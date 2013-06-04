@@ -1,0 +1,50 @@
+{% extends "nirit/base.html" %}
+{% load i18n %}
+{% load building_card %}
+
+{% block content %}
+<div class="content doublepadded">
+
+    {% if user.is_anonymous %}
+        <div id="login-card">
+            {% if form.errors %}
+            <div id="form-errors">
+                <p>Your username and password didn't match. Please try again.</p>
+                <p>The username should be your email address.</p>
+            </div>
+            {% endif %}
+            <form method="post" action="">
+                {% csrf_token %}
+                <div class="form-field"><label>{{ form.username.label_tag }}</label>{{ form.username }}</div>
+                <div class="form-field"><label>{{ form.password.label_tag }}</label>{{ form.password }}</div>
+                <ul id="login-links">
+                    <li><a href="/user/password/reset/">forgot password</a></li>
+                    <li><a href="">what's Nirit</a></li>
+                    <li><a href="">sign-up</a></li>
+                </ul>
+                <input type="submit" value="login" />
+                <input type="hidden" name="next" value="{{ next }}" />
+            </form>
+        </div>
+    {% endif %}
+
+    {% for building in buildings %}
+        {% building_card building %}
+    {% endfor %}
+
+</div>
+{% endblock %}
+
+{% block extrajs %}{{ super }}
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#id_username').focus();
+        $('#form-errors').bind('click', function () {
+            $(this).hide();
+        });
+        setTimeout(function () {
+            $('#form-errors').fadeOut();
+        }, 2000);
+    });
+</script>
+{% endblock %}

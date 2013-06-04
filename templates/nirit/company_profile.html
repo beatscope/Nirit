@@ -1,0 +1,35 @@
+{% extends "nirit/base.html" %}
+
+{% block title %}Nirit | Company Profile | {{ organization.name }}{% endblock %}
+
+{% block content %}
+<div id="company" class="content doublepadded">
+
+    <div class="box padded">
+        <h1>{{ organization.name }}</h1>
+    </div>
+
+    <div class="box padded">
+        <h3>Company Info</h3>
+        <ul>
+            <li><strong>Short Description</strong>: {% if organization.summary %}{{ organization.summary }}{% endif %}</li>
+            <li><strong>Long Description</strong>: {% if organization.description %}{{ organization.description }}{% endif %}</li>
+            <li><strong>Department</strong>: {% if organization.department %}{{ organization.department }}{% endif %}</li>
+            <li><strong>Floor</strong>: {% if organization.floor %}{{ organization.floor }}{% endif %}</li>
+            <li><strong>Keywords/Crafts</strong>: {% if organization.keywords %}{{ organization.keywords }}{% endif %}</li>
+            <li><strong>Company Size</strong>: {% if organization.size %}{{ organization.size }}{% endif %}</li>
+            <li><strong>Formed</strong>: {% if organization.formed %}{{ organization.formed }}{% endif %}</li>
+            <li><strong>Joined</strong>: {% if organization.joined %}{{ organization.joined }}{% endif %}</li>
+            <li><strong>Status</strong>: {% if organization.status %}{{ organization.status }}{% endif %}</li>
+        </ul>
+    </div>
+
+    <div class="box padded">
+        <h3>Members</h3>
+        <ul>{% for member in organization.members.all %}
+            <li>{{ member }}</li>
+        {% endfor %}</ul>
+    </div>
+
+</div>
+{% endblock %}
