@@ -14,9 +14,9 @@ urlpatterns = patterns('',
     url(r'^directory/[\w-]*/(?P<codename>\w+)', 'nirit.views.directory'),
     url(r'^company/[\w-]*/(?P<codename>\w+)', 'nirit.views.company'),
 
-    # API
-    url(r'^notices$', 'nirit.api.notices'),
-    url(r'^notices/(?P<nid>[\d\w]+)/?(?P<action>\w+)?/?(?P<rng>\d+)?$', 'nirit.api.notices'),
+    # REST API 
+    url(r'^notices$', 'nirit.views.notices'),
+    url(r'^notices/(?P<object_code>[\d\w]+)/?(?P<action>\w+)?/?(?P<start>\d+)?$', 'nirit.views.notices'),
 
     # Admin
     url(r'^browse/(.*)', user_passes_test(lambda u: u.is_superuser)(databrowse.site.root)),

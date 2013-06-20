@@ -1,7 +1,7 @@
 # nirit/manager.py
 """
-Manager Utilities.
-Provides a unified API for operations and tasks.
+Data Manager.
+Low-level API to the Django ORM. Provides methods to access to alter Nirit's data.
 
 """
 import hashlib
