@@ -1,0 +1,104 @@
+{% extends "nirit/base.html" %}
+
+{% load i18n static %}
+
+{% block title %}Sign Up to Nirit{% endblock %}
+
+{% block content %}
+<div class="content sign-up edit">
+    <div id="signup-card">
+
+        <div class="padded">
+            <form action="" method="post">
+                {% csrf_token %}
+                <div class="text">
+                    <h1>Sign Up to Nirit</h1>
+                    <p class="description">Nirit is a members-only service.</p>
+                    <p class="description">You can register your Company and create a Business Profile,
+                        or simply join your Company if it is already registered with Nirit.</p>
+                </div>
+                <div class="fields">
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.first_name.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.first_name }}
+                        {{ form.first_name.errors }}
+                        {% if form.first_name.help_text %}
+                            <p class="description">{{ form.first_name.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.last_name.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.last_name }}
+                        {{ form.last_name.errors }}
+                        {% if form.last_name.help_text %}
+                            <p class="description">{{ form.last_name.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.email.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.email }}
+                        {{ form.email.errors }}
+                        {% if form.email.help_text %}
+                            <p class="description">{{ form.email.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.password.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.password }}
+                        {{ form.password.errors }}
+                        {% if form.password.help_text %}
+                            <p class="description">{{ form.password.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>Business {{ form.auth_code.label }}</label>
+                        </h3>
+                        {{ form.auth_code }}
+                        {{ form.auth_code.errors }}
+                        {% if form.auth_code.help_text %}
+                            <div class="description">{{ form.auth_code.help_text|safe }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field agreed">
+                        {{ form.agreed }} <span class="required">*</span>
+                        <label>I agree to the <a href="/terms-of-use" target="_blank">Terms of Use</a> and <a href="/privacy-policy" target="_blank">Privacy Policy</a></label>
+                        {{ form.agreed.errors }}
+                    </div>
+                    <input type="submit" value="Sign Up" class="button" />
+                </div>
+            </form>
+            <div class="explanation">
+                <div class="text">
+                    {% if form.errors and not form.non_field_errors %}
+                        <h3>There are errors in the information you provided</h3>
+                        <p>Please correct them and submit this form again.
+                        Contact us via <a href="/contact">this form</a> if you have any issues.</p>
+                    {% endif %}
+                    {{ explanation|safe }}
+                    {% if form.non_field_errors %}
+                        <div class="errorList">
+                        {% for paragraph in form.non_field_errors %}
+                            {{ paragraph|safe }}
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

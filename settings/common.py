@@ -14,7 +14,9 @@ DATABASE_OPTIONS = {
     'use_unicode': True,
     'charset': 'utf8'
 }
-BOARD_NOTICES = 6
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -56,7 +58,7 @@ STATIC_ROOT = ''
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
-STATIC_URL = '/static/'
+STATIC_URL = ''
 
 # URL prefix for admin static files -- CSS, JavaScript and images.
 # Make sure to use a trailing slash.
@@ -107,8 +109,6 @@ MIDDLEWARE_CLASSES = (
     'nirit.middleware.NiritMiddleware',
 )
 
-ROOT_URLCONF = 'nirit.urls'
-
 TEMPLATE_DIRS = ()
 
 INSTALLED_APPS = (
@@ -117,16 +117,22 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.admin',
-    'django.contrib.databrowse',
+    'django.contrib.staticfiles',
     #'django.contrib.humanize',
-    # Uncomment the next line to enable admin documentation:
-    # 'django.contrib.admindocs',
     'nirit',
+    # requires south
+    # @see http://south.readthedocs.org/en/latest/index.html
     'south',
+    'rest_framework',
+    'rest_framework.authtoken',
+)
+
+AUTHENTICATION_BACKENDS = (
+    'nirit.auth.EmailBackend',
 )
 
 SCRIPT_DIR = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
-LOGFILENAME = os.path.abspath(os.path.join(SCRIPT_DIR, '../runtime/runtime.log'))
+LOGFILENAME = os.path.abspath(os.path.join(SCRIPT_DIR, '../../runtime/runtime.log'))
 LOGFILE = open(LOGFILENAME, 'a+')
 try:
     # The file owner sets the permissions to 777 so every process can log to the same file
@@ -150,6 +156,11 @@ LOGGING = {
     },
     'loggers': {
         'nirit': {
+            'handlers': ['log_to_file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        'api': {
             'handlers': ['log_to_file'],
             'level': 'ERROR',
             'propagate': True,

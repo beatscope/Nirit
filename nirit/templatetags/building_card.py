@@ -14,7 +14,7 @@ def do_building_card(parser, token):
 class BuildingCardNode(template.Node):
     def render(self, context):
         building = context['building']
-        members = len(building.members)
+        members = building.get_members_count()
         posts = building.notices.filter(date=datetime.datetime.now().date()).count()
         links = []
         user = context['user']
@@ -28,15 +28,15 @@ class BuildingCardNode(template.Node):
                     'text': 'directory',
                     'href': '/directory/{}'.format(building.link)
                 })
-            else:
-                links.append({
-                    'text': 'join',
-                    'href': '/'
-                })
+            #else:
+            #    links.append({
+            #        'text': 'join',
+            #        'href': '/'
+            #    })
         else:
             links.append({
                 'text': 'sign-up',
-                'href': '/'
+                'href': '/member/sign-up'
             })
         t = template.loader.get_template('nirit/building_card.html')
         return t.render(template.Context({

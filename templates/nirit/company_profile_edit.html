@@ -1,0 +1,117 @@
+{% extends "nirit/base.html" %}
+
+{% block title %}Nirit | Company Profile | {{ organization.name }}{% endblock %}
+
+{% block extrahead %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.ajaxfileupload.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/nirit.company.js"></script>
+<link media="all" rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/jquery-ui.css" />
+{% endblock %}
+
+{% block content %}
+<div class="content company-profile filled edit">
+    <form action="" method="post" enctype="multipart/form-data">{% csrf_token %}
+
+        <div class="edit-line box padded">
+            <h2>{{ organization.name }} (edit mode)</h2>
+            <p class="description">Please contact us to update the name of your company.</p>
+            <div class="publish-line">
+                <input class="button" type="submit" value="Publish" />
+                <a class="button" href="../{{ organization.codename }}">Cancel</a>
+            </div>
+        </div>
+
+        {{ form.errors }}
+        {{ form.non_field_errors }}
+        {{ form.description.errors }}
+        {{ form.image.errors }}
+        {{ form.logo.errors }}
+        {{ form.square_logo.errors }}
+        {{ form.expertise.errors }}
+        {{ form.department.errors }}
+        {{ form.size.errors }}
+        {{ form.founded.errors }}
+        {{ form.floor.errors }}
+
+        <div id="main">
+            <div class="box padded">
+                <div class="fieldWrapper">
+                    <h3>{{ form.description.label_tag }}</h3>
+                    {{ form.description }}
+                </div>
+            </div>
+            <div class="box padded">
+                <div class="fieldWrapper">
+                    <h3>{{ form.image.label_tag }}</h3>
+                    {{ form.image }}
+                    <span class="description">{{ form.image.help_text }}</span>
+                </div>
+            </div>
+            <div class="box padded">
+                <div class="fieldWrapper">
+                    <h3>{{ form.logo.label_tag }}</h3>
+                    {{ form.logo }}
+                    <span class="description">{{ form.logo.help_text }}</span>
+                </div>
+            </div>
+            <div class="box padded">
+                <div class="fieldWrapper">
+                    <h3>{{ form.square_logo.label_tag }}</h3>
+                    {{ form.square_logo }}
+                    <span class="description">{{ form.square_logo.help_text }}</span>
+                </div>
+            </div>
+            <div class="box padded">
+                <div class="fieldWrapper">
+                    <h3>{{ form.expertise.label_tag }}</h3>
+                    <div id="expertise_widget">
+                        <ul id="expertise_list"></ul>
+                        <div class="description">Add more areas of expertise</div>
+                        <input id="expertise" type="text" />
+                    </div>
+                    {{ form.expertise }}
+                </div>
+            </div>
+        </div>
+
+        <div id="sidebar">
+            <div class="box padded">
+                <div class="fieldWrapper">
+                    <h3><span class="required">*</span>{{ form.department.label_tag }}</h3>
+                    <p class="description">{{ form.department.help_text }}</p>
+                    {{ form.department }}
+                </div>
+                <div class="fieldWrapper">
+                    <h3><span class="required">*</span>{{ form.size.label_tag }}</h3>
+                    {{ form.size }}
+                </div>
+                <div class="fieldWrapper">
+                    <h3>{{ form.founded.label_tag }}</h3>
+                    {{ form.founded }}
+                </div>
+                <div class="fieldWrapper">
+                    <h3><span class="required">*</span>{{ form.floor.label_tag }}</h3>
+                    {{ form.floor }}
+                </div>
+            </div>
+        </div>
+
+        <div class="hidden">
+            {{ form.name }}
+            {{ form.codename }}
+        </div>
+
+    </form>
+</div>
+{% endblock %}
+
+{% block extrajs %}{{ block.super }}
+<script type="text/javascript">
+    $(document).ready(function () {
+        var csrf_token = '{{ csrf_token }}';
+        var token = '{{ account.token }}';
+        new NIRIT.Company(csrf_token, token);
+    });
+</script>
+{% endblock %}

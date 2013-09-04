@@ -3,27 +3,26 @@
 {% load building_card %}
 
 {% block content %}
-<div class="content doublepadded">
+<div class="content index edit">
 
     {% if user.is_anonymous %}
         <div id="login-card">
             {% if form.errors %}
             <div id="form-errors">
-                <p>Your username and password didn't match. Please try again.</p>
-                <p>The username should be your email address.</p>
+                <p>Your email and password didn't match. Please try again.</p>
             </div>
             {% endif %}
             <form method="post" action="">
                 {% csrf_token %}
-                <div class="form-field"><label>{{ form.username.label_tag }}</label>{{ form.username }}</div>
+                <div class="form-field"><label>Email Address</label>{{ form.username }}</div>
                 <div class="form-field"><label>{{ form.password.label_tag }}</label>{{ form.password }}</div>
-                <ul id="login-links">
-                    <li><a href="/user/password/reset/">forgot password</a></li>
-                    <li><a href="">what's Nirit</a></li>
-                    <li><a href="">sign-up</a></li>
-                </ul>
-                <input type="submit" value="login" />
                 <input type="hidden" name="next" value="{{ next }}" />
+                <ul id="login-links">
+                    <li><a href="/member/password/reset/">forgot password</a></li>
+                    <li><a href="">what's Nirit</a></li>
+                    <li><a href="/member/sign-up">sign-up</a></li>
+                    <li><input type="submit" class="button" value="login" /></li>
+                </ul>
             </form>
         </div>
     {% endif %}
@@ -35,15 +34,17 @@
 </div>
 {% endblock %}
 
-{% block extrajs %}{{ super }}
+{% block extrajs %}{{ block.super }}
 <script type="text/javascript">
     $(document).ready(function () {
         $('#id_username').focus();
         $('#form-errors').bind('click', function () {
             $(this).hide();
+            $('#id_username').focus();
         });
         setTimeout(function () {
             $('#form-errors').fadeOut();
+            $('#id_username').focus();
         }, 2000);
     });
 </script>

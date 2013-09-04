@@ -8,6 +8,13 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # Adding model 'Expertise'
+        db.create_table('nirit_expertise', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('title', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200)),
+        ))
+        db.send_create_signal('nirit', ['Expertise'])
+
         # Adding model 'Notice'
         db.create_table('nirit_notice', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -27,6 +34,12 @@ class Migration(SchemaMigration):
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200)),
             ('codename', self.gf('django.db.models.fields.CharField')(unique=True, max_length=64)),
+            ('description', self.gf('django.db.models.fields.TextField')(null=True)),
+            ('department', self.gf('django.db.models.fields.IntegerField')(null=True)),
+            ('size', self.gf('django.db.models.fields.CharField')(max_length=1, null=True)),
+            ('founded', self.gf('django.db.models.fields.DateField')(null=True)),
+            ('floor', self.gf('django.db.models.fields.IntegerField')(null=True)),
+            ('status', self.gf('django.db.models.fields.IntegerField')(default=0)),
         ))
         db.send_create_signal('nirit', ['Organization'])
 
@@ -37,6 +50,14 @@ class Migration(SchemaMigration):
             ('user', models.ForeignKey(orm['auth.user'], null=False))
         ))
         db.create_unique('nirit_organization_members', ['organization_id', 'user_id'])
+
+        # Adding M2M table for field expertise on 'Organization'
+        db.create_table('nirit_organization_expertise', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('organization', models.ForeignKey(orm['nirit.organization'], null=False)),
+            ('expertise', models.ForeignKey(orm['nirit.expertise'], null=False))
+        ))
+        db.create_unique('nirit_organization_expertise', ['organization_id', 'expertise_id'])
 
         # Adding model 'Building'
         db.create_table('nirit_building', (
@@ -88,6 +109,9 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
+        # Deleting model 'Expertise'
+        db.delete_table('nirit_expertise')
+
         # Deleting model 'Notice'
         db.delete_table('nirit_notice')
 
@@ -96,6 +120,9 @@ class Migration(SchemaMigration):
 
         # Removing M2M table for field members on 'Organization'
         db.delete_table('nirit_organization_members')
+
+        # Removing M2M table for field expertise on 'Organization'
+        db.delete_table('nirit_organization_expertise')
 
         # Deleting model 'Building'
         db.delete_table('nirit_building')
@@ -161,6 +188,11 @@ class Migration(SchemaMigration):
             'notices': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['nirit.Notice']", 'symmetrical': 'False'}),
             'organizations': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['nirit.Organization']", 'symmetrical': 'False'})
         },
+        'nirit.expertise': {
+            'Meta': {'object_name': 'Expertise'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'title': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'})
+        },
         'nirit.notice': {
             'Meta': {'object_name': 'Notice'},
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
@@ -176,9 +208,16 @@ class Migration(SchemaMigration):
         'nirit.organization': {
             'Meta': {'object_name': 'Organization'},
             'codename': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '64'}),
+            'department': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
+            'description': ('django.db.models.fields.TextField', [], {'null': 'True'}),
+            'expertise': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['nirit.Expertise']", 'symmetrical': 'False'}),
+            'floor': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
+            'founded': ('django.db.models.fields.DateField', [], {'null': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'members': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.User']", 'symmetrical': 'False'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'})
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
+            'size': ('django.db.models.fields.CharField', [], {'max_length': '1', 'null': 'True'}),
+            'status': ('django.db.models.fields.IntegerField', [], {'default': '0'})
         },
         'nirit.userprofile': {
             'Meta': {'object_name': 'UserProfile'},

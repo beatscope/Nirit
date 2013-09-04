@@ -1,0 +1,130 @@
+{% extends "nirit/base.html" %}
+
+{% load i18n static %}
+
+{% block title %}Sign Up to Nirit{% endblock %}
+
+{% block content %}
+<div class="content sign-up edit">
+    <div id="signup-card">
+
+        {% if status == 'FAILED' %}
+            <div class="text">
+                <h1>Account Activation</h1>
+                <div class="description">
+                    <p>Activation failed. The token is invalid.</p>
+                    <p><a href="/">Log in to Nirit to continue</a>.</p>
+                </div>
+            </div>
+        {% elif status == 'REDEEMED' %}
+            <div class="text">
+                <h1>Account Activation</h1>
+                <div class="description">
+                    <p>Activation failed. Each token can only be used once.</p>
+                    <p><a href="/">Log in to Nirit to continue</a>.</p>
+                </div>
+            </div>
+        {% elif status == 'ACTIVATED' %}
+            <form action="" method="post" enctype="multipart/form-data">{% csrf_token %}
+                <div class="text">
+                    <h1>Account Activation</h1>
+                    <div class="description">
+                        <p>Hi {{ user.first_name }},</p>
+                        <p>Your account has been successfully activated.</p>
+                    </div>
+                </div>
+                <div class="fields">
+                     <div class="form-field">
+                        <h3>
+                            <label>{{ form.name.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.name }}
+                        {{ form.name.errors }}
+                        {% if form.name.help_text %}
+                            <div class="description">{{ form.name.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.description.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.description }}
+                        {{ form.description.errors }}
+                        {% if form.description.help_text %}
+                            <div class="description">{{ form.description.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.department.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.department }}
+                        {{ form.department.errors }}
+                        {% if form.department.help_text %}
+                            <div class="description">{{ form.department.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.size.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.size }}
+                        {{ form.size.errors }}
+                        {% if form.size.help_text %}
+                            <div class="description">{{ form.size.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.founded.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.founded }}
+                        {{ form.founded.errors }}
+                        {% if form.founded.help_text %}
+                            <div class="description">{{ form.founded.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.floor.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.floor }}
+                        {{ form.floor.errors }}
+                        {% if form.floor.help_text %}
+                            <div class="description">{{ form.floor.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <input class="button" type="submit" value="Create Business Profile" />
+                </div>
+            </form>
+            <div class="explanation">
+                <div class="text">
+                    {% if not form.errors and not form.non_field_errors %}
+                        <h3>Create a Business Profile for your Company</h3>
+                        <p>We have logged you in so that you can start right away and create your Business Profile.</p>
+                    {% endif %}
+                    {% if form.errors and not form.non_field_errors %}
+                        <h3>There are errors in the information you provided</h3>
+                        <p>Please correct them and submit this form again.
+                        Contact us via <a href="/contact">this form</a> if you have any issues.</p>
+                    {% endif %}
+                    {% if form.non_field_errors %}
+                        <div class="errorList">
+                        {% for paragraph in form.non_field_errors %}
+                            {{ paragraph|safe }}
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

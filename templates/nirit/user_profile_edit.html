@@ -1,0 +1,138 @@
+{% extends "nirit/base.html" %}
+
+{% block title %}Nirit | Edit Profile | {% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}{% endblock %}
+
+{% block extrahead %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.ajaxfileupload.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="content account filled edit">
+    <form action="" method="post" enctype="multipart/form-data">{% csrf_token %}
+
+        <div class="edit-line box padded">
+            <h2>{% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %} (edit mode)</h2>
+            <p class="description">Raw passwords are not stored, but you can change the password using <a href="/member/password/change">this form</a>.</p>
+            <div class="publish-line">
+                <input class="button" type="submit" value="Publish" />
+                <a class="button" href="../{{ member.username }}">Cancel</a>
+            </div>
+        </div>
+
+        {{ member_form.errors }}
+        {{ member_form.non_field_errors }}
+        {{ user_form.first_name.errors }}
+        {{ user_form.last_name.errors }}
+        {{ user_form.email.errors }}
+        {{ member_form.thumbnail.errors }}
+        {{ member_form.job_title.errors }}
+        {{ member_form.bio.errors }}
+
+        <div id="main">
+
+            <div class="box padded">
+                <div class="fieldWrapper">
+                    <h3>{{ user_form.first_name.label_tag }} <span class="required">*</span></h3>
+                    {{ user_form.first_name }}
+                    <span class="description">{{ user_form.first_name.help_text }}</span>
+                </div>
+                <div class="fieldWrapper">
+                    <h3>{{ user_form.last_name.label_tag }} <span class="required">*</span></h3>
+                    {{ user_form.last_name }}
+                    <span class="description">{{ user_form.last_name.help_text }}</span>
+                </div>
+                <div class="fieldWrapper">
+                    <h3>{{ user_form.email.label_tag }} <span class="required">*</span></h3>
+                    {{ user_form.email }}
+                    <span class="description">{{ user_form.email.help_text }}</span>
+                </div>
+            </div>
+
+            <div class="box padded">
+                <div class="fieldWrapper">
+                    <h3>{{ member_form.job_title.label_tag }}</h3>
+                    {{ member_form.job_title }}
+                    <span class="description">{{ member_form.job_title.help_text }}</span>
+                </div>
+                <div class="fieldWrapper">
+                    <h3>Background</h3>
+                    {{ member_form.bio }}
+                    <span class="description">{{ member_form.bio.help_text }}</span>
+                </div>
+            </div>
+
+            <div class="box padded">
+                <div class="fieldWrapper">
+                    <h3>{{ member_form.thumbnail.label_tag }}</h3>
+                    {{ member_form.thumbnail }}
+                    <span class="description">{{ member_form.thumbnail.help_text }}</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="sidebar">
+            <div class="box padded">
+                <h3>{% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}</h3>
+                <p class="description">{{ member.email }}</p>
+                {% if profile.company %}
+                <p class="description">{{ profile.company }}</p>
+                {% endif %}
+                <p class="description">{{ profile.active_building }}</p>
+            </div>
+            {% if profile.buildings.length > 1 %}
+            <div class="box padded">
+                <h3>Select primary building</h3>
+                <ul>{% for building in profile.buildings %}
+                    <li class="{% if building == profile.active_building %}active{% else %}inactive{% endif %}">
+                        {% if user == member %}
+                            {% if building == profile.active_building %}
+                                {{ building.name }} <span class="primary">(primary)</span>
+                            {% else %}
+                                <a href="?set-active-building={{ building.codename }}" title="Set as primary building">{{ building.name }}</a>
+                            {% endif %}
+                        {% else %}
+                            {{ building.name }}
+                        {% endif %}
+                    </li>
+                {% endfor %}</ul>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="hidden">
+            {{ user_form.username }}
+            {{ user_form.password }}
+            {{ user_form.last_login }}
+            {{ user_form.is_superuser }}
+            {{ user_form.groups }}
+            {{ user_form.user_permissions }}
+            {{ user_form.is_staff }}
+            {{ user_form.is_active }}
+            {{ user_form.date_joined }}
+            {{ member_form.user }}
+            {{ member_form.building }}
+            {{ member_form.company }}
+            {{ member_form.starred }}
+            {{ member_form.networked }}
+        </div>
+
+    </form>
+</div>
+{% endblock %}
+
+{% block extrajs %}{{ block.super }}
+<script type="text/javascript">
+    $(document).ready(function () {
+        NIRIT.Upload({
+            'field': 'thumbnail',
+            'model': 'UserProfile',
+            'token': '{{ csrf_token }}',
+            'width': 60,
+            'height': 60
+        })
+        // Expandable textareas
+        $('#id_bio').elastic();
+    });
+</script>
+{% endblock %}

@@ -2,34 +2,161 @@
 
 {% block title %}Nirit | Company Profile | {{ organization.name }}{% endblock %}
 
+{% block extrahead %}
+{% if organization.image %}
+<style type="text/css">
+    .company-profile .heading { 
+        background-image: url({{ MEDIA_URL }}{{ organization.image }});
+        background-position: center center;
+        background-repeat: no-repeat;
+    }
+</style>
+{% endif %}
+{% endblock %}
+
 {% block content %}
-<div id="company" class="content doublepadded">
+<div class="content company-profile">
 
-    <div class="box padded">
-        <h1>{{ organization.name }}</h1>
+    <div id="main">
+        <div class="heading">
+            <div class="company-card">
+                <h1>
+                    {% if organization.get_logo %}
+                        <div class="company-logo">
+                            <img src="{{ organization.get_logo }}" alt="{{ organization.name }}" />
+                        </div>
+                    {% else %}
+                        {{ organization.name }}
+                    {% endif %}
+                </h1>
+                <ul class="company-info">
+                    <li>Joined {{ organization.created|date:"jS" }} of {{ organization.created|date:"F, Y" }}</li>
+                    <li>{{ organization.floor_tag }} Floor, {{ account.active_building.name }}</li>
+                </ul>
+                <a class="networked-switch{% if organization in account.networked %} active{% endif %}" href="" title="Add {{ organization.name }} to Your Network">
+                    <img src="{{ STATIC_URL }}/images/z.gif" alt="Add {{ organization.name }} to Your Network" width="30" height="30" />
+                </a>
+            </div>
+            {% if is_user_editor %}<a class="button" href="./{{ organization.codename }}/edit">Edit</a>{% endif %}
+        </div>
+
+        <div class="box filled padded">
+
+            {% if organization.description %}
+            <h3>About {{ organization.name }}</h3>
+            <div class="textfield">
+                {{ organization.description|linebreaks }}
+            </div>
+            {% endif %}
+
+            {% if organization.get_department_display  %} 
+            <h3>Department</h3>
+            <div class="charfield">
+                {{ organization.get_department_display }}
+            </div>
+            {% endif %}
+            
+            {% if organization.expertise.all  %}
+            <h3>Areas of Expertise</h3>
+            <div class="charfield">
+                {% if organization.expertise.all %}
+                    {{ organization.expertise.all|join:", " }}
+                {% else %}
+                    &nbsp;
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="inline">
+                {% if organization.get_size_display %}
+                <div class="inline-block">
+                    <h3>Company Size</h3>
+                    <div class="charfield">
+                        {% if organization.size == 'A' or organization.size == 'B' %}
+                            1-10 employees
+                        {% else %}
+                            {{ organization.get_size_display }} employees
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if organization.founded %}
+                <div class="inline-block">
+                    <h3>Year Founded</h3>
+                    <div class="charfield">
+                        {{ organization.founded }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <h3>Nirit Status</h3>
+            <div class="charfield">
+                {{ organization.get_status_display }}
+            </div>
+
+        </div>
     </div>
 
-    <div class="box padded">
-        <h3>Company Info</h3>
-        <ul>
-            <li><strong>Short Description</strong>: {% if organization.summary %}{{ organization.summary }}{% endif %}</li>
-            <li><strong>Long Description</strong>: {% if organization.description %}{{ organization.description }}{% endif %}</li>
-            <li><strong>Department</strong>: {% if organization.department %}{{ organization.department }}{% endif %}</li>
-            <li><strong>Floor</strong>: {% if organization.floor %}{{ organization.floor }}{% endif %}</li>
-            <li><strong>Keywords/Crafts</strong>: {% if organization.keywords %}{{ organization.keywords }}{% endif %}</li>
-            <li><strong>Company Size</strong>: {% if organization.size %}{{ organization.size }}{% endif %}</li>
-            <li><strong>Formed</strong>: {% if organization.formed %}{{ organization.formed }}{% endif %}</li>
-            <li><strong>Joined</strong>: {% if organization.joined %}{{ organization.joined }}{% endif %}</li>
-            <li><strong>Status</strong>: {% if organization.status %}{{ organization.status }}{% endif %}</li>
-        </ul>
-    </div>
-
-    <div class="box padded">
-        <h3>Members</h3>
-        <ul>{% for member in organization.members.all %}
-            <li>{{ member }}</li>
-        {% endfor %}</ul>
+    <div id="sidebar">
+        {% if notices|length > 0 %}
+        <div class="box padded">
+            <h2>Latest Active Notices</h2>
+            <ul class="staff">{% for notice in notices %}
+                <li>
+                    <div class="notice">
+                        <img
+                        {% if notice.sender.company.square_logo %}
+                             src="{{ notice.sender.company.square_logo }}"
+                        {% else %}
+                             src="{{ notice.sender.avatar }}"
+                        {% endif %}
+                             width="16" height="auto"
+                             class="avatar"
+                             alt="{% if notice.sender.full_name %}{{ notice.sender.full_name }}{% else %}{{ notice.sender.username }}{% endif %}" />
+                        {{ notice.subject|safe }}
+                    </div>
+                </li>
+            {% endfor %}</ul>
+            <div class="see-all"><a href="./{{ organization.codename }}/board">See All</a></div>
+        </div>
+        {% endif %}
+        <div class="box padded">
+            <h2>Members of Staff</h2>
+            <ul class="staff">{% for member in staff %}
+                <li>
+                    <a href="/member/{{ member.username }}">
+                        <img src="{{ member.profile.get_avatar }}"
+                             width="16" height="auto" 
+                             class="avatar"
+                             alt="{% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}" />
+                        {% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}
+                    </a>
+                </li>
+            {% endfor %}</ul>
+            <div class="see-all"><a href="./{{ organization.codename }}/staff">See All</a></div>
+        </div>
+        <div class="box">
+            <div class="ad-slot">
+                <p>300x250 MPU</p>
+            </div>
+        </div>
     </div>
 
 </div>
+{% endblock %}
+
+{% block extrajs %}{{ block.super }}
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('.networked-switch').click(function () {
+            var self = $(this);
+            NIRIT.utils.set_member_preference('network', '{{ organization.codename }}', function (data) {
+                if (self.hasClass('active')) { self.removeClass('active'); }
+                else { self.addClass('active'); }
+            });
+            return false;
+        });
+    });
+</script>
 {% endblock %}

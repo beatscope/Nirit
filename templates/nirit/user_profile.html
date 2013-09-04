@@ -1,0 +1,163 @@
+{% extends "nirit/base.html" %}
+{% load static %}
+
+{% block title %}Nirit | Member Profile | {% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}{% endblock %}
+
+{% block extrahead %}<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>
+<script type="text/javascript" src="{% static "js/nirit.board.js" %}"></script>{% endblock %}
+
+{% block content %}
+<div class="content account">
+
+    <div id="main">
+
+        <div class="heading">
+            <div class="box filled padded">
+                <h1>{% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}</h1>
+                {% if profile.thumbnail %}
+                    <img id="avatar" src="{{ profile.thumbnail }}" alt="{% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}" width="60" height="auto" />
+                {% endif %}
+                {% if profile.job_title %}<p class="job-title">{{ profile.job_title }}</p>{% endif %}
+                <h2>
+                    <a href="/company/{{ profile.company.link }}">{{ profile.company.name }}</a>
+                    <span class="role">({{ profile.roles }})</span>
+                </h2>
+                {% if user == member %}<a class="button" href="/member/account/edit">Edit</a>{% endif %}
+            </div>
+        </div>
+
+        {% if profile.bio %}
+        <div class="box filled padded">
+            <h3>Background</h3>
+            {{ profile.bio|linebreaks }}
+        </div>
+        {% endif %}
+
+        <div class="notices">
+            <h3>Active Notices</h3>
+            <div id="cards">
+                <div id="stream"></div>
+                <a id="plus" class="plus" href=""><span>More</span></a>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="sidebar">
+        {% if companies_awaiting %}
+        <div class="box padded">
+            <h3>Companies Awaiting Approval</h3>
+            <ul class="approval-list company">
+                {% for company in companies_awaiting %}
+                <li class="company" rel="{{ company.codename }}">{{ company.name }}
+                    <a href="" class="activate">Approve</a>
+                    <a href="" class="ban">Decline</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% if staff_awaiting %}
+        <div class="box padded">
+            <h3>Staff Awaiting Approval</h3>
+            <ul class="approval-list staff">
+                {% for staff in staff_awaiting %}
+                <li class="staff" rel="{{ staff.email }}">{% if staff.get_full_name %}{{ staff.get_full_name }}{% else %}{{ staff }}{% endif %}
+                    <a href="" class="activate">Approve</a>
+                    <a href="" class="ban">Decline</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <div class="box">
+            <div class="ad-slot">
+                <p>300x250 MPU</p>
+            </div>
+        </div>
+        {% if profile.networked.count > 0 %}
+        <div class="box padded">
+            <h3>{% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}'s Network</h3>
+            <ul>
+                {% for company in profile.networked %}
+                <li><a href="/company/{{ company.link }}" title="{{ company }}">{{ company }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extrajs %}{{ block.super }}
+<script type="text/javascript">
+    $(document).ready(function () {
+        var buildings = [];
+        var building = '{{ profile.active_building.codename }}';
+        buildings.push(building); // Can only post to active building
+        var token = '{{ account.token }}';
+        new NIRIT.Board({
+            'data': {{ data|safe }},
+            'notices': {{ notices|safe }},
+            'buildings': buildings,
+            'token': token,
+            'account': {
+                'username': '{{ account.username }}',
+                'company': {
+                    'name': '{{ account.company.name }}',
+                    'codename': '{{ account.company.codename }}'
+                },
+                'roles': '{{ account.roles }}'.split(', '),
+                'starred': {{ starred|safe }}
+            },
+            'filter': {
+                'type': 'user',
+                'value': '{{ account.username }}'
+            }
+        });
+
+        {% if staff_awaiting or companies_awaiting %}
+        // Handle Staff and Comapnies approval
+        NIRIT.Approval = function () {
+            this.init();
+        };
+        
+        NIRIT.Approval.prototype.init = function () {
+            var self = this;
+            $('.approval-list').find('.company, .staff').each(function () {
+                var entity = $(this);
+                entity.find('a').bind('click', function () {
+                    // URL format: "/company|member/codename|email/activate|ban
+                    var url = '/' + (entity.attr('class') == 'staff' ? 'member' : entity.attr('class'));
+                    url += '/' + entity.attr('rel');
+                    url += '/' + $(this).attr('class');
+                    $.get(url, function () {
+                        // Remove the entity from the screen on success
+                        self.remove(entity);
+                    });
+                    return false;
+                });
+            });
+        };
+
+        NIRIT.Approval.prototype.remove = function (entity) {
+            var self = this;
+            var entity_type = entity.attr('class');
+            entity.slideUp(function () {
+                entity.remove();
+                self.refresh(entity_type);
+            });
+        };
+
+        NIRIT.Approval.prototype.refresh = function (entity_type) {
+            if ($('.approval-list.'+entity_type).find('.'+entity_type).length <= 0) {
+                $('.approval-list.'+entity_type).hide().append('<li>No pending requests remaining.</li>').slideDown();
+            }
+        };
+
+        new NIRIT.Approval();
+        {% endif %}
+    });
+</script>
+{% endblock %}

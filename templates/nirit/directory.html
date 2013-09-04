@@ -1,30 +1,51 @@
 {% extends "nirit/base.html" %}
+{% load static %}
 
 {% block title %}Nirit | {{ building.name }} Directory{% endblock %}
 
-{% block content %}
-<div id="directory" class="content">
+{% block extrahead %}<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>
+<script type="text/javascript" src="{% static "js/nirit.directory.js" %}"></script>{% endblock %}
 
-    <div class="tabs">
-        <h1>{{ building.name }} Directory</h1>
-        {% if tabs %}<ul>
-            {% for tab in tabs %}<li{% if tab.class %} class="{{ tab.class }}"{% endif %}>
-                <a href="{{ tab.href }}">{{ tab.name }}</a>
-            </li>{% endfor %}
-        </ul>{% endif %}
+{% block content %}
+<div class="content directory">
+
+    <div id="selection">
+        <h1>{{ building.name }} <span>Directory</span></h1>
+        <div class="selection filled">
+            {% if tabs %}<ul>
+                {% for tab in tabs %}<li>
+                    {% if group and tab.name == group %}
+                    {{ tab.label }}
+                    {% else %}
+                    <a href="{{ tab.href }}">{{ tab.label }}</a>
+                    {% endif %}
+                </li>{% endfor %}
+            </ul>{% endif %}
+        </div>
     </div>
     
-    <div class="section">
-        <div class="head-img"><img src="/static/images/z.gif" width="100%" height="100%" /></div>
-        <ul>{% for company in organizations %}            
-            <li>
-                <a href="/company/{{ company.link }}">{{ company.name }}</a>
-                {% if company.floor %}/ Floor <strong>{{ company.floor }}</strong>{% endif %}
-                {% if company.department %}/ Department <strong>{{ company.department }}</strong>{% endif %}
-            </li>
-        {% endfor %}</ul>
+    <div id="results" class="filled">
+        <div id="stream"></div>
+        <a href="" id="plus">[+]</a>
     </div>
 
-    <div class="clear"></div>
+    <div id="sidebar-narrow" class="filled">
+         <div class="ad-slot-wide-skyscraper">
+            <p>160x600 Wide Skyscraper</p>
+        </div>
+    </div>
+
 </div>
+{% endblock %}
+
+{% block extrajs %}{{ block.super }}
+<script type="text/javascript">
+    $(document).ready(function () {
+        var building = '{{ building.codename }}';
+        new NIRIT.Directory({
+            'data': {{ data|safe }},
+            'group': '{{ group }}'
+        });
+    });
+</script>
 {% endblock %}

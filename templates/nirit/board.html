@@ -1,296 +1,119 @@
 {% extends "nirit/base.html" %}
 {% load static %}
-{% load notice_card %}
 
 {% block title %}Nirit | {{ building.name }} Notice Board{% endblock %}
 
-{% block extrahead %}<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>{% endblock %}
+{% block extrahead %}<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>
+<script type="text/javascript" src="{% static "js/nirit.board.js" %}"></script>{% endblock %}
+
+{% block sublinks %}
+<ul>
+    <li class="first">
+        <a id="latest_count" 
+            {% if not filter %} class="active" {% endif %}
+           href="/board/{{ building.link }}">Latest <span class="invisible"></span></a>
+    </li>
+    <li>
+        <a {% if filter and filter == 'starred' %}class="active" {% endif %}
+           href="/board/{{ building.link }}?filter=starred">Starred</a>
+    </li>
+    <li>
+        <a {% if filter and filter == 'network' %}class="active" {% endif %}
+           href="/board/{{ building.link }}?filter=network">Network</a>
+    </li>
+    <li class="last">
+        <a {% if filter and filter == 'company' %}class="active" {% endif %}
+           href="/board/{{ building.link }}?filter=company">Company</a>
+    </li>
+    <li class="right">
+        <a id="new_card" class="new-card" href="">Post New Notice <span></span></a>
+    </li>
+</ul>
+{% endblock %}
+
 {% block content %}
-<div id="board">
-    <div class="content">
+<div class="content board">
 
-        <div id="stream">
-            <div id="filters">
-                <div class="filter">
-                    <a id="latest_count" href="">Latest <span class="hidden"></span></a>
+    <div id="main">
+        <h1>{{ building.name }} <span>Notice Board</span></h1>
+        <div id="cards">
+            <div class="card-add hidden">
+                <p class="box-title">Post New Notice <span class="close"></span></p>
+                <textarea id="add_card_subject" class="add elastic" rows="2" cols="70"></textarea>
+                {% if 'Owner' in account.roles or 'Rep' in account.roles %}
+                <div class="add-as-org">
+                    <label>
+                        <input type="checkbox" id="add_is_official" class="add-is-official"
+                           name="{{ account.company.name }}"
+                           value="{{ account.company.id }}" />
+                        on behalf of <strong>{{ account.company.name }}</strong>
+                    </label>
                 </div>
-            </div>
-            <div id="cards">
-                <div class="card-add hidden">
-                    <p>Post New Notice <span class="close">[X]</span></p>
-                    <textarea id="add_card_subject" class="add" rows="2" cols="70"></textarea>
-                    {% if 'Owner' in account.roles %}
-                    <div class="add-as-org">
-                        {% for org in account.organizations %}
-                        <input type="checkbox" id="add_is_official" class="add-is-official" name="{{ org.name }}" value="{{ org.id }}"><label>on behalf of <strong>{{ org.name }}</strong></label>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                    <button id="add_card" class="add">Post</button>
-                </div>
-                <div class="cards">{% for card in cards %}                    
-                    {% notice_card card %}
+                {% endif %}
+                {% if types_escaped %}
+                <div class="add-as-type"><select id="add_is_type">
+                {% for type in types_escaped %}
+                    <option value="{{ type.value }}"{% if type.value == 1 %} selected="selected"{% endif %}>{{ type.label }}</option>
                 {% endfor %}
-                    <a href="" id="plus">[+]</a>
-                </div>
+                </select></div>
+                {% endif %}
+                <button id="add_card" class="add">Post</button>
             </div>
-            <div class="clear"></div>
-        </div>
-        <div id="sidebar">
-            <div class="sidebar">
-                <div class="box">
-                    <button class="new-card" id="new_card">Post New Notice</button>
-                </div>
-                <div class="box">
-                    <div class="ad-slot">
-                        <p>300x250 MPU</p>
-                    </div>
-                </div>
+            <div class="cards">
+                <div id="stream"></div>
+                <a id="plus" class="plus" href=""><span>More</span></a>
             </div>
         </div>
-        <div class="clear"></div>
-
     </div>
+
+    <div id="sidebar">
+        <div class="box padded">
+            <ul>
+                <li><span class="strong">{{ stats.organizations }}</span> Organization{{ stats.organizations|pluralize }}</li>
+                <li>
+                    <span class="strong">{{ stats.notices }}</span> Active Notice{{ stats.notices|pluralize }}
+                    {% if filter %}<span class="filter-description">Filtering is on</span>{% endif %}
+                </li>
+            </ul>
+        </div>
+        <div class="box">
+            <div class="ad-slot">
+                <p>300x250 MPU</p>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
 
-{% block extrajs %}{{ super }}
+{% block extrajs %}{{ block.super }}
 <script type="text/javascript">
     $(document).ready(function () {
-
-        var counts = {
-            'latest': {{ cards_count }}
-        }
-
-        setInterval(function() {
-            $.get('/notices/{{ building.codename }}/view', function (data) {
-                // latest
-                var latest_diff = data['cards_count'] - counts['latest'];
-                if (latest_diff > 0) {
-                    $('#latest_count').find('span').css('display', 'block');
-                    $('#latest_count').find('span').html(latest_diff);
-                    $('#latest_count').animate({
-                        color: '#1a5a74',
-                        backgroundColor: '#e2e8ee'
-                    }, 550).animate({
-                        color: '#ced9e4',
-                        backgroundColor: '#2e7ea0'
-                    }, 1000);
-                }
-            });
-        }, 5000);
-
-        var cards = {{ cards|length }};
-        var cards_count = {{ cards_count }};
-        var cards_range = {{ cards_range }};
-        var cards_left = cards_count - cards;
-        
-        function addEventListeners() {
-
-            // New Notice
-            $('#new_card').unbind('click').bind('click', function () {
-                $('.card-add').slideDown(250, function () {
-                    $('#add_card_subject').focus();
-                });
-            });
-            $('.card-add').find('span.close').unbind('click').bind('click', function () {
-                $('.card-add').slideUp(250);
-            });
-            $('#add_card').unbind('click').bind('click', function () {
-                var subject = $('#add_card_subject').val();
-                var building = '{{ building.codename }}'; // Can only post to current building
-                // we assume a user is a member of only 1 org
-                var is_official = $('#add_is_official').is(':checked') ? 1 : 0;
-                if (subject.length > 0) {
-                    $.post('/notices', {
-                        'subject': trim_all(subject),
-                        'buildings': building,
-                        'is_official': is_official
-                    }, 'json').done(function () {
-                        location.reload(true);
-                    });
-                }
-            });
-
-            // Reply to Notice
-            $('.open-reply').unbind('click').bind('click', function () {
-                var self = $(this);
-                $('.card-reply').each(function() {
-                    if ($(this).attr('rel') == self.attr('rel')) {
-                        $(this).slideDown(250, function () {
-                            $(this).find('textarea').focus();
-                        });
-                    } else {
-                        $(this).slideUp(250);
-                    }
-                });
-                return false;
-            });
-            $('.card-reply').find('span.close').unbind('click').bind('click', function () {
-                $('.card-reply').slideUp(250);
-            });
-            $('.card-reply').each(function() {
-                var self = $(this);
-                $(this).attr('card_id', $(this).attr('rel'));
-                $(this).find('button').unbind('click').bind('click', function () {
-                    var subject = self.find('textarea').val();
-                    // we assume a user is a member of only 1 org
-                    var is_official = self.find('.reply-is-official').is(':checked') ? 1 : 0;
-                    if (subject.length > 0) {
-                        $.post('/notices', {
-                            'subject': trim_all(subject),
-                            'nid': self.attr('card_id'),
-                            'is_official': is_official
-                        }, 'json').done(function () {
-                            location.reload(true);
-                        });
-                    }
-                });
-            });
-
-            // View Notice Replies
-            $('.open-replies').unbind('click').bind('click', function () {
-                var self = $(this);
-                $('.card-replies').each(function() {
-                    var card = $(this);
-                    if ($(this).attr('rel') == self.attr('rel')) {
-                        $(this).slideDown(250, function () {
-                            card.find('.card-replies-holder').each(function () {
-                                var holder = $(this);
-                                if (card.data('range') === undefined) {
-                                    $.get('/notices/'+self.attr('rel')+'/replies', function (data) {
-                                        card.data('range', cards_range);
-                                        card.data('replies', data['replies_count']);
-                                        card.data('replies_left', card.data('replies') - data['replies'].length);
-
-                                        // Add first reply cards
-                                        for (r in data['replies']) {
-                                            var card_tag = '<div class="card"><div class="subject">'+data['replies'][r]['subject']+'</div>';
-                                            card_tag += '<div class="age">' + data['replies'][r]['age'] + ' ago</div>';
-                                            card_tag += '<div class="sender">' + data['replies'][r]['sender'];
-                                            if (data['replies'][r]['is_official'] && data['replies'][r].hasOwnProperty('organization')) {
-                                                card_tag += ', <span>' + data['replies'][r]['organization'] + '</span>';
-                                            }
-                                            card_tag += '</div></div>';
-                                            holder.append(card_tag);
-                                            card_tag = null;
-                                        }
-
-                                        // Add 'plus' handler
-                                        if (card.data('replies_left') > 0) {
-                                            card.find('.plus').show().unbind('click').bind('click', function () {
-                                                $.get('/notices/'+self.attr('rel')+'/replies/'+card.data('range'), function (data) {
-                                                    card.data('range', card.data('range') + cards_range);
-                                                    card.data('replies_left', card.data('replies_left') - data['replies'].length);
-
-                                                    // Add ranged reply cards
-                                                    for (r in data['replies']) {
-                                                        var card_tag = '<div class="card"><div class="subject">'+data['replies'][r]['subject']+'</div>';
-                                                        card_tag += '<div class="age">' + data['replies'][r]['age'] + ' ago</div>';
-                                                        card_tag += '<div class="sender">' + data['replies'][r]['sender'];
-                                                        if (data['replies'][r]['is_official'] && data['replies'][r].hasOwnProperty('organization')) {
-                                                            card_tag += ', <span>' + data['replies'][r]['organization'] + '</span>';
-                                                        }
-                                                        card_tag += '</div></div>';
-                                                        holder.append(card_tag);
-                                                        card_tag = null;
-                                                    }
-
-                                                    // Remove the 'plus' icon if no more replies left
-                                                    if (card.data('replies_left') <= 0) {
-                                                        card.find('.plus').hide();
-                                                    }
-                                                }, 'json');
-                                                return false;
-                                            });
-                                        }
-                                    }, 'json');
-                                }
-                            });
-                        });
-                    } else {
-                        $(this).slideUp(250);
-                    }
-                });
-                return false;
-            });
-            $('.card-replies').find('span.close').unbind('click').bind('click', function () {
-                $('.card-replies').slideUp(250);
-            });
-  
-        }
-
-        // View Notices
-        if (cards_left > 0) {
-            var plus = $('#plus');
-            plus.show().bind('click', function () {
-                cards += cards_range;
-                cards_left -= cards_range;
-                $.get('/notices/{{ building.codename }}/view/'+(cards - cards_range), function (data) {
-
-                    // Add cards                    
-                    for (c in data['cards']) {
-                        var card_tag = '<div class="card ';
-                        card_tag += data['cards'][c]['type'].toLowerCase();
-                        card_tag += '"><div class="subject">'+data['cards'][c]['subject']+'</div>';
-                        card_tag += '<div class="age">' + data['cards'][c]['age'] + ' ago</div>';
-                        card_tag += '<div class="sender">' + data['cards'][c]['sender'];
-                        if (data['cards'][c]['is_official'] && data['cards'][c].hasOwnProperty('organization')) {
-                            card_tag += ', <span>' + data['cards'][c]['organization'] + '</span>';
-                        }
-                        card_tag += '</div>';
-
-                        card_tag += '<div class="card-replies hidden" rel="' + data['cards'][c]['id'] + '">';
-                        card_tag += '<p>All Replies <span class="close">[X]</span></p>';
-                        card_tag += '<div class="card-replies-holder"></div>';
-                        card_tag += '<a href="" class="plus">[+]</a>';
-                        card_tag += '</div>';
-
-                        card_tag += '<ul>';
-                        if (data['cards'][c]['replies_count'] > 0) {
-                            card_tag += '<li><a href="" class="open-replies" rel="' + data['cards'][c]['id'] + '">';
-                            if (data['cards'][c]['replies_count'] == 1) {
-                                card_tag += '1 reply';
-                            } else {
-                                card_tag += data['cards'][c]['replies_count'] + ' replies';
-                            }
-                            card_tag += '</a></li>';
-                        }
-                        card_tag += '<li><a href="" class="open-reply" rel="' + data['cards'][c]['id'] + '">reply</a></li>';
-                        card_tag += '</ul>';
-
-                        card_tag += '<div class="card-reply hidden" rel="' + data['cards'][c]['id'] + '">';
-                        card_tag += '<p>Leave a reply <span class="close">[X]</span></p>';
-                        card_tag += '<textarea class="reply" rows="2" cols="70"></textarea>';
-                        {% if 'Owner' in account.roles %}
-                            card_tag += '<div class="reply-as-org">';
-                            {% for org in account.organizations %}
-                                card_tag += '<input type="checkbox" class="reply-is-official" name="{{ org.name }}" value="{{ org.id }}"><label>on behalf of <strong>{{ org.name }}</strong></label>';
-                            {% endfor %}
-                            card_tag += '</div>';
-                        {% endif %}
-                        card_tag += '<button class="reply">Reply</button>';
-                        card_tag += '</div>'
-
-                        card_tag += '</div>';
-                        plus.before(card_tag);
-                        card_tag = null;
-                    }
-
-                    // Remove the 'plus' icon if no more cards left
-                    if (cards_left <= 0) {
-                        plus.hide();
-                    }
-
-                    // Bind new elements
-                    addEventListeners();
-
-                }, 'json');
-                return false;
-            });
-        }
-
-        addEventListeners();
+        var building = '{{ building.codename }}';
+        var buildings = [];
+        buildings.push(building); // Can only post to current building
+        var token = '{{ account.token }}';
+        new NIRIT.Board({
+            'data': {{ data|safe }},
+            'notices': {{ notices|safe }},
+            'count': {{ count }},
+            'types': {{ types|safe }},
+            'buildings': buildings,
+            'token': token,
+            'account': {
+                'username': '{{ account.username }}',
+                'company': {
+                    'name': '{{ account.company.name }}',
+                    'codename': '{{ account.company.codename }}'
+                },
+                'roles': '{{ account.roles }}'.split(', '),
+                'starred': {{ starred|safe }}
+            },
+            'filter': {
+                'type': 'building',
+                'value': building
+            }
+        });
     });
 </script>
 {% endblock %}

@@ -1,0 +1,141 @@
+{% extends "nirit/base.html" %}
+{% load static %}
+
+{% block title %}Nirit | {{ organization.name }}'s Board{% endblock %}
+
+{% block extrahead %}<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>
+<script type="text/javascript" src="{% static "js/nirit.board.js" %}"></script>
+{% if organization.image %}
+<style type="text/css">
+    .company-profile .heading { 
+        background-image: url({{ MEDIA_URL }}{{ organization.image }});
+        background-position: center center;
+        background-repeat: no-repeat;
+    }
+</style>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="content company-profile staff">
+
+    <div id="main">
+        <div class="heading">
+            <div class="company-card">
+                <h1>
+                    {% if organization.get_logo %}
+                        <div class="company-logo">
+                            <img src="{{ organization.get_logo }}" alt="{{ organization.name }}" />
+                        </div>
+                    {% else %}
+                        {{ organization.name }}
+                    {% endif %}
+                </h1>
+                <ul class="company-info">
+                    <li>Joined {{ organization.created|date:"jS" }} of {{ organization.created|date:"F, Y" }}</li>
+                    <li>{{ organization.floor_tag }} Floor, {{ account.active_building.name }}</li>
+                </ul>
+                <a class="networked-switch{% if organization in account.networked %} active{% endif %}" href="" title="Add {{ organization.name }} to Your Network">
+                    <img src="{{ STATIC_URL }}/images/z.gif" alt="Add {{ organization.name }} to Your Network" width="30" height="30" />
+                </a>
+            </div>
+        </div>
+        <div class="padded">
+            <h3>Notice Board</h3>
+        </div>
+        <div id="cards">
+            <div id="stream"></div>
+            <a id="plus" class="plus" href=""><span>More</span></a>
+        </div>
+    </div>
+
+    <div id="sidebar">
+        <div class="box padded">
+            <ul class="stats">
+                <li>
+                    <span class="strong">{{ stats.notices.count }}</span> Active Notice{{ stats.notices.results|pluralize }}
+                </li>
+                <li>
+                    <span class="strong">{{ stats.members|length }}</span> Member{{ stats.members|pluralize }} of Staff
+                    <span class="see-all"><a href="../{{ organization.codename }}/staff">See All</a></span>
+                </li>
+                <li>
+                    <span class="strong">{{ stats.expertise|length }}</span> Area{{ stats.expertise|pluralize }} of Expertise
+                    <span class="see-all"><a href="../{{ organization.codename }}">See All</a></span>
+                </li>
+            </ul>
+        </div>
+        <div class="box padded">
+            <p class="is-network">
+                <span class="is-network{% if organization in account.networked %} active{% endif %}">
+                    <img src="{{ STATIC_URL }}/images/z.gif" alt="" width="30" height="30" />
+                </span>
+                <span rel="choice">{% if organization in account.networked %}
+                    <span class="strong">{{ organization.name }}</span> is in Your Network{% else %}
+                    <span class="strong">{{ organization.name }}</span> is not yet in Your Network{% endif %}</span>
+            </p>
+        </div>
+        <div class="box">
+            <div class="ad-slot">
+                <p>300x250 MPU</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extrajs %}{{ block.super }}
+<script type="text/javascript">
+    var choices = {
+        'on': '<span class="strong">{{ organization.name }}</span> is in Your Network',
+        'off': '<span class="strong">{{ organization.name }}</span> is not yet in Your Network'
+    };
+
+    $(document).ready(function () {
+
+        // Build board
+        var buildings = [];
+        var building = '{{ account.active_building.codename }}';
+        buildings.push(building); // Can only post to active building
+        var token = '{{ account.token }}';
+        new NIRIT.Board({
+            'data': {{ data|safe }},
+            'notices': {{ notices|safe }},
+            'buildings': buildings,
+            'token': token,
+            'account': {
+                'username': '{{ account.username }}',
+                'company': {
+                    'name': '{{ account.company.name }}',
+                    'codename': '{{ account.company.codename }}'
+                },
+                'roles': '{{ account.roles }}'.split(', '),
+                'starred': {{ starred|safe }}
+            },
+            'filter': {
+                'type': 'company',
+                'value': '{{ organization.codename }}'
+            }
+        });
+
+        // Add/remove to/from network
+        $('.networked-switch').click(function () {
+            var self = $(this);
+            NIRIT.utils.set_member_preference('network', '{{ organization.codename }}', function (data) {
+                if (self.hasClass('active')) {
+                    self.removeClass('active');
+                    $('span.is-network').removeClass('active');
+                    $('span[rel="choice"]').html(choices['off']);
+                } else {
+                    self.addClass('active');
+                    $('span.is-network').addClass('active');
+                    $('span[rel="choice"]').html(choices['on']);
+                }
+            });
+            return false;
+        });
+
+    });
+</script>
+{% endblock %}

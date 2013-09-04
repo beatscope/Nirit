@@ -1,0 +1,22 @@
+{% extends "nirit/base.html" %}
+
+{% load i18n static %}
+
+{% block title %}Sign Up to Nirit{% endblock %}
+
+{% block content %}
+<div class="content sign-up edit">
+    <div id="signup-card">
+        <div class="padded">
+            <h1>You have successfully signed up to Nirit</h1>
+            <div class="description">
+                <p>You can now <a href="/">log in</a> using your email address.
+                However, you will not be able to access Nirit's features until you have confirmed your email address.
+                You will shortly receive a confirmation email with instructions on how do do so.</p>
+                <p>Once your email address is confirmed,
+                you will be able to create a <strong>Business Profile</strong> for your <strong>Company</strong>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
