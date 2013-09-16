@@ -1,35 +1,60 @@
 {% extends "nirit/base.html" %}
 {% load static %}
 
-{% block title %}Nirit | Member Profile | {% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}{% endblock %}
+{% block title %}Nirit | Member Profile | {{ member.name }}{% endblock %}
 
 {% block extrahead %}<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>
 <script type="text/javascript" src="{% static "js/nirit.board.js" %}"></script>{% endblock %}
+
+{% block sublinks %}
+{% if user != member.user %}
+<ul>
+    <li class="right">
+        <a id="contact_button" class="new-card" href="">Contact <span></span></a>
+    </li>
+</ul>
+{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="content account">
 
     <div id="main">
 
+        <div class="contact-form hidden">
+            <p class="box-title">Contact {{ member.name }} <span class="close"></span></p>
+            <textarea id="contact_form_subject" class="elastic no-limit" rows="2" cols="70"></textarea>
+            <button id="contact_form_submit">Submit</button>
+        </div>
+        <div class="contact-success label big hidden">
+            Your message has been sent to {{ member.name }}.
+        </div>
+
         <div class="heading">
             <div class="box filled padded">
-                <h1>{% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}</h1>
-                {% if profile.thumbnail %}
-                    <img id="avatar" src="{{ profile.thumbnail }}" alt="{% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}" width="60" height="auto" />
+                <h1>{{ member.name }}</h1>
+                {% if member.avatar %}
+                    <img id="avatar" src="{{ member.avatar }}" alt="{{ member.name }}" width="60" height="auto" />
                 {% endif %}
-                {% if profile.job_title %}<p class="job-title">{{ profile.job_title }}</p>{% endif %}
+                {% if member.job_title %}<p class="job-title">{{ member.job_title }}</p>{% endif %}
+                {% if member.roles %}
+                    <div class="roles">
+                        {% for role in member.roles %}
+                            <span class="label">{{ role }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
                 <h2>
-                    <a href="/company/{{ profile.company.link }}">{{ profile.company.name }}</a>
-                    <span class="role">({{ profile.roles }})</span>
+                    <a href="/company/{{ member.company.link }}">{{ member.company.name }}</a>
                 </h2>
-                {% if user == member %}<a class="button" href="/member/account/edit">Edit</a>{% endif %}
+                {% if user == member.user %}<a class="button" href="/member/account/edit">Edit</a>{% endif %}
             </div>
         </div>
 
-        {% if profile.bio %}
+        {% if member.bio %}
         <div class="box filled padded">
             <h3>Background</h3>
-            {{ profile.bio|linebreaks }}
+            {{ member.bio|linebreaks }}
         </div>
         {% endif %}
 
@@ -62,7 +87,7 @@
             <h3>Staff Awaiting Approval</h3>
             <ul class="approval-list staff">
                 {% for staff in staff_awaiting %}
-                <li class="staff" rel="{{ staff.email }}">{% if staff.get_full_name %}{{ staff.get_full_name }}{% else %}{{ staff }}{% endif %}
+                <li class="staff" rel="{{ staff.get_profile.codename }}">{{ staff.get_profile.name }}
                     <a href="" class="activate">Approve</a>
                     <a href="" class="ban">Decline</a>
                 </li>
@@ -75,11 +100,11 @@
                 <p>300x250 MPU</p>
             </div>
         </div>
-        {% if profile.networked.count > 0 %}
+        {% if member.networked.all.count > 0 %}
         <div class="box padded">
-            <h3>{% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}'s Network</h3>
+            <h3>{{ member.name }}'s Network</h3>
             <ul>
-                {% for company in profile.networked %}
+                {% for company in member.networked.all %}
                 <li><a href="/company/{{ company.link }}" title="{{ company }}">{{ company }}</a></li>
                 {% endfor %}
             </ul>
@@ -93,27 +118,51 @@
 {% block extrajs %}{{ block.super }}
 <script type="text/javascript">
     $(document).ready(function () {
-        var buildings = [];
-        var building = '{{ profile.active_building.codename }}';
-        buildings.push(building); // Can only post to active building
-        var token = '{{ account.token }}';
         new NIRIT.Board({
             'data': {{ data|safe }},
             'notices': {{ notices|safe }},
-            'buildings': buildings,
-            'token': token,
+            'buildings': ['{{ member.building.codename }}'], // Can only post to active building
+            'token': '{{ member.token }}',
             'account': {
-                'username': '{{ account.username }}',
+                'username': '{{ member.codename }}',
                 'company': {
-                    'name': '{{ account.company.name }}',
-                    'codename': '{{ account.company.codename }}'
+                    'name': '{{ member.company.name }}',
+                    'codename': '{{ member.company.codename }}'
                 },
-                'roles': '{{ account.roles }}'.split(', '),
-                'starred': {{ starred|safe }}
+                'roles': {{ member.roles|safe }},
+                'starred': {{ member.get_starred|safe }}
             },
             'filter': {
                 'type': 'user',
-                'value': '{{ account.username }}'
+                'value': '{{ member.codename }}'
+            }
+        });
+
+        // Contact Form
+        $('.elastic').elastic();
+        $('#contact_button').bind('click', function () {
+            $('#contact_form_subject').val(''); // clear content
+            if ($('.contact-form').is(':visible')) {
+                $('.contact-form').slideUp(250);
+            } else {
+                $('.contact-form').slideDown(250, function () {
+                    $('#contact_form_subject').focus();
+                });
+            }
+            return false;
+        });
+        $('.contact-form').find('span.close').bind('click', function () {
+            $('.contact-form').slideUp(250);
+        });
+        $('#contact_form_submit').bind('click', function () {
+            var subject = $('#contact_form_subject').val();
+            if (subject.length > 0) {
+                $.post('/contact/member/{{ member.codename }}', {
+                        'subject': trim(subject)
+                }, function (response) {
+                    $('.contact-form').slideUp(250);
+                    $('.contact-success').slideDown(250);
+                });
             }
         });
 
@@ -128,8 +177,8 @@
             $('.approval-list').find('.company, .staff').each(function () {
                 var entity = $(this);
                 entity.find('a').bind('click', function () {
-                    // URL format: "/company|member/codename|email/activate|ban
-                    var url = '/' + (entity.attr('class') == 'staff' ? 'member' : entity.attr('class'));
+                    // URL format: "/approval/company|member/codename/activate|ban
+                    var url = '/approval/' + (entity.attr('class') == 'staff' ? 'member' : entity.attr('class'));
                     url += '/' + entity.attr('rel');
                     url += '/' + $(this).attr('class');
                     $.get(url, function () {

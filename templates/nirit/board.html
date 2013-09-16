@@ -39,14 +39,15 @@
         <div id="cards">
             <div class="card-add hidden">
                 <p class="box-title">Post New Notice <span class="close"></span></p>
-                <textarea id="add_card_subject" class="add elastic" rows="2" cols="70"></textarea>
-                {% if 'Owner' in account.roles or 'Rep' in account.roles %}
+                <input id="add_card_subject" class="subject" type="text" value="" placeholder="Subject" />
+                <textarea id="add_card_body" class="add elastic" rows="2" cols="70"></textarea>
+                {% if 'Owner' in user.get_profile.roles or 'Rep' in user.get_profile.roles %}
                 <div class="add-as-org">
                     <label>
                         <input type="checkbox" id="add_is_official" class="add-is-official"
-                           name="{{ account.company.name }}"
-                           value="{{ account.company.id }}" />
-                        on behalf of <strong>{{ account.company.name }}</strong>
+                           name="{{ user.get_profile.company.name }}"
+                           value="on" />
+                        on behalf of <strong>{{ user.get_profile.company.name }}</strong>
                     </label>
                 </div>
                 {% endif %}
@@ -72,7 +73,7 @@
                 <li><span class="strong">{{ stats.organizations }}</span> Organization{{ stats.organizations|pluralize }}</li>
                 <li>
                     <span class="strong">{{ stats.notices }}</span> Active Notice{{ stats.notices|pluralize }}
-                    {% if filter %}<span class="filter-description">Filtering is on</span>{% endif %}
+                    {% if filter %}<span class="label">Filtering is on</span>{% endif %}
                 </li>
             </ul>
         </div>
@@ -89,29 +90,23 @@
 {% block extrajs %}{{ block.super }}
 <script type="text/javascript">
     $(document).ready(function () {
-        var building = '{{ building.codename }}';
-        var buildings = [];
-        buildings.push(building); // Can only post to current building
-        var token = '{{ account.token }}';
         new NIRIT.Board({
             'data': {{ data|safe }},
             'notices': {{ notices|safe }},
-            'count': {{ count }},
-            'types': {{ types|safe }},
-            'buildings': buildings,
-            'token': token,
+            'buildings': ['{{ building.codename }}'], // Can only post to current building
+            'token': '{{ user.get_profile.token }}',
             'account': {
-                'username': '{{ account.username }}',
+                'username': '{{ user.get_profile.username }}',
                 'company': {
-                    'name': '{{ account.company.name }}',
-                    'codename': '{{ account.company.codename }}'
+                    'name': '{{ user.get_profile.company.name }}',
+                    'codename': '{{ user.get_profile.company.codename }}'
                 },
-                'roles': '{{ account.roles }}'.split(', '),
-                'starred': {{ starred|safe }}
+                'roles': {{ user.get_profile.roles|safe }},
+                'starred': {{ user.get_profile.get_starred|safe }}
             },
             'filter': {
                 'type': 'building',
-                'value': building
+                'value': '{{ building.codename }}'
             }
         });
     });

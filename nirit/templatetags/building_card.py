@@ -14,7 +14,7 @@ def do_building_card(parser, token):
 class BuildingCardNode(template.Node):
     def render(self, context):
         building = context['building']
-        members = building.get_members_count()
+        members = building.members.count()
         posts = building.notices.filter(date=datetime.datetime.now().date()).count()
         links = []
         user = context['user']

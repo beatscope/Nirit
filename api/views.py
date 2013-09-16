@@ -2,17 +2,16 @@
 import logging
 import re
 from django.http import Http404
-from django.contrib.auth.models import User
 from rest_framework import authentication
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework import renderers
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.views import APIView
-from nirit.models import Building, Notice, Expertise, Organization, UserProfile
+from nirit.models import Building, Notice, Expertise, Organization, CompanyProfile, UserProfile
 from api.serializers import BuildingSerializer, \
                             UserSerializer, \
                             NoticeSerializer, \
@@ -21,9 +20,8 @@ from api.serializers import BuildingSerializer, \
 
 logger = logging.getLogger('api.views')
 
-# @TODO makse only staff can view the Buildings and Organizations APIs
-
 @api_view(('GET',))
+@permission_classes((permissions.IsAdminUser, ))
 def api_root(request, format=None):
     return Response({
         'buildings': reverse('buildings-list', request=request, format=format),
@@ -40,6 +38,7 @@ class BuildingListView(generics.ListAPIView):
     """
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
+    permission_classes = (permissions.IsAdminUser,)
 
 
 class BuildingView(generics.RetrieveAPIView):
@@ -50,24 +49,7 @@ class BuildingView(generics.RetrieveAPIView):
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
     lookup_field = 'codename'
-
-
-class UserListView(generics.ListAPIView):
-    """
-    List all users (read-only).
-
-    """
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    
-
-class UserView(generics.RetrieveAPIView):
-    """
-    Retrieve a user.
-
-    """
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+    permission_classes = (permissions.IsAdminUser,)
 
 
 class NoticeListView(generics.ListAPIView):
@@ -107,23 +89,29 @@ class NoticeListView(generics.ListAPIView):
                 return queryset
             else:
                 queryset = building.notices.filter(is_reply=False)
+                # exclude notices posted by a BANNED company
+                # we only exclude the Companies which are banned in this particular Building
+                banned = [bp['organization__id'] for bp \
+                         in building.building_profile.filter(status=CompanyProfile.BANNED).values('organization__id')]
+                if banned:
+                    queryset = queryset.exclude(sender__profile__company__pk__in=banned)
                 # handle filters
                 # when filters are provided, we expect the 'filter' and 'member' parameters
                 if self.request.QUERY_PARAMS.has_key('filter') and self.request.QUERY_PARAMS.has_key('member'):
                     try:
-                        user = User.objects.get(username=self.request.QUERY_PARAMS['member'])
-                    except User.DoesNotExist:
+                        profile = UserProfile.objects.get(codename=self.request.QUERY_PARAMS['member'])
+                    except UserProfile.DoesNotExist:
                         pass
                     else:
                         # apply filter selection
                         if self.request.QUERY_PARAMS['filter'] == 'starred':
-                            starred = [int(n['id']) for n in user.get_profile().starred.values('id')]
+                            starred = [int(n['id']) for n in profile.starred.values('id')]
                             queryset = queryset.filter(pk__in=starred)
                         elif self.request.QUERY_PARAMS['filter'] == 'network':
-                            network = [int(o['id']) for o in user.get_profile().networked.values('id')]
+                            network = [int(o['id']) for o in profile.networked.values('id')]
                             queryset = queryset.filter(sender__profile__company__pk__in=network)
                         elif self.request.QUERY_PARAMS['filter'] == 'company':
-                            company = user.get_profile().company.id
+                            company = profile.company.id
                             queryset = queryset.filter(sender__profile__company__pk=company)
 
         # Company Notices
@@ -141,6 +129,12 @@ class NoticeListView(generics.ListAPIView):
                 # sent officially
                 for member in members:
                     queryset = queryset | Notice.objects.filter(sender=member, is_reply=False, is_official=True)
+                # exclude notices posted by a BANNED company
+                # we only exclude Notices sent in the Building where the Company is banned
+                banned = [cp['building__id'] for cp \
+                         in organization.company_profile.filter(status=CompanyProfile.BANNED).values('building__id')]
+                if banned:
+                    queryset = queryset.exclude(building__pk__in=banned)
 
         # Member Notices
         elif self.request.QUERY_PARAMS.has_key('member'):
@@ -148,18 +142,24 @@ class NoticeListView(generics.ListAPIView):
             if not member:
                 return queryset
             try:
-                user = User.objects.get(username=member)
-            except User.DoesNotExist:
+                profile = UserProfile.objects.get(codename=member)
+            except UserProfile.DoesNotExist:
                 return queryset
             else:
-                queryset = Notice.objects.filter(sender=user, is_reply=False).order_by('-updated')
+                queryset = Notice.objects.filter(sender=profile.user, is_reply=False).order_by('-updated')
+                # exclude notices posted by a BANNED company
+                # we only exclude Notices sent in the User's Active Building,
+                # where the Company is banned
+                company_profile = CompanyProfile.objects.get(building=profile.building, organization=profile.company)
+                if company_profile.status == CompanyProfile.BANNED:
+                    queryset = Notice.objects.none()
 
-        # order all results by latest updated
-        queryset = queryset.order_by('-updated')
-        # exclude notices posted by a BANNED company
-        queryset = queryset.exclude(sender__profile__company__status=Organization.BANNED)
+        # By default, we return Notices for the User's Active Building
+        queryset = queryset.filter(building=self.request.user.get_profile().building)
         # exclude notices posted by a BANNED user
         queryset = queryset.exclude(sender__profile__status=UserProfile.BANNED)
+        # order all results by latest updated
+        queryset = queryset.order_by('-updated')
         return queryset
 
     def metadata(self, request):
@@ -174,16 +174,21 @@ class NoticeListView(generics.ListAPIView):
         if request.user.is_authenticated:
             # Add notice types
             data['types'] = []
-            if 'Building Manager' in [g.name for g in request.user.groups.all()]:
+            profile = request.user.get_profile()
+            if 'Building Manager' in profile.roles:
                 # Building Managers are allowed to specify which type of Notice to post
                 data['types'] = [{'value': key, 'label': value} for key, value in Notice.TYPES]
             # Retrieve the full list of Notices the logged-in user can see
-            # i.e.: sent in the user's buildings
-            buildings = [int(b['id']) for b in request.user.get_profile().company.building_set.all().values('id')]
-            queryset = Notice.objects.filter(building__id__in=buildings, is_reply=False).order_by('-created')
+            # i.e.: sent in the user's active uilding
+            queryset = Notice.objects.filter(building=profile.building, is_reply=False).order_by('-created')
             # exclude BANNED senders
-            queryset = queryset.exclude(sender__profile__company__status=Organization.BANNED)\
-                               .exclude(sender__profile__status=UserProfile.BANNED)
+            queryset = queryset.exclude(sender__profile__status=UserProfile.BANNED)
+            # exclude notices posted by a BANNED company
+            # we only exclude Notices sent in the User's Active Building,
+            # where the Company is banned
+            company_profile = CompanyProfile.objects.get(building=profile.building, organization=profile.company)
+            if company_profile.status == CompanyProfile.BANNED:
+                queryset = Notice.objects.none()
 
             count = queryset.count()
             notices = {}
@@ -191,14 +196,13 @@ class NoticeListView(generics.ListAPIView):
                 replies = notice.get_replies()
                 count += replies.count()
                 notices[notice.id] = [int(r['id']) for r in replies.values('id')]
-            starred = [int(n['id']) for n in request.user.get_profile().starred.values('id')]
-            network = [int(o['id']) for o in request.user.get_profile().networked.values('id')]
-            company = request.user.get_profile().company.id
+            starred = [int(n['id']) for n in profile.starred.values('id')]
+            network = [int(o['id']) for o in profile.networked.values('id')]
             data['results'] = {
                 'all': count, # count all posts and replies
                 'starred': queryset.filter(pk__in=starred).count(),
                 'network': queryset.filter(sender__profile__company__pk__in=network).count(),
-                'company': queryset.filter(sender__profile__company__pk=company).count(),
+                'company': queryset.filter(sender__profile__company=profile.company).count(),
                 'notices': notices,
             }
         return data
@@ -208,9 +212,6 @@ class NoticePostView(APIView):
     """
     Post new Notice or Reply.
     Provides a post method handler.
-
-    @TODO handle permission
-    @TODO handle notice type
 
     """
     # Check Token Authentication first, as this is how it will be used form AJAX
@@ -262,6 +263,7 @@ class NoticePostView(APIView):
 
         # create Notice
         notice = Notice.objects.create(subject=request.DATA['subject'], 
+                                       body=request.DATA['body'] if request.DATA.has_key('body') else None,
                                        sender=sender,
                                        type=notice_type,
                                        is_official=is_official,
@@ -281,18 +283,7 @@ class NoticePostView(APIView):
         return Response(serializer.data)
 
 
-class NoticeView(generics.RetrieveDestroyAPIView):
-    """
-    Retrieve a notice.
-
-    @TODO make sure only staff can delete
-
-    """
-    queryset = Notice.objects.all()
-    serializer_class = NoticeSerializer
-
-
-class NoticeReplyListView(generics.ListAPIView):
+class NoticeView(generics.ListAPIView):
     """
     Retrieve a notice's replies.
 
@@ -319,8 +310,6 @@ class OrganizationListView(generics.ListAPIView):
     serializer_class = OrganizationSerializer
     lookup_field = 'codename'
     paginate_by = 15
-    #filter_backends = (filters.SearchFilter,)
-    #search_fields = ('name', 'floor', 'department')
 
     def get_queryset(self):
         """
@@ -333,23 +322,33 @@ class OrganizationListView(generics.ListAPIView):
         - by department
 
         """
-        queryset = self.queryset.filter(floor__isnull=False)\
-                                .exclude(status=Organization.BANNED)
+        queryset = self.queryset
+        
+        # Building filter
         if self.request.QUERY_PARAMS.has_key('building'):
-            queryset = queryset.filter(building__codename=self.request.QUERY_PARAMS['building'])
+            queryset = queryset.filter(company_profile__building__codename=self.request.QUERY_PARAMS['building'])
+
+        # Name filter
         if self.request.QUERY_PARAMS.has_key('name'):
             queryset = queryset.filter(name__icontains=self.request.QUERY_PARAMS['name'])
-        if self.request.QUERY_PARAMS.has_key('floor'):
-            queryset = queryset.filter(floor__exact=self.request.QUERY_PARAMS['floor'])
+
+        # Deparment filter
         if self.request.QUERY_PARAMS.has_key('department'):
             regex = re.compile(r'{}'.format(str(self.request.QUERY_PARAMS['department'])), re.IGNORECASE)
             departments = [int(key) for key, label in Organization.DEPARTMENT_CHOICES if regex.search(label) is not None]
             queryset = queryset.filter(department__in=departments)
+
+        # Floor filter
+        if self.request.QUERY_PARAMS.has_key('floor'):
+            queryset = queryset.filter(company_profile__floor__exact=self.request.QUERY_PARAMS['floor'])
+
         # Ordering
         if self.request.QUERY_PARAMS.has_key('order-by'):
             order_by = self.request.QUERY_PARAMS['order-by']
-            if order_by in ('name', 'floor', 'department'):
+            if order_by in ('name', 'department'):
                 queryset = queryset.order_by(order_by)
+            elif order_by == 'floor':
+                queryset = queryset.order_by('company_profile__floor')
         return queryset
 
 
@@ -360,6 +359,7 @@ class OrganizationView(generics.RetrieveUpdateAPIView):
     """
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
+    lookup_field = 'codename'
 
 
 class ExpertiseListView(generics.ListAPIView):

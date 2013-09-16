@@ -1,5 +1,6 @@
 # nirit/models.py
 import logging
+import base64
 import datetime
 import hashlib
 import re
@@ -9,12 +10,14 @@ from django.db.models.signals import post_save
 from django.core.mail import EmailMultiAlternatives
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Permission, User
-from django.utils.html import escape
+from django.utils.crypto import pbkdf2, get_random_string
+from django.utils.html import strip_tags, linebreaks
 from django.utils.encoding import force_unicode
 from django.utils.timesince import timesince
 from django.conf import settings
 from rest_framework.authtoken.models import Token
 from nirit.fixtures import DEPARTMENTS
+from markitup.fields import MarkupField
 
 logger = logging.getLogger('nirit.models')
 
@@ -39,7 +42,8 @@ class Notice(models.Model):
         (NOTICE, 'NOTICE'),
         (INTRO, 'INTRO'),
     )
-    subject = models.CharField(max_length=255)
+    subject = models.CharField(max_length=128)
+    body = models.TextField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     date = models.DateField(auto_now_add=True)
@@ -47,27 +51,51 @@ class Notice(models.Model):
     type = models.IntegerField(default=NOTICE, choices=TYPES)
     is_official = models.BooleanField(default=False)
     is_reply = models.BooleanField(default=False)
-    reply_to = models.ForeignKey('self', null=True)
+    reply_to = models.ForeignKey('self', null=True, editable=False)
 
     def __unicode__(self):
-        text = "{}, {}: {}".format(self.created.date(), self.created.time(), self.subject)
+        text = u"{}, {}: {}".format(
+            self.created.date(), 
+            self.created.time(), 
+            force_unicode(self.subject),
+        )
         if self.is_reply:
-            text = "(R#{}) {}".format(self.reply_to.id, text)
-        if self.type == 0:
-            text = "{} [{}]".format(text, self.get_type_display())
-        return "[#{}] {}".format(self.id, text)
+            text = u"[R#{}] {!s}".format(self.reply_to.id, text)
+        else:
+            text = u"[{}] {!s}".format(self.get_type_display(), text)
+        return u"[#{}] {}".format(self.id, text)
 
     def get_subject(self):
         # escape subject to prevent script attacks
-        return escape(self.subject)
+        subject = force_unicode(self.subject)
+        return strip_tags(subject)
+
+    def get_body(self):
+        # escape body to prevent script attacks,
+        # and convert line breaks in p tags
+        body = force_unicode(self.body)
+        body = linebreaks(body, autoescape=True)
+        return body
 
     def get_age(self):
         return timesince(self.created, datetime.datetime.now())
 
     def get_replies(self):
-        return Notice.objects.filter(reply_to=self)\
-                             .exclude(sender__profile__company__status=Organization.BANNED)\
-                             .exclude(sender__profile__status=UserProfile.BANNED)
+        replies = Notice.objects.filter(reply_to=self)\
+                                .exclude(sender__profile__status=UserProfile.BANNED)
+        # Exclude post sent by Companies BANNED in the Notice's Building
+        exclude = []
+        for reply in replies:
+            # the reply has to be in the same building as the original Notice
+            buildings = self.building_set.all()
+            # check the status of the reply company is each building
+            for building in buildings:
+                building_profile = CompanyProfile.objects.get(building=building, organization=reply.sender.profile.company)
+                if building_profile.status == CompanyProfile.BANNED:
+                    exclude.append(reply.id)
+        if exclude:
+            replies = replies.exclude(pk__in=exclude)
+        return replies
 
 
 class Organization(models.Model):
@@ -83,15 +111,7 @@ class Organization(models.Model):
         ('H', '5001-10000'),
         ('I', '10001+'),
     )
-    PENDING = 0
-    VERIFIED = 1
-    BANNED = 2
-    STATUS_CHOICES = (
-        (PENDING, 'Pending'),
-        (VERIFIED, 'Verified'),
-        (BANNED, 'Banned'),
-    )
-    
+        
     name = models.CharField("Company Name", max_length=200, unique=True)
     codename = models.CharField(max_length=64, unique=True, null=True, blank=True)
     description = models.TextField("Company Description", null=True)
@@ -107,9 +127,7 @@ class Organization(models.Model):
     department = models.IntegerField("Company Department", choices=DEPARTMENT_CHOICES, null=True, help_text="Main Company Industry")
     size = models.CharField("Company Size", max_length=1, choices=SIZE_CHOICES, null=True)
     founded = models.CharField("Year Founded", max_length=4, null=True, blank=True)
-    floor = models.IntegerField("Floor", null=True)
     expertise = models.ManyToManyField(Expertise, help_text="Areas of Expertise", null=True, blank=True)
-    status = models.IntegerField("Verification Status", choices=STATUS_CHOICES, default=PENDING)
 
     def __unicode__(self):
         return self.name
@@ -136,23 +154,6 @@ class Organization(models.Model):
         super(Organization, self).delete(*args, **kwargs)
 
     @property
-    def floor_tag(self):
-        tag = 'th'
-        if self.floor < 0:
-            return 'Basement'
-        if self.floor == 0:
-            return 'Ground'
-        if self.floor not in (11, 12, 13): # 11, 12 and 13 are exceptions, they use 'th'
-            last_digit = int(str(self.floor)[-1:])
-            if last_digit == 1:
-                tag = 'st'
-            elif last_digit == 2:
-                tag = 'nd'
-            elif last_digit == 3:
-                tag = 'rd'
-        return "{}{}".format(self.floor, tag)
-
-    @property
     def members(self):
         return User.objects\
                .filter(profile__company=self)\
@@ -161,8 +162,17 @@ class Organization(models.Model):
                .distinct()
 
     @property
-    def buildings(self):
-        return Building.objects.filter(organizations=self)
+    def editors(self):
+        return User.objects\
+               .filter(profile__company=self)\
+               .filter(groups__name__in=['Owner','Rep'])\
+               .exclude(profile__status=UserProfile.BANNED)\
+               .distinct()
+
+    #@property
+    #def buildings(self):
+    #    Building.objects.none()
+    #    #return Building.objects.filter(organizations=self)
 
     @property
     def slug(self):
@@ -175,9 +185,6 @@ class Organization(models.Model):
     def get_staff_awaiting(self):
         # Return pending staff
         return self.members.filter(profile__status=UserProfile.PENDING)
-
-    def get_status(self):
-        return self.get_status_display()
 
     def get_image(self):
         try:
@@ -223,7 +230,6 @@ class Organization(models.Model):
     def mail_editors(self, subject, text_content, html_content=None):
         from_email = settings.EMAIL_FROM
         recipients_list = [member.email for member in self.members if self.is_editor(member)]
-        logger.debug(recipients_list)
         if recipients_list:
             msg = EmailMultiAlternatives(subject, text_content, from_email, recipients_list)
             if html_content:
@@ -234,7 +240,6 @@ class Organization(models.Model):
 class Building(models.Model):
     name = models.CharField(max_length=200, unique=True)
     codename = models.CharField(max_length=64, unique=True, null=True, blank=True)
-    organizations = models.ManyToManyField(Organization, null=True, blank=True)
     notices = models.ManyToManyField(Notice, null=True, blank=True)
 
     def __unicode__(self):
@@ -273,14 +278,16 @@ class Building(models.Model):
         Building Managers are considered members of their Buildings.
 
         """
-        members = []
-        for o in self.organizations.all():
-            users = User.objects.filter(profile__company=o)\
-                    .filter(groups__name__in=['Owner','Rep','Staff','Building Manager'])\
-                    .exclude(profile__status=UserProfile.BANNED)\
-                    .distinct()\
-                    .order_by('first_name', 'last_name', 'username')
-            members.extend(users)
+        profiles = self.building_profile.filter(building=self)\
+                                        .exclude(status=CompanyProfile.BANNED)
+        ids = []
+        for profile in profiles:
+            ids.extend([m['id'] for m in profile.organization.members.values('id')])
+        members = User.objects.filter(pk__in=ids)\
+                              .filter(groups__name__in=['Owner','Rep','Staff','Building Manager'])\
+                              .exclude(profile__status=UserProfile.BANNED)\
+                              .distinct()\
+                              .order_by('first_name', 'last_name', 'username')
         return members
 
     @property
@@ -289,28 +296,31 @@ class Building(models.Model):
         Return all Building Managers througout all the Organizations of the Building.
 
         """
-        managers = []
-        for o in self.organizations.all():
-            users = User.objects.filter(profile__company=o)\
-                    .filter(groups__name='Building Manager')\
-                    .exclude(profile__status=UserProfile.BANNED)\
-                    .distinct()\
-                    .order_by('first_name', 'last_name', 'username')
-            managers.extend(users)
+        profiles = self.building_profile.filter(building=self)\
+                                        .exclude(status=CompanyProfile.BANNED)
+        ids = []
+        for profile in profiles:
+            ids.extend([m['id'] for m in profile.organization.members.values('id')])
+        managers = User.objects.filter(pk__in=ids)\
+                               .filter(groups__name='Building Manager')\
+                               .exclude(profile__status=UserProfile.BANNED)\
+                               .distinct()\
+                               .order_by('first_name', 'last_name', 'username')
         return managers
-
-    def get_members_count(self):
-        return len(self.members)
 
     def get_pending_companies(self):
         # Return pending companies
-        return self.organizations.filter(status=Organization.PENDING)
+        pending_profiles = self.building_profile.filter(status=CompanyProfile.PENDING)
+        return Organization.objects.filter(pk__in=[p.organization.id for p in pending_profiles])
 
     def get_notices(self):
-        return self.notices.filter(is_reply=False)
-
-    def get_notices_count(self):
-        return self.get_notices().count()
+        notices = self.notices.filter(is_reply=False)\
+                              .exclude(sender__profile__status=UserProfile.BANNED)
+        banned = [bp['organization__id'] for bp \
+                 in self.building_profile.filter(status=CompanyProfile.BANNED).values('organization__id')]
+        if banned:
+            notices = notices.exclude(sender__profile__company__pk__in=banned)
+        return notices
 
     def mail_managers(self, subject, text_content, html_content=None):
         from_email = settings.EMAIL_FROM
@@ -322,6 +332,46 @@ class Building(models.Model):
             msg.send()
 
 
+class CompanyProfile(models.Model):
+    PENDING = 0
+    VERIFIED = 1
+    BANNED = 2
+    STATUS_CHOICES = (
+        (PENDING, 'Pending'),
+        (VERIFIED, 'Verified'),
+        (BANNED, 'Banned'),
+    )
+    organization = models.ForeignKey(Organization, related_name='company_profile')
+    building = models.ForeignKey(Building, null=True, blank=True, related_name='building_profile')
+    floor = models.IntegerField("Floor", null=True, blank=True)
+    status = models.IntegerField("Verification Status", choices=STATUS_CHOICES, default=PENDING)
+
+    def __unicode__(self):
+        if self.building:
+            return u'{} at {}'.format(self.organization.name, self.building.name)
+        return u'{} [No Building Assigned]'.format(self.organization.name)
+
+    @property
+    def floor_tag(self):
+        tag = 'th'
+        if self.floor < 0:
+            return 'Basement'
+        if self.floor == 0:
+            return 'Ground'
+        if self.floor not in (11, 12, 13): # 11, 12 and 13 are exceptions, they use 'th'
+            last_digit = int(str(self.floor)[-1:])
+            if last_digit == 1:
+                tag = 'st'
+            elif last_digit == 2:
+                tag = 'nd'
+            elif last_digit == 3:
+                tag = 'rd'
+        return "{}{}".format(self.floor, tag)
+
+    def get_status(self):
+        return self.get_status_display()
+
+
 class OToken(models.Model):
     """
     Organization Token.
@@ -330,7 +380,7 @@ class OToken(models.Model):
     """
     key = models.CharField(max_length=14, primary_key=True)
     building = models.ForeignKey(Building)
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, null=True, blank=True)
     redeemed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
 
@@ -371,6 +421,7 @@ class UserProfile(models.Model):
     )
 
     user = models.OneToOneField(User, related_name='profile')
+    codename = models.CharField(max_length=64, unique=True, editable=False)
     company = models.ForeignKey(Organization, null=True, blank=True, related_name='company', on_delete=models.SET_NULL)
     building = models.ForeignKey(Building, null=True, blank=True, help_text="Primary building", on_delete=models.SET_NULL)
     starred = models.ManyToManyField(Notice, null=True, blank=True)
@@ -379,17 +430,70 @@ class UserProfile(models.Model):
                                   help_text="PNG, JPEG, or GIF; max size 2 MB. Image must be 60 x 60 pixels or larger.")
     job_title = models.CharField(max_length=64, null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
-    status = models.IntegerField("Verification Status", choices=STATUS_CHOICES, default=PENDING)
+    status = models.IntegerField("Verification Status", choices=STATUS_CHOICES, default=PENDING, editable=False)
 
-    def get_avatar(self):
+    def __unicode__(self):
+        return self.name
+
+    @property
+    def name(self):
+        if self.user.get_full_name():
+            return self.user.get_full_name()
+        else:
+            return self.codename
+
+    @property
+    def roles(self):
+        roles = self.user.groups.all()
+        return [g.name for g in roles]
+
+    @property
+    def buildings(self):
+        buildings = []
+        if self.company:
+            profiles = CompanyProfile.objects.filter(organization=self.company)
+            buildings = [profile.building for profile in profiles]
+        return buildings
+
+    @property
+    def token(self):
+        try:
+            token = Token.objects.get(user=self.user)
+            return token.key
+        except Token.DoesNotExist:
+            return ''
+
+    @property
+    def avatar(self):
         if self.thumbnail:
             return self.thumbnail.url
         else:
             return '{}images/useravatar_60x60.png'.format(settings.STATIC_URL)
 
+    @property
+    def small_avatar(self):
+        if self.thumbnail:
+            return self.thumbnail.url
+        else:
+            return '{}images/useravatar_32x32.png'.format(settings.STATIC_URL)
+
+    def generate_hash(self):
+        # Generate a random binary string
+        # Configured to use PBKDF2 + HMAC + SHA256 with 10000 iterations.
+        # The result is a 64 byte binary string
+        hash = pbkdf2(self.user.username, get_random_string(), 10000, digest=hashlib.sha256)
+        self.codename = base64.b64encode(hash).decode('ascii').strip()
+        self.save()
+
+    def get_starred(self):
+        # Convert logged-in user starred notices into list of IDs
+        return [int(n.id) for n in self.starred.all()]
+
+
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        UserProfile.objects.create(user=instance)
+        profile = UserProfile.objects.create(user=instance)
+        profile.generate_hash()
 
 def create_auth_token(sender, instance, created, **kwargs):
     if created:
@@ -399,4 +503,11 @@ post_save.connect(create_user_profile, sender=User)
 post_save.connect(create_auth_token, sender=User)
 
 
+class Page(models.Model):
+    title = models.CharField(max_length=64, unique=True)
+    slug = models.CharField(max_length=64, unique=True)
+    body = MarkupField()
+    status = models.BooleanField("Publish Status", default=False)
 
+    def __unicode__(self):
+        return self.title

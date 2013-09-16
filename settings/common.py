@@ -3,6 +3,7 @@ import os
 import stat
 
 DEBUG = False
+TEMPLATE_DEBUG = False
 
 LOGIN_URL = '/'
 LOGIN_REDIRECT_URL = '/'
@@ -12,7 +13,7 @@ ADMINS = ()
 DATABASES = {}
 DATABASE_OPTIONS = {
     'use_unicode': True,
-    'charset': 'utf8'
+    'charset': 'utf8_general_ci'
 }
 
 SESSION_COOKIE_SECURE = True
@@ -107,6 +108,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'nirit.middleware.NiritMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware'
 )
 
 TEMPLATE_DIRS = ()
@@ -116,6 +118,8 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'grappelli',
+    'filebrowser',
     'django.contrib.admin',
     'django.contrib.staticfiles',
     #'django.contrib.humanize',
@@ -125,11 +129,20 @@ INSTALLED_APPS = (
     'south',
     'rest_framework',
     'rest_framework.authtoken',
+    'markitup',
+    'debug_toolbar'
 )
 
 AUTHENTICATION_BACKENDS = (
     'nirit.auth.EmailBackend',
 )
+
+MARKITUP_FILTER = ('markdown.markdown', {'safe_mode': True})
+MARKITUP_SET = 'markitup/sets/markdown'
+MARKITUP_AUTO_PREVIEW = True
+JQUERY_URL='js/jquery-1.9.1.min.js'
+
+GRAPPELLI_ADMIN_TITLE = 'Nirit'
 
 SCRIPT_DIR = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
 LOGFILENAME = os.path.abspath(os.path.join(SCRIPT_DIR, '../../runtime/runtime.log'))

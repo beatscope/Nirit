@@ -40,6 +40,21 @@ jQuery.cookie = function (key, value, options) {
     return (result = new RegExp('(?:^|; )' + encodeURIComponent(key) + '=([^;]*)').exec(document.cookie)) ? decode(result[1]) : null;
 };
 
+// UserVoice
+(function(){var uv=document.createElement('script');uv.type='text/javascript';uv.async=true;uv.src='//widget.uservoice.com/UaLxQ5lfg2BrMOxj33zDA.js';var s=document.getElementsByTagName('script')[0];s.parentNode.insertBefore(uv,s)})()
+UserVoice = window.UserVoice || [];
+UserVoice.push(['showTab', 'classic_widget', {
+  mode: 'full',
+  primary_color: '#393939',
+  link_color: '#2e7fa1',
+  default_mode: 'support',
+  forum_id: 222019,
+  tab_label: 'Feedback & Support',
+  tab_color: '#236b87',
+  tab_position: 'middle-left',
+  tab_inverted: false
+}]);
+
 /**
 *   @name                           Elastic
 *   @descripton                     Elastic is jQuery plugin that grow and shrink your textareas automatically
@@ -55,7 +70,6 @@ jQuery.cookie = function (key, value, options) {
 (function($){ 
     jQuery.fn.extend({  
         elastic: function() {
-        
             //  We will create a div clone of the textarea
             //  by copying these attributes from the textarea to the div.
             var mimics = [
@@ -80,14 +94,14 @@ jQuery.cookie = function (key, value, options) {
                 'borderBottomColor',
                 'borderLeftStyle',
                 'borderLeftColor'
-                ];
+            ];
             
             return this.each( function() {
 
-                // Elastic only works on textareas
-                if ( this.type !== 'textarea' ) {
-                    return false;
-                }
+            // Elastic only works on textareas
+            if ( this.type !== 'textarea' ) {
+                return false;
+            }
                     
             var $textarea   = jQuery(this),
                 $twin       = jQuery('<div />').css({
@@ -127,7 +141,6 @@ jQuery.cookie = function (key, value, options) {
                 
                 // Sets a given height and overflow state on the textarea
                 function setHeightAndOverflow(height, overflow){
-                
                     var curratedHeight = Math.floor(parseInt(height,10));
                     if($textarea.height() !== curratedHeight){
                         $textarea.css({'height': curratedHeight + 'px','overflow':overflow});
@@ -136,7 +149,6 @@ jQuery.cookie = function (key, value, options) {
                 
                 // This function will update the height of the textarea if necessary 
                 function update(forced) {
-                    
                     // Get curated content from the textarea.
                     var textareaContent = $textarea.val().replace(/&/g,'&amp;').replace(/ {2}/g, '&nbsp;').replace(/<|>/g, '&gt;').replace(/\n/g, '<br />');
                     
@@ -163,14 +175,13 @@ jQuery.cookie = function (key, value, options) {
                         }
                         
                     }
-                    
                 }
                 
                 // Hide scrollbars
                 $textarea.css({'overflow':'hidden'});
                 
                 // Update textarea size on keyup, change, cut and paste
-                $textarea.bind('keyup change cut paste', function(){
+                $textarea.bind('keyup change cut paste', function(e) {
                     update(); 
                 });
                 
@@ -180,7 +191,8 @@ jQuery.cookie = function (key, value, options) {
                 $textarea.bind('update', update);
                 
                 // Compact textarea on blur
-                $textarea.bind('blur',function(){
+                // this feature breaks when the textarea is given padding
+                /*$textarea.bind('blur',function(){
                     if($twin.height() < maxheight){
                         if($twin.height() > minheight) {
                             $textarea.height($twin.height());
@@ -188,7 +200,7 @@ jQuery.cookie = function (key, value, options) {
                             $textarea.height(minheight);
                         }
                     }
-                });
+                });*/
                 
                 // And this line is to catch the browser paste event
                 $textarea.bind('input paste',function(e){ setTimeout( update, 250); });             
@@ -218,7 +230,7 @@ $.ajaxSetup({
     }
 });
 
-function trim_all (str) {
+function trim (str) {
     // trim beginning and end
     str = str.replace(/^\s+/, '');
     for (var i = str.length - 1; i >= 0; i--) {
@@ -228,7 +240,7 @@ function trim_all (str) {
         }
     }
     // trim whitespaces
-    str = str.replace(/\s\s*/g, ' ');
+    //str = str.replace(/\s\s*/g, ' ');
     return str;
 }
 
@@ -353,3 +365,20 @@ NIRIT.Upload = function (settings) {
     });
 
 };
+
+$(document).ready(function () {
+
+    // Cookie Control
+    (function () {
+        if (!$.cookie('ck_allowed')) {
+            setTimeout(function () {
+                $('#niritcookies').slideDown();
+            }, 500);
+            $('#cookies-continue-button').click(function () {
+                $.cookie('ck_allowed', 1, {'expires': 365, 'path': '/'});
+                $('#niritcookies').slideUp();
+            });
+        }
+    })();
+
+});

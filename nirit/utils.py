@@ -8,49 +8,9 @@ import logging
 import re
 import urllib2
 from django.core.exceptions import ValidationError
-from django.conf import settings
-from rest_framework.authtoken.models import Token
-from nirit.models import Organization, User
+from django.contrib.auth.models import User
 
 logger = logging.getLogger('nirit.utils')
-
-
-def get_profile(user):
-    profile = {}
-    user_profile = user.get_profile()
-
-    if user_profile.job_title:
-        profile['job_title'] = user_profile.job_title
-
-    if user_profile.bio:
-        profile['bio'] = user_profile.bio
-
-    if user_profile.thumbnail:
-        profile['thumbnail'] = '{}{}'.format(settings.MEDIA_URL, user_profile.thumbnail)
-    
-    if user_profile.building:
-        profile['active_building'] = user_profile.building
-    
-    if user_profile.networked.all():
-        profile['networked'] = user_profile.networked.all()
-
-    if user_profile.starred.all():
-        profile['starred'] = user_profile.starred.all()
-
-    roles = user.groups.all()
-    profile['roles'] = ", ".join([g.name for g in roles])
-
-    profile['company'] = user_profile.company
-    if user_profile.company:
-        profile['buildings'] = user_profile.company.buildings
-    else:
-        profile['buildings'] = []
-
-    # API Token
-    token = Token.objects.get(user=user)
-    profile['token'] = token.key
-
-    return profile
 
 
 def validate_year(value):

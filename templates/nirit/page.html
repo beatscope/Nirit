@@ -1,0 +1,12 @@
+{% extends "nirit/base.html" %}
+
+{% block title %}{{ block.super }} | {{ title }}{% endblock %}
+
+{% block content %}
+<div class="content">
+    <div class="page">
+        <h1>{{ title }}</h1>
+        {{ body }}
+    </div>
+</div>
+{% endblock %}

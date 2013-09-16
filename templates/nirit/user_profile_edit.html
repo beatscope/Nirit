@@ -1,6 +1,6 @@
 {% extends "nirit/base.html" %}
 
-{% block title %}Nirit | Edit Profile | {% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}{% endblock %}
+{% block title %}Nirit | Edit Profile | {{ member.name }}{% endblock %}
 
 {% block extrahead %}
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.ajaxfileupload.js"></script>
@@ -11,11 +11,11 @@
     <form action="" method="post" enctype="multipart/form-data">{% csrf_token %}
 
         <div class="edit-line box padded">
-            <h2>{% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %} (edit mode)</h2>
+            <h2>{{ member.name }} (edit mode)</h2>
             <p class="description">Raw passwords are not stored, but you can change the password using <a href="/member/password/change">this form</a>.</p>
             <div class="publish-line">
                 <input class="button" type="submit" value="Publish" />
-                <a class="button" href="../{{ member.username }}">Cancel</a>
+                <a class="button" href="../{{ member.codename }}">Cancel</a>
             </div>
         </div>
 
@@ -73,20 +73,22 @@
 
         <div id="sidebar">
             <div class="box padded">
-                <h3>{% if member.get_full_name %}{{ member.get_full_name }}{% else %}{{ member }}{% endif %}</h3>
-                <p class="description">{{ member.email }}</p>
-                {% if profile.company %}
-                <p class="description">{{ profile.company }}</p>
+                <h3>{{ member.name }}</h3>
+                <p class="description">{{ member.user.email }}</p>
+                {% if member.company %}
+                <p class="description">{{ member.company }}</p>
                 {% endif %}
-                <p class="description">{{ profile.active_building }}</p>
+                <p class="description">{{ member.building }}</p>
             </div>
-            {% if profile.buildings.length > 1 %}
+            {% if member.buildings.count > 1 %}
             <div class="box padded">
                 <h3>Select primary building</h3>
-                <ul>{% for building in profile.buildings %}
-                    <li class="{% if building == profile.active_building %}active{% else %}inactive{% endif %}">
-                        {% if user == member %}
-                            {% if building == profile.active_building %}
+                <p class="description">The primary building defines your active view,
+                    and sets the default filters, including the Notices displayed on your Profile.</p>
+                <ul>{% for building in member.buildings %}
+                    <li class="{% if building == member.building %}active{% else %}inactive{% endif %}">
+                        {% if user == member.user %}
+                            {% if building == member.building %}
                                 {{ building.name }} <span class="primary">(primary)</span>
                             {% else %}
                                 <a href="?set-active-building={{ building.codename }}" title="Set as primary building">{{ building.name }}</a>

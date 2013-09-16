@@ -1,11 +1,17 @@
 # nirit/urls.py
+import logging
 from django.conf import settings
 from django.conf.urls.defaults import patterns, include, url
 from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
+from filebrowser.sites import site as filebrowser_site
 from nirit.admin import site
+from nirit.models import Page
 from nirit.forms import PassResetForm
 from nirit.uploads import FileUploader
+
+# Static pages regular expression
+pages_regex = r'^(?P<page>{})$'.format('|'.join([p['slug'] for p in Page.objects.filter(status=True).values('slug')]))
 
 urlpatterns = patterns('',
 
@@ -13,7 +19,6 @@ urlpatterns = patterns('',
     url(r'^$', 'nirit.views.landing'),
     url(r'^board/[\w-]*/(?P<codename>\w+)', 'nirit.views.board'),
     url(r'^directory/[\w-]*/(?P<codename>\w+)', 'nirit.views.directory'),
-    url(r'^api/companies/(?P<codename>\w+)/(?P<group>\w+)', 'nirit.views.company_api'),
 
     # Member pages
     url(r'^member/sign-up$', 'nirit.views.sign_up'),
@@ -42,21 +47,29 @@ urlpatterns = patterns('',
     url(r'^member/set-preference/(?P<setting>\w+)/(?P<value>\w+)$', 'nirit.views.set_preference'),
     url(r'^member/account/edit$', 'nirit.views.user_profile_edit'),
     url(r'^member/account$', 'nirit.views.user_profile'),
-    url(r'^member/(?P<username>.*)/(?P<action>\w+)$', 'nirit.views.user_set_status'),
-    url(r'^member/(?P<username>.*)$', 'nirit.views.user_profile'),
+    url(r'^member/(?P<codename>.+)$', 'nirit.views.user_profile'),
     url(r'^logout', 'django.contrib.auth.views.logout_then_login'),
 
     # Company Pages
-    url(r'^company/(?P<codename>\w+)/(?P<action>\w+)$', 'nirit.views.company_set_status'),
     url(r'^company/[\w-]*/(?P<codename>\w+)/board$', 'nirit.views.company_board'),
     url(r'^company/[\w-]*/(?P<codename>\w+)/edit$', 'nirit.views.company_edit'),
     url(r'^company/[\w-]*/(?P<codename>\w+)/staff$', 'nirit.views.company_staff'),
     url(r'^company/[\w-]*/(?P<codename>\w+)$', 'nirit.views.company'),
 
-    # Upload AJAX Interface
+    # Pages
+    url(pages_regex, 'nirit.views.page'),
+
+    # AJAX Interfaces
     url(r'^upload$', login_required(FileUploader())),
+    url(r'^contact/company/(?P<codename>\w+)$', 'nirit.views.contact_company'),
+    url(r'^contact/member/(?P<codename>.+)$', 'nirit.views.contact_member'),
+    url(r'^approval/company/(?P<codename>\w+)/(?P<action>\w+)$', 'nirit.views.company_set_status'),
+    url(r'^approval/member/(?P<codename>.+)/(?P<action>\w+)$', 'nirit.views.user_set_status'),
 
     # Admin
-    url(r'^back-office', include(site.urls)),
+    url(r'^grappelli/', include('grappelli.urls')),
+    url(r'^back-office/', include(site.urls)),
+    url(r'^back-office/filebrowser/', include(filebrowser_site.urls)),
+    url(r'^markitup/', include('markitup.urls'))
 
 )

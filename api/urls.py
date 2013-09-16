@@ -2,8 +2,7 @@
 from django.conf.urls.defaults import patterns, include, url
 from rest_framework.urlpatterns import format_suffix_patterns
 from api.views import BuildingListView, BuildingView, \
-                      UserListView, UserView, \
-                      NoticeListView, NoticeView, NoticeReplyListView, NoticePostView, \
+                      NoticeListView, NoticeView, NoticePostView, \
                       OrganizationListView, OrganizationView, \
                       ExpertiseListView, ExpertiseView, ExpertiseCreateView
 
@@ -12,11 +11,8 @@ urlpatterns = patterns('',
     url(r'^$', 'api.views.api_root'),
     url(r'^buildings/$', BuildingListView.as_view(), name='buildings-list'),
     url(r'^buildings/(?P<codename>\w+)/$', BuildingView.as_view(), name='building-detail'),
-    url(r'^users/$', UserListView.as_view(), name='users-list'),
-    url(r'^users/(?P<pk>[0-9]+)/$', UserView.as_view(), name='user-detail'),
     url(r'^notices/post$', NoticePostView.as_view(), name='notice-add'),
     url(r'^notices/$', NoticeListView.as_view(), name='notices-list'),
-    url(r'^notices/(?P<pk>[0-9]+)/replies$', NoticeReplyListView.as_view(), name='notice-replies'),
     url(r'^notices/(?P<pk>[0-9]+)/$', NoticeView.as_view(), name='notice-detail'),
     url(r'^organizations/$', OrganizationListView.as_view(), name='organizations-list'),
     url(r'^organizations/(?P<codename>\w+)/$', OrganizationView.as_view(), name='organization-detail'),

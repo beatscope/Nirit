@@ -22,29 +22,19 @@
             </div>
         </div>
 
-        {{ form.errors }}
-        {{ form.non_field_errors }}
-        {{ form.description.errors }}
-        {{ form.image.errors }}
-        {{ form.logo.errors }}
-        {{ form.square_logo.errors }}
-        {{ form.expertise.errors }}
-        {{ form.department.errors }}
-        {{ form.size.errors }}
-        {{ form.founded.errors }}
-        {{ form.floor.errors }}
-
         <div id="main">
             <div class="box padded">
                 <div class="fieldWrapper">
                     <h3>{{ form.description.label_tag }}</h3>
                     {{ form.description }}
+                    {{ form.description.errors }}
                 </div>
             </div>
             <div class="box padded">
                 <div class="fieldWrapper">
                     <h3>{{ form.image.label_tag }}</h3>
                     {{ form.image }}
+                    {{ form.image.errors }}
                     <span class="description">{{ form.image.help_text }}</span>
                 </div>
             </div>
@@ -52,6 +42,7 @@
                 <div class="fieldWrapper">
                     <h3>{{ form.logo.label_tag }}</h3>
                     {{ form.logo }}
+                    {{ form.logo.errors }}
                     <span class="description">{{ form.logo.help_text }}</span>
                 </div>
             </div>
@@ -59,6 +50,7 @@
                 <div class="fieldWrapper">
                     <h3>{{ form.square_logo.label_tag }}</h3>
                     {{ form.square_logo }}
+                    {{ form.square_logo.errors }}
                     <span class="description">{{ form.square_logo.help_text }}</span>
                 </div>
             </div>
@@ -71,6 +63,7 @@
                         <input id="expertise" type="text" />
                     </div>
                     {{ form.expertise }}
+                    {{ form.expertise.errors }}
                 </div>
             </div>
         </div>
@@ -81,18 +74,22 @@
                     <h3><span class="required">*</span>{{ form.department.label_tag }}</h3>
                     <p class="description">{{ form.department.help_text }}</p>
                     {{ form.department }}
+                    {{ form.department.errors }}
                 </div>
                 <div class="fieldWrapper">
                     <h3><span class="required">*</span>{{ form.size.label_tag }}</h3>
                     {{ form.size }}
+                    {{ form.size.errors }}
                 </div>
                 <div class="fieldWrapper">
                     <h3>{{ form.founded.label_tag }}</h3>
                     {{ form.founded }}
+                    {{ form.founded.errors }}
                 </div>
                 <div class="fieldWrapper">
                     <h3><span class="required">*</span>{{ form.floor.label_tag }}</h3>
                     {{ form.floor }}
+                    {{ form.floor.errors }}
                 </div>
             </div>
         </div>
@@ -110,7 +107,7 @@
 <script type="text/javascript">
     $(document).ready(function () {
         var csrf_token = '{{ csrf_token }}';
-        var token = '{{ account.token }}';
+        var token = '{{ user.get_profile.token }}';
         new NIRIT.Company(csrf_token, token);
     });
 </script>

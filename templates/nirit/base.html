@@ -16,12 +16,29 @@
 </head>
 <body>
     <div class="wrapper">
+         <div id="niritcookies" class="banner">
+            <section class="container">
+                <div>
+                    <h2 class="banner-title">Cookies on Nirit</h2>
+                    <p class="banner-content">
+                        We use cookies to ensure that we give you the best experience on our website. We also use cookies to ensure we show you advertising that is relevant to you.
+                        If you continue without changing your settings, we'll assume that you are happy to receive all cookies on Nirit.
+                        However, if you would like to, you can change your cookie settings at any time.
+                    </p>
+                    <ul class="banner-options">
+                        <li id="cookies-continue"><button type="button" id="cookies-continue-button">Continue</button></li>
+                        <li id="cookies-settings"><a href="/cookie-settings">Change settings</a></li>
+                        <li id="cookies-more"><a href="/cookies">Find out more</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
         <header>
             <div class="container">
                 <div id="logo"><a href="/"><img src="{{ STATIC_URL}}/images/nirit-logo.png" witdh="108" height="43" alt="Nirit" /></a></div>
                 <div id="user-corner">
                     {% if user.is_authenticated %}
-                    <a href="/board/{{ account.active_building.link }}">{{ account.active_building.name }}</a>
+                    <a href="/board/{{ user.get_profile.building.link }}">{{ user.get_profile.building.name }}</a>
                     {% endif %}
                     <div class="today">{% now "jS F Y" %}</div>
                 </div>
@@ -33,10 +50,10 @@
                     <ul>
                         {% if menu %}
                             {% for link in menu %}
-                                <li><a href="{{ link.href }}" class="{{ link.name }} {{ link.class }}">{{ link.link }}<span> </span></a></li>
+                                <li><a href="{{ link.href }}" class="{{ link.name }} {{ link.class }}">{{ link.link }}<span></span></a></li>
                             {% endfor %}
                         {% else %}
-                            {% if user.is_anonymous %}<li><a href="/">What's Nirit?</a></li>{% endif %}
+                            {% if user.is_anonymous %}<li><a href="/what-is-nirit">What's Nirit?</a></li>{% endif %}
                         {% endif %}
                     </ul>
                 {% endblock %}
@@ -44,10 +61,12 @@
         </div>
         <nav id="sub-links">
             <div class="container">
-                {% block sublinks %}{% endblock %}
+                {% block sublinks %}{% if user.is_anonymous %}<ul>
+                    <li class="first"><a href="/member/sign-up">Sign-up</a></li>
+                </ul>{% endif %}{% endblock %}
                 {% if user.is_authenticated %}
                 <div id="me">
-                    Logged in as <a href="/member/account">{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user }}{% endif %}</a>
+                    Logged in as <a href="/member/account">{{ user.get_profile.name }}</a>
                     <span><a href="/logout">Logout</a></span>
                 </div>
                 {% endif %}
@@ -55,19 +74,28 @@
         </nav>
         <section>
             <div class="container">
-                {% block content %}{% endblock %}
+                <div id="content">
+                    {% block content %}{% endblock %}
+                </div>
             </div>
         </section>
     </div>
     <footer>
         <div id="skyline"></div>
-        <div class="container">
-            {% block footer %}<div id="footer">
-            <div class="container">
-            <em>Powered by Beatscope Engineering</em>, &copy; 2008-{% now "Y" %} <a href="http://www.beatscope.co.uk/" target="_blank">Beatscope Limited</a>
-            </div>{% endblock %}
-        </div>
+        {% block footer %}<div id="footer">
+            <ul class="container">
+                <li><a href="/what-is-nirit">What's Nirit</a></li>
+                <li><a href="/member/sign-up">Sign-up</a></li>
+                <li><a href="https://nirit.uservoice.com/" target="_blank">Feedback &amp; Support</a></li>
+                <li class="inline"><a href="/terms-of-use">Terms &amp; conditions</a></li>
+                <li class="inline"><a href="/privacy-policy">Privacy policy</a></li>
+                <li class="inline"><a href="/cookies">Cookies</a></li>
+                <li class="inline"><a href="/cookie-settings">Change cookie settings</a></li>
+                <li class="last"><em>Powered by Beatscope Engineering</em>, &copy; 2008-{% now "Y" %} <a href="http://www.beatscope.co.uk/" target="_blank">Beatscope Limited</a></li>
+            </ul>
+        </div>{% endblock %}
     </footer>
     {% block extrajs %}{% endblock %}
+
 </body>
 </html>

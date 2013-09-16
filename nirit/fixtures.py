@@ -196,7 +196,7 @@ class Message(object):
         'email_activation_required_text': (
             'Hi {first_name}\n\n'\
             + 'An account has been created on Nirit using this email address.\n\n'\
-            + 'Please click the following link to confirm your email address and activate your account.\n\n'\
+            + 'Please click the following link to confirm your email address and activate your account and create a Business Profile.\n\n'\
             + '{link}\n\n'\
             + 'If you did not create this account please contact the Nirit team via support@nirit.co.uk.\n\n'\
             + 'The team @ Nirit',
@@ -212,7 +212,8 @@ class Message(object):
         # New Company Joined (text)
         'email_new_company_text': (
             '{name} has just joined Nirit.\n\n'\
-            + 'Visit your account to activate this company: {link}',
+            + 'Visit your account to activate this company: {link}\n\n'\
+            + 'The team @ Nirit',
             'text'
         ),
 
@@ -227,7 +228,8 @@ class Message(object):
             '{name} has just joined {company}.\n\n'\
             + 'This user needs to be approved in order to access Nirit\'s features.\n\n'\
             + 'Visit {company}\'s Staff page to activate this account.\n'\
-            + '{link}',
+            + '{link}\n\n'\
+            + 'The team @ Nirit',
             'text'
         ),
 
@@ -242,13 +244,44 @@ class Message(object):
             'A user has attempted to create an account.\n\n'\
             + 'The user might have an email address in a public domain (i.e. google.com). '\
             + 'In which case the Company would need to be created manually.\n\n'\
-            + 'Please contact: {contact}',
+            + 'Please contact: {contact}\n\n'\
+            + 'The team @ Nirit',
             'text'
         ),
 
         # Sign up failed (html)
         'email_sign_up_failed_html': (
             'sign_up_failed.html',
+            'file'
+        ),
+
+        # contact Company (text)
+        'email_company_contact_text': (
+            '{name} has sent a message to {company} via Nirit.\n\n'\
+            + '{subject}\n\n'\
+            + 'Visit {name}\'s Profile: {link}\n\n'\
+            + 'The team @ Nirit',
+            'text'
+        ),
+
+        # Contact Company (html)
+        'email_company_contact_html': (
+            'company_contact.html',
+            'file'
+        ),
+
+        # Contact Member(text)
+        'email_member_contact_text': (
+            '{name} from {company} has sent you a message via Nirit.\n\n'\
+            + '{subject}\n\n'\
+            + 'Visit {name}\'s Profile: {link}\n\n'\
+            + 'The team @ Nirit',
+            'text'
+        ),
+
+        # Contact Member (html)
+        'email_member_contact_html': (
+            'member_contact.html',
             'file'
         ),
 
@@ -265,6 +298,9 @@ class Message(object):
                     html = html.format(**data)
                 return html
             else:
-                return msg[0]
+                text = msg[0]
+                if data:
+                    text = text.format(**data)
+                return text
         else:
             return ''

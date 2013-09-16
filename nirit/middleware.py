@@ -11,8 +11,7 @@ import logging
 from django.http import HttpResponseRedirect
 from django.conf import settings
 from nirit.manager import ModelManager
-from nirit.models import Building
-from nirit.utils import get_profile
+from nirit.models import Building, CompanyProfile
 
 logger = logging.getLogger('nirit.middleware')
 
@@ -40,8 +39,8 @@ class NiritMiddleware(object):
                     company = request.user.get_profile().company
                     if not company:
                         raise IndexError
-                    buildings = company.building_set.all()
-                    active_building = buildings[0]
+                    buildings = CompanyProfile.objects.filter(organization=company)
+                    active_building = buildings[0].building
                 except IndexError:
                     pass
                 else:
@@ -54,26 +53,29 @@ def request(request):
     meta = {}
 
     if request.user.is_authenticated():
-        meta['account'] = get_profile(request.user)
         meta['menu'] = []
 
         # Building menu item
         # defaults to the user's default building
-        if meta['account'].has_key('active_building') and meta['account']['active_building']:
-            # prepend building links to the user links
-            links = [
-                {
-                    'link': 'Notice Board',
-                    'name': 'notice-board',
-                    'href': '/board/{}'.format(meta['account']['active_building'].link)
-                },
-                {
-                    'link': 'Directory', 
-                    'name': 'directory',
-                    'href': '/directory/{}'.format(meta['account']['active_building'].link)
-                },
-            ]
-            meta['menu'] = links + meta['menu']
+        if request.user.get_profile().building:
+            meta['menu'].append({
+                'link': 'Notice Board',
+                'name': 'notice-board',
+                'href': '/board/{}'.format(request.user.get_profile().building.link)
+            })
+            meta['menu'].append({
+                'link': 'Directory', 
+                'name': 'directory',
+                'href': '/directory/{}'.format(request.user.get_profile().building.link)
+            })
+
+        # Add user's company
+        if request.user.get_profile().company:
+            meta['menu'].append({
+                    'link': 'Company Profile',
+                    'name': 'company',
+                    'href': '/company/{}'.format(request.user.get_profile().company.link)
+                })
 
         # Highlight active menu item
         for i, l in enumerate([p for p in meta['menu'] if p['href']]):

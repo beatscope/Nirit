@@ -9,16 +9,17 @@ from django.core.mail import EmailMultiAlternatives, mail_admins
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login as auth_login
 from django.shortcuts import get_object_or_404, render_to_response
 from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.template import RequestContext, loader
+from django.utils.encoding import force_unicode
+from django.utils.html import strip_tags, linebreaks
 from django.conf import settings
-from nirit.models import Building, Notice, Organization, OToken, UserProfile
+from nirit.models import Page, Building, Notice, Organization, OToken, UserProfile, CompanyProfile
 from nirit.manager import ModelManager
 from nirit.forms import CompanyForm, MemberForm, UserForm, SignUpForm
-from nirit.utils import get_profile
 from nirit.fixtures import Message
 
 logger = logging.getLogger('nirit.views')
@@ -41,6 +42,17 @@ def landing(request):
     t = loader.get_template('nirit/index.html')
     c = RequestContext(request, context)
     return HttpResponse(t.render(c))
+
+
+def page(request, page):
+    p = get_object_or_404(Page, slug=page)
+    t = loader.get_template('nirit/page.html')
+    c = RequestContext(request, {
+        'title': p.title,
+        'body': p.body
+    })
+    return HttpResponse(t.render(c))
+
 
 def sign_up(request):
     explanation = ''
@@ -112,10 +124,15 @@ def sign_up_activate(request):
             if t.redeemed:
                 context['status'] = 'REDEEMED'
             else:
-                # Log the user in
+                # Make sure this token is assigned to a user
                 user = t.user
+                if not user:
+                    raise PermissionDenied
+
+                # Log the user in
                 user.backend = 'django.contrib.auth.backends.ModelBackend'
                 auth_login(request, user)
+
                 context['status'] = 'ACTIVATED'
 
                 # This is the one-time chance for the user to create a company
@@ -124,15 +141,19 @@ def sign_up_activate(request):
                 if request.method == 'POST':
                     form = CompanyForm(request.POST)
                     if form.is_valid():
-                        company = form.save()
+                        data = form.save()
+                        company = data['organization']
+                        floor = data['floor']
+
+                        # Create a Company Profile on this building
+                        CompanyProfile.objects.create(organization=company,
+                                                      building=t.building,
+                                                      floor=floor)
 
                         # Assign user to the company
                         profile = user.get_profile()
                         profile.company = company
                         profile.save()
-
-                        # Assign company to building
-                        t.building.organizations.add(company)
 
                         # Flag token as redeemed 
                         t.redeemed = True
@@ -142,17 +163,19 @@ def sign_up_activate(request):
                         # ignore SSL Certificate verification when DEBUG in True
                         verify = not settings.DEBUG
                         # verification is token-based
-                        # use the sysadmin token
-                        token = get_profile(User.objects.get(pk=1))['token']
+                        token = profile.token
                         headers = {
                             'referer': settings.API_HOST,
                             'content-type': 'application/json',
                             'authorization': 'Token {}'.format(token)
                         }
+                        subject = u'{}\n\n{}'.format(title, force_unicode(company.description))
                         data = {
-                            'subject': '{} has just joined Nirit'.format(company.name),
+                            'subject': u'{} has just joined Nirit'.format(company.name),
+                            'body': force_unicode(company.description),
                             'buildings': [t.building.codename],
-                            'type': '{}'.format(Notice.INTRO)
+                            'type': '{}'.format(Notice.INTRO),
+                            'official': 'on'
                         }
                         r = requests.post("https://{}/api/notices/post".format(request.META['HTTP_HOST']),
                                           verify=verify,
@@ -163,7 +186,7 @@ def sign_up_activate(request):
                         subject = 'A new Company has just joined Nirit'
                         data = {
                             'name': company.name,
-                            'link': '{}/company/{}/{}'.format(settings.HOST, company.slug, company.codename)
+                            'link': '{}/member/account'.format(settings.HOST)
                         }
                         text_content = Message().get('email_new_company_text', data)
                         html_content = Message().get('email_new_company_html', data)
@@ -187,252 +210,20 @@ def sign_up_activate(request):
 
 @login_required
 @ensure_csrf_cookie
-def board(request, codename):
-    context = {}
-    building = get_object_or_404(Building, codename=codename)
-    context['building'] = building
-
-    # Check the user is a member of this building
-    if request.user not in building.members:
-        raise PermissionDenied
-
-    # Check the user is active
-    if not request.user.get_profile().status == UserProfile.VERIFIED:
-        raise PermissionDenied
-
-    # ignore SSL Certificate verification when DEBUG in True
-    verify = not settings.DEBUG
-    # verification is session-based
-    cookies = {
-        'csrftoken': request.COOKIES['csrftoken'],
-        'sessionid': request.COOKIES['sessionid']
-    }
-
-    # Make an OPTIONS request to retrieve the full list of Notices for this user 
-    r = requests.options("https://{}/api/notices".format(request.META['HTTP_HOST']), verify=verify, cookies=cookies)
-    try:
-        d = json.loads(r.text)
-        context['notices'] = json.dumps(d['results']['notices'])
-        context['types'] = json.dumps(d['types'])
-        context['types_escaped'] = d['types']
-        context['count'] = int(d['results']['all'])
-    except IndexError:
-        context['notices'] = '{}'
-        context['types'] = '{}'
-        context['types_escaped'] = {}
-        context['count'] = 0
-    
-    # Load Building's first Notices
-    url = "https://{}/api/notices/?building={}".format(request.META['HTTP_HOST'], building.codename)
-    if request.GET.has_key('filter'):
-        # when filters are provided, we also pass in the username to the API query
-        url += '&member=' + request.user.username
-        url += '&filter=' + request.GET['filter']
-        # we also add it to the context for the template to use
-        context['filter'] = request.GET['filter']
-    response = requests.get(url, verify=verify, cookies=cookies)
-    context['data'] = response.text
-
-    # Add statistics
-    context['stats'] = {
-        'organizations': building.organizations.exclude(status=Organization.BANNED).count()
-    }
-    try:
-        notice_count = json.loads(response.text)['count']
-    except ValueError:
-        notice_count = 0
-    context['stats']['notices'] = notice_count
-
-    # Convert logged-in user profile data into lists of IDs
-    # used by the Board JS App for filtering
-    profile = get_profile(request.user)
-    if profile.has_key('starred'):
-        context['starred'] = [int(n.id) for n in profile['starred']]
-    else:
-        context['starred'] = []
-
-    t = loader.get_template('nirit/board.html')
-    c = RequestContext(request, context)
-    return HttpResponse(t.render(c))
-
-
-@login_required
-def directory(request, codename):
-    context = {}
-    building = get_object_or_404(Building, codename=codename)
-    context['building'] = building
-
-    # Check the user is a member of this building
-    if request.user not in building.members:
-        raise PermissionDenied
-
-    # Check the user is active
-    if not request.user.get_profile().status == UserProfile.VERIFIED:
-        raise PermissionDenied
-
-    context['tabs'] = [
-        {'name': 'floor','label': 'By Floor', 'href': '?by=floor'},
-        {'name': 'department', 'label': 'By Department', 'href': '?by=department'},
-        {'name': 'name', 'label': 'Alphabetical', 'href': '?by=name'}
-    ]
-    if request.GET.has_key('by'):
-        group = request.GET['by']
-    else:
-        # 'floor' is the default tab
-        group = 'floor'
-    context['group'] = group
-
-    # use Proxy API to return the grouped results
-    url = "https://{}/api/companies/{}/{}".format(request.META['HTTP_HOST'], building.codename, group)
-    if request.GET.has_key('page'):
-        url += '?page=' + request.GET['page']
-    # ignore SSL Certificate verification when DEBUG in True
-    verify = not settings.DEBUG
-    # verification is session-based
-    cookies = {
-        'csrftoken': request.COOKIES['csrftoken'],
-        'sessionid': request.COOKIES['sessionid']
-    }
-    response = requests.get(url, verify=verify, cookies=cookies)
-    context['data'] = response.text
-
-    t = loader.get_template('nirit/directory.html')
-    c = RequestContext(request, context)
-    return HttpResponse(t.render(c))
-
-
-@login_required
-def company_set_status(request, codename, action):
-    # Check the user is active
-    if not request.user.get_profile().status == UserProfile.VERIFIED:
-        raise PermissionDenied
-
-    # Check the user is a Building Manager
-    if not 'Building Manager' in [g['name'] for g in request.user.groups.values('name')]:
-        raise PermissionDenied
-
-    # Check action
-    if action not in ('activate', 'ban'):
-        return HttpResponseBadRequest(json.dumps({
-            'status': '400',
-            'reason': 'Unknown Action.'
-        }), mimetype="application/json")
-
-    try:
-        company = Organization.objects.get(codename=codename)
-        if action == 'activate':
-            company.status = Organization.VERIFIED
-        elif action == 'ban':
-            company.status = Organization.BANNED
-        company.save()
-    except Organization.DoesNotExist:
-        return HttpResponseBadRequest(json.dumps({
-            'status': '404',
-            'reason': 'Unknown Company.'
-        }), mimetype="application/json")
-
-    response = HttpResponse(json.dumps({
-        'status': '200',
-        'data': {
-            'company': codename,
-            'action': action
-        }
-    }), mimetype="application/json")
-    response['Content-Type'] = 'application/json; charset=utf-8'
-    return response
-
-
-@login_required
-def company_api(request, codename, group):
-    """
-    Organizations API proxy.
-    Uses the Organizations API, and groups the results.
-
-    """
-    building = get_object_or_404(Building, codename=codename)
-
-    # Check the user is a member of this building
-    if request.user not in building.members:
-        raise PermissionDenied
-
-    # Check the user is active
-    if not request.user.get_profile().status == UserProfile.VERIFIED:
-        raise PermissionDenied
-
-    # Filter Companies
-    url = "https://{}/api/organizations?building={}".format(request.META['HTTP_HOST'], building.codename)
-    # add ordering
-    url = "{}&{}={}".format(url, 'order-by', group)
-    if request.GET.has_key('page'):
-        url += '&page=' + request.GET['page']
-    # ignore SSL Certificate verification when DEBUG in True
-    verify = not settings.DEBUG
-    # verification is session-based
-    cookies = {
-        'csrftoken': request.COOKIES['csrftoken'],
-        'sessionid': request.COOKIES['sessionid']
-    }
-    response = requests.get(url, verify=verify, cookies=cookies)
-
-    # group results by label
-    data = json.loads(response.text)
-    groups = []
-    index = -1
-    previous_value = None
-    for result in data['results']:
-        # use the first letter as the alphabetical group
-        # otherwise, the label is the group name
-        if group == 'name':
-            label = result[group][:1]
-        else:
-            label = result[group]
-        if label != previous_value:
-            _group = {
-                'label': label,
-                'results': [
-                    result
-                ]
-            }
-            groups.append(_group)
-            index += 1
-            previous_value = label
-        else:
-            groups[index]['results'].append(result)
-
-    # override the result list with the grouped list
-    data['results'] = groups
-
-    # override pagination links
-    if data.has_key('next') and data['next']:
-        next_page = re.search(r'&page=(?P<page>\d+)', data['next'])
-        if next_page is not None:
-            next_page = next_page.group('page')
-            data['next'] = request.META['PATH_INFO'] + '?page=' + next_page
-
-    # convert to JSON string before sending to the template
-    return HttpResponse(json.dumps(data), mimetype='application/json')
-
-
-@login_required
-@ensure_csrf_cookie
-def user_profile(request, username=None):
+def user_profile(request, codename=None):
     # Check the user is active
     if not request.user.get_profile().status == UserProfile.VERIFIED:
         raise PermissionDenied
 
     # Check member being viewed
     # logged-in user or other?
-    if username:
+    if codename:
         try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
+            profile = UserProfile.objects.get(codename=codename)
+        except UserProfile.DoesNotExist:
             raise Http404
-        else:
-            member = user
-            profile = get_profile(user)
     else:
-        user = request.user
-        profile = get_profile(request.user)
+        profile = request.user.get_profile()
 
     # ignore SSL Certificate verification when DEBUG in True
     verify = not settings.DEBUG
@@ -450,39 +241,28 @@ def user_profile(request, username=None):
         notices = '{}'
 
     # Load user's Notices
-    url = "https://{}/api/notices/?member={}".format(request.META['HTTP_HOST'], user.username)
+    url = "https://{}/api/notices/?member={}".format(request.META['HTTP_HOST'], profile.codename)
     response = requests.get(url, verify=verify, cookies=cookies)
 
-    # Convert logged-in user starred notices into list of IDs
-    # used by the Board JS App
-    user_profile = get_profile(request.user)
-    if user_profile.has_key('starred'):
-        starred = [int(n.id) for n in user_profile['starred']]
-    else:
-        starred = []
-
     context = {
-        'member': user,
-        'profile': profile,
+        'member': profile,
         'data': response.text,
-        'starred': starred,
         'notices': notices
     }
 
     # Add companies approval
     #   - for Building Managers
     #   - only on member's own page
-    if user == request.user:
-        logger.debug('Building Manager' in [g['name'] for g in user.groups.values('name')])
-        if profile.has_key('active_building') and 'Building Manager' in [g['name'] for g in user.groups.values('name')]:
-            context['companies_awaiting'] = profile['active_building'].get_pending_companies()
+    if profile.user == request.user:
+        if profile.building and 'Building Manager' in profile.roles:
+            context['companies_awaiting'] = profile.building.get_pending_companies()
 
     # Add staff awaiting approval
     #   - for Editors
     #   - only on member's own page
-    if user == request.user:
-        if profile.has_key('company') and profile['company'].is_editor(user):
-            context['staff_awaiting'] = profile['company'].get_staff_awaiting()
+    if profile.user == request.user:
+        if profile.company and profile.company.is_editor(profile.user):
+            context['staff_awaiting'] = profile.company.get_staff_awaiting()
 
     t = loader.get_template('nirit/user_profile.html')
     c = RequestContext(request, context)
@@ -490,7 +270,7 @@ def user_profile(request, username=None):
 
 
 @login_required
-def user_set_status(request, username, action):
+def user_set_status(request, codename, action):
     # Check the user is active
     if not request.user.get_profile().status == UserProfile.VERIFIED:
         raise PermissionDenied
@@ -500,21 +280,27 @@ def user_set_status(request, username, action):
         raise PermissionDenied
 
     # Check action
-    if action not in ('activate', 'ban'):
+    if action not in ('activate', 'ban', 'assign', 'revoke'):
         return HttpResponseBadRequest(json.dumps({
             'status': '400',
             'reason': 'Unknown Action.'
         }), mimetype="application/json")
 
     try:
-        user = User.objects.get(email=username)
-        profile = user.get_profile()
+        profile = UserProfile.objects.get(codename=codename)
         if action == 'activate':
             profile.status = UserProfile.VERIFIED
+            profile.save()
         elif action == 'ban':
             profile.status = UserProfile.BANNED
-        profile.save()
-    except User.DoesNotExist:
+            profile.save()
+        elif action == 'assign':
+            profile.user.groups.remove(Group.objects.get(name='Staff'))
+            profile.user.groups.add(Group.objects.get(name='Rep'))
+        elif action == 'revoke':
+            profile.user.groups.remove(Group.objects.get(name='Rep'))
+            profile.user.groups.add(Group.objects.get(name='Staff'))
+    except UserProfile.DoesNotExist:
         return HttpResponseBadRequest(json.dumps({
             'status': '404',
             'reason': 'Unknown User.'
@@ -523,7 +309,7 @@ def user_set_status(request, username, action):
     response = HttpResponse(json.dumps({
         'status': '200',
         'data': {
-            'username': username,
+            'codename': codename,
             'action': action
         }
     }), mimetype="application/json")
@@ -573,8 +359,7 @@ def user_profile_edit(request):
     # load template
     t = loader.get_template('nirit/user_profile_edit.html')
     c = RequestContext(request, {
-        'member': request.user,
-        'profile': get_profile(request.user),
+        'member': request.user.get_profile(),
         'user_form': user_form,
         'member_form': member_form
     })
@@ -611,6 +396,199 @@ def set_preference(request, setting, value):
 
 
 @login_required
+@ensure_csrf_cookie
+def board(request, codename):
+    context = {}
+    building = get_object_or_404(Building, codename=codename)
+    context['building'] = building
+
+    # Check the user is a member of this building
+    if request.user not in building.members:
+        raise PermissionDenied
+
+    # Check the user is active
+    if not request.user.get_profile().status == UserProfile.VERIFIED:
+        raise PermissionDenied
+
+    # ignore SSL Certificate verification when DEBUG in True
+    verify = not settings.DEBUG
+    # verification is session-based
+    cookies = {
+        'csrftoken': request.COOKIES['csrftoken'],
+        'sessionid': request.COOKIES['sessionid']
+    }
+
+    # Make an OPTIONS request to retrieve the full list of Notices for this user 
+    r = requests.options("https://{}/api/notices".format(request.META['HTTP_HOST']), verify=verify, cookies=cookies)
+    try:
+        d = json.loads(r.text)
+        context['notices'] = json.dumps(d['results']['notices'])
+        context['types'] = json.dumps(d['types'])
+        context['types_escaped'] = d['types']
+        context['count'] = int(d['results']['all'])
+    except IndexError:
+        context['notices'] = '{}'
+        context['types'] = '{}'
+        context['types_escaped'] = {}
+        context['count'] = 0
+    
+    # Load Building's first Notices
+    url = "https://{}/api/notices/?building={}".format(request.META['HTTP_HOST'], building.codename)
+    if request.GET.has_key('filter'):
+        # when filters are provided, we also pass in the member to the API query
+        url += '&member=' + request.user.get_profile().codename
+        url += '&filter=' + request.GET['filter']
+        # we also add it to the context for the template to use
+        context['filter'] = request.GET['filter']
+    response = requests.get(url, verify=verify, cookies=cookies)
+    context['data'] = response.text
+
+    # Add statistics
+    context['stats'] = {
+        'organizations': building.building_profile.exclude(status=CompanyProfile.BANNED).count()
+    }
+    try:
+        notice_count = json.loads(response.text)['count']
+    except ValueError:
+        notice_count = 0
+    context['stats']['notices'] = notice_count
+
+    t = loader.get_template('nirit/board.html')
+    c = RequestContext(request, context)
+    return HttpResponse(t.render(c))
+
+
+@login_required
+def directory(request, codename):
+    context = {}
+    building = get_object_or_404(Building, codename=codename)
+    context['building'] = building
+
+    # Check the user is a member of this building
+    if request.user not in building.members:
+        raise PermissionDenied
+
+    # Check the user is active
+    if not request.user.get_profile().status == UserProfile.VERIFIED:
+        raise PermissionDenied
+
+    context['tabs'] = [
+        {'name': 'floor','label': 'By Floor', 'href': '?by=floor'},
+        {'name': 'department', 'label': 'By Department', 'href': '?by=department'},
+        {'name': 'name', 'label': 'Alphabetical', 'href': '?by=name'}
+    ]
+    if request.GET.has_key('by'):
+        group = request.GET['by']
+    else:
+        # 'floor' is the default tab
+        group = 'floor'
+    context['group'] = group
+
+    # Fetch companies using Nirit API
+    url = "https://{}/api/organizations?building={}".format(request.META['HTTP_HOST'], building.codename)
+    # add ordering
+    url = "{}&{}={}".format(url, 'order-by', group)
+    if request.GET.has_key('page'):
+        url += '&page=' + request.GET['page']
+    # ignore SSL Certificate verification when DEBUG in True
+    verify = not settings.DEBUG
+    # verification is session-based
+    cookies = {
+        'csrftoken': request.COOKIES['csrftoken'],
+        'sessionid': request.COOKIES['sessionid']
+    }
+    response = requests.get(url, verify=verify, cookies=cookies)
+    data = json.loads(response.text)
+
+    # group results by label
+    groups = []
+    index = -1
+    previous_value = None
+    for result in data['results']:
+        # use the first letter as the alphabetical group
+        # otherwise, the label is the group name
+        if group == 'name':
+            label = result[group][:1]
+        elif group == 'department':
+            label = result[group]
+        elif group == 'floor':
+            label = result['buildings'][0]['floor_tag']
+        if label != previous_value:
+            _group = {
+                'label': label,
+                'results': [
+                    result
+                ]
+            }
+            groups.append(_group)
+            index += 1
+            previous_value = label
+        else:
+            groups[index]['results'].append(result)
+
+    # override the result list with the grouped list
+    data['results'] = groups
+
+    # override pagination links
+    if data.has_key('next') and data['next']:
+        next_page = re.search(r'&page=(?P<page>\d+)', data['next'])
+        if next_page is not None:
+            next_page = next_page.group('page')
+            data['next'] = request.META['PATH_INFO'] + '?page=' + next_page
+
+    # the result object is fed to the JS app directly,
+    # give a JSON-formatted object
+    context['data'] = json.dumps(data)
+
+    t = loader.get_template('nirit/directory.html')
+    c = RequestContext(request, context)
+    return HttpResponse(t.render(c))
+
+
+@login_required
+def company_set_status(request, codename, action):
+    # Check the user is active
+    if not request.user.get_profile().status == UserProfile.VERIFIED:
+        raise PermissionDenied
+
+    # Check the user is a Building Manager
+    if not 'Building Manager' in request.user.get_profile().roles:
+        raise PermissionDenied
+
+    # Check action
+    if action not in ('activate', 'ban'):
+        return HttpResponseBadRequest(json.dumps({
+            'status': '400',
+            'reason': 'Unknown Action.'
+        }), mimetype="application/json")
+
+    try:
+        company = Organization.objects.get(codename=codename)
+        company_profile = CompanyProfile.objects.get(building=request.user.get_profile().building,\
+                                                     organization=company)
+        if action == 'activate':
+            company_profile.status = CompanyProfile.VERIFIED
+        elif action == 'ban':
+            company_profile.status = CompanyProfile.BANNED
+        company_profile.save()
+    except (Organization.DoesNotExist, CompanyProfile.DoesNotExist):
+        return HttpResponseBadRequest(json.dumps({
+            'status': '404',
+            'reason': 'Unknown Company.'
+        }), mimetype="application/json")
+
+    response = HttpResponse(json.dumps({
+        'status': '200',
+        'data': {
+            'codename': codename,
+            'action': action
+        }
+    }), mimetype="application/json")
+    response['Content-Type'] = 'application/json; charset=utf-8'
+    return response
+
+
+@login_required
 def company(request, codename):
     """
     A company can be viewed by all of the Building's members.
@@ -623,15 +601,14 @@ def company(request, codename):
 
     context = {}
     organization = get_object_or_404(Organization, codename=codename)
-    context['organization'] = organization
-    context['staff'] = organization.members.all()[:4]
+    
+    # Load the Company Profile for the user's Active Building
+    building = request.user.get_profile().building
+    company = CompanyProfile.objects.get(building=building, organization=organization)
+    context['company'] = company
 
     # check the user is a member of the building this organization belongs to
-    allowed = False
-    for building in Building.objects.filter(organizations=organization):
-        if request.user in building.members:
-            allowed = True
-    if not allowed:
+    if not request.user in building.members:
         raise PermissionDenied
 
     # add whether the user is a company editor to the context
@@ -646,7 +623,20 @@ def company(request, codename):
         'sessionid': request.COOKIES['sessionid']
     }
     response = requests.get(url, verify=verify, cookies=cookies)
-    context['notices'] = json.loads(response.text)['results'][:2]
+
+    # This is the list displayed on the RHS
+    context['staff'] = organization.members.all()[:4]
+
+    # Latest notices (x2)
+    # This is the list displayed on the RHS
+    context['notices'] = []
+    for notice in json.loads(response.text)['results'][:2]:
+        # only display first 255 characters
+        subject = strip_tags(notice['subject'])
+        notice['subject'] = subject
+        if len(subject) > 255:
+            notice['subject'] = subject[:252] + '...'
+        context['notices'].append(notice)
 
     # load template
     t = loader.get_template('nirit/company_profile.html')
@@ -665,17 +655,17 @@ def company_staff(request, codename):
     if not request.user.get_profile().status == UserProfile.VERIFIED:
         raise PermissionDenied
 
-    context = {}
     organization = get_object_or_404(Organization, codename=codename)
-    context['organization'] = organization
+    context = {}
+    
+    # Load the Company Profile for the user's Active Building
+    building = request.user.get_profile().building
+    company = CompanyProfile.objects.get(building=building, organization=organization)
+    context['company'] = company
     context['staff'] = organization.members.all()
 
     # check the user is a member of the building this organization belongs to
-    allowed = False
-    for building in Building.objects.filter(organizations=organization):
-        if request.user in building.members:
-            allowed = True
-    if not allowed:
+    if not request.user in building.members:
         raise PermissionDenied
 
     # Load company Notices
@@ -695,6 +685,9 @@ def company_staff(request, codename):
         'expertise': organization.expertise.all()
     }
 
+    # Add whether the user is a company Owner
+    context['is_owner'] = organization.is_owner(request.user)
+
     # load template
     t = loader.get_template('nirit/company_profile_staff.html')
     c = RequestContext(request, context)
@@ -712,17 +705,17 @@ def company_board(request, codename):
     if not request.user.get_profile().status == UserProfile.VERIFIED:
         raise PermissionDenied
 
-    context = {}
     organization = get_object_or_404(Organization, codename=codename)
-    context['organization'] = organization
+    context = {}
+
+    # Load the Company Profile for the user's Active Building
+    building = request.user.get_profile().building
+    company = CompanyProfile.objects.get(building=building, organization=organization)
+    context['company'] = company
     context['staff'] = organization.members.all()
 
     # check the user is a member of the building this organization belongs to
-    allowed = False
-    for building in Building.objects.filter(organizations=organization):
-        if request.user in building.members:
-            allowed = True
-    if not allowed:
+    if not request.user in building.members:
         raise PermissionDenied
 
     # ignore SSL Certificate verification when DEBUG in True
@@ -744,14 +737,6 @@ def company_board(request, codename):
     url = "https://{}/api/notices/?company={}".format(request.META['HTTP_HOST'], organization.codename)
     response = requests.get(url, verify=verify, cookies=cookies)
     context['data'] = response.text
-
-    # Convert logged-in user starred notices into list of IDs
-    # used by the Board JS App
-    profile = get_profile(request.user)
-    if profile.has_key('starred'):
-        context['starred'] = [int(n.id) for n in profile['starred']]
-    else:
-        context['starred'] = []
 
     # Add statistics
     context['stats'] = {
@@ -793,14 +778,14 @@ def company_edit(request, codename):
 
     # user is allowed to edit the company
     # add the Organization form
+    profile = CompanyProfile.objects.get(building=request.user.get_profile().building, organization=organization)
     if request.method == 'POST':
         # do NOT handle files in this form, as they are being uploaded via AJAX
-        form = CompanyForm(request.POST, instance=organization)
+        form = CompanyForm(request.POST, instance=organization, initial={'floor': profile.floor})
         if form.is_valid():
             # save the model directly,
             # to avoid re-submitting the file (which would be empty at this point)
             # we do this to avoid creating the file twice
-            form.instance.floor = form.cleaned_data['floor']
             form.instance.description = form.cleaned_data['description']
             form.instance.founded = form.cleaned_data['founded']
             form.instance.expertise = form.cleaned_data['expertise']
@@ -822,14 +807,115 @@ def company_edit(request, codename):
             else:
                 form.instance.square_logo = form.cleaned_data['square_logo']
             form.instance.save()
+            # save profile data
+            profile.floor = form.cleaned_data['floor']
+            profile.save()
             # all done, redirect to company page
             destination = '/company/{}/{}'.format(organization.slug, organization.codename)
             return HttpResponseRedirect(destination)
     else:
-        form = CompanyForm(instance=organization)
+        form = CompanyForm(instance=organization, initial={'floor': profile.floor})
     context['form'] = form
 
     # load template
     t = loader.get_template('nirit/company_profile_edit.html')
     c = RequestContext(request, context)
     return HttpResponse(t.render(c))
+
+
+@login_required
+def contact_company(request, codename):
+    if request.method == 'GET':
+        return HttpResponseBadRequest(json.dumps({
+            'status': '400',
+            'reason': 'Method Not Allowed.'
+        }), mimetype="application/json")
+
+    # Check the user is active
+    if not request.user.get_profile().status == UserProfile.VERIFIED:
+        raise PermissionDenied
+
+    try:
+        company = Organization.objects.get(codename=codename)
+        if request.POST.has_key('subject') and request.POST['subject']:
+            subject = 'A member has contacted you'
+            text_content = Message().get('email_company_contact_text', {
+                'name': request.user.get_profile().name,
+                'company': company.name,
+                'link': '{}/member/{}'.format(settings.HOST, request.user.get_profile().codename),
+                'subject': request.POST['subject']
+            })
+            html_content = Message().get('email_company_contact_html', {
+                'name': request.user.get_profile().name,
+                'company': company.name,
+                'link': '{}/member/{}'.format(settings.HOST, request.user.get_profile().codename),
+                'subject': linebreaks(request.POST['subject'])
+            }) 
+            company.mail_editors(subject, text_content, html_content)
+    except Organization.DoesNotExist:
+        return HttpResponseBadRequest(json.dumps({
+            'status': '404',
+            'reason': 'Unknown Company.'
+        }), mimetype="application/json")
+
+    response = HttpResponse(json.dumps({
+        'status': '200',
+        'data': {
+            'subject': request.POST['subject'] if request.POST.has_key('subject') else '',
+            'company': codename
+        }
+    }), mimetype="application/json")
+    response['Content-Type'] = 'application/json; charset=utf-8'
+    return response
+
+
+@login_required
+def contact_member(request, codename):
+    if request.method == 'GET':
+        return HttpResponseBadRequest(json.dumps({
+            'status': '400',
+            'reason': 'Method Not Allowed.'
+        }), mimetype="application/json")
+
+    # Check the user is active
+    if not request.user.get_profile().status == UserProfile.VERIFIED:
+        raise PermissionDenied
+
+    try:
+        profile = UserProfile.objects.get(codename=codename)
+        if request.POST.has_key('subject') and request.POST['subject']:
+            subject = 'A member has contacted you'
+            text_content = Message().get('email_member_contact_text', {
+                'name': request.user.get_profile().name,
+                'company': request.user.get_profile().company.name,
+                'link': '{}/member/{}'.format(settings.HOST, request.user.get_profile().codename),
+                'subject': request.POST['subject']
+            })
+            html_content = Message().get('email_member_contact_html', {
+                'name': request.user.get_profile().name,
+                'company': request.user.get_profile().company.name,
+                'link': '{}/member/{}'.format(settings.HOST, request.user.get_profile().codename),
+                'subject': linebreaks(request.POST['subject'])
+            }) 
+            from_email = settings.EMAIL_FROM
+            recipients_list = [profile.user.email]
+            if recipients_list:
+                msg = EmailMultiAlternatives(subject, text_content, from_email, recipients_list)
+                if html_content:
+                    msg.attach_alternative(html_content, "text/html")
+                msg.send()
+    except UserProfile.DoesNotExist:
+        return HttpResponseBadRequest(json.dumps({
+            'status': '404',
+            'reason': 'Unknown Member.'
+        }), mimetype="application/json")
+
+    response = HttpResponse(json.dumps({
+        'status': '200',
+        'data': {
+            'subject': request.POST['subject'] if request.POST.has_key('subject') else '',
+            'member': codename
+        }
+    }), mimetype="application/json")
+    response['Content-Type'] = 'application/json; charset=utf-8'
+    return response

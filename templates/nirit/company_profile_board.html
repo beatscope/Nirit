@@ -1,14 +1,22 @@
 {% extends "nirit/base.html" %}
 {% load static %}
 
-{% block title %}Nirit | {{ organization.name }}'s Board{% endblock %}
+{% block title %}Nirit | {{ company.organization.name }}'s Board{% endblock %}
 
 {% block extrahead %}<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>
 <script type="text/javascript" src="{% static "js/nirit.board.js" %}"></script>
-{% if organization.image %}
+{% if company.organization.image %}
 <style type="text/css">
-    .company-profile .heading { 
-        background-image: url({{ MEDIA_URL }}{{ organization.image }});
+    #content .company-profile .heading {
+        background-image: url({{ MEDIA_URL }}{{ company.organization.image }});
+        background-position: center center;
+        background-repeat: no-repeat;
+    }
+</style>
+{% else %}
+<style type="text/css">
+    #content .company-profile .heading {
+        background-image: url({{ STATIC_URL }}images/default_company_{{ company.building.codename }}.jpg);
         background-position: center center;
         background-repeat: no-repeat;
     }
@@ -16,27 +24,58 @@
 {% endif %}
 {% endblock %}
 
+{% block sublinks %}
+<ul>
+    <li class="first">
+        <a href="/company/{{ company.organization.link }}">{{ company.organization.name }}</a>
+    </li>
+    <li>
+        <a href="/company/{{ company.organization.link }}/board" class="active">Notice Board</a>
+    </li>
+    <li class="last">
+        <a href="/company/{{ company.organization.link }}/staff">Members of Staff</a>
+    </li>
+    {% if user.get_profile.company != company.organization %}
+        <li class="right">
+            <a id="contact_button" class="new-card" href="">Contact <span></span></a>
+        </li>
+    {% endif %}
+</ul>
+{% endblock %}
+
 {% block content %}
 <div class="content company-profile staff">
 
     <div id="main">
+
+        <div class="contact-form hidden">
+            <p class="box-title">Contact {{ company.organization.name }} <span class="close"></span></p>
+            <textarea id="contact_form_subject" class="elastic no-limit" rows="2" cols="70"></textarea>
+            <button id="contact_form_submit">Submit</button>
+        </div>
+        <div class="contact-success label big hidden">
+            Your message has been sent to {{ company.organization.name }}.
+        </div>
+
         <div class="heading">
             <div class="company-card">
                 <h1>
-                    {% if organization.get_logo %}
+                    {% if company.organization.get_logo %}
                         <div class="company-logo">
-                            <img src="{{ organization.get_logo }}" alt="{{ organization.name }}" />
+                            <img src="{{ company.organization.get_logo }}" alt="{{ company.organization.name }}" />
                         </div>
                     {% else %}
-                        {{ organization.name }}
+                        {{ company.organization.name }}
                     {% endif %}
                 </h1>
                 <ul class="company-info">
-                    <li>Joined {{ organization.created|date:"jS" }} of {{ organization.created|date:"F, Y" }}</li>
-                    <li>{{ organization.floor_tag }} Floor, {{ account.active_building.name }}</li>
+                    <li>Joined {{ company.organization.created|date:"jS" }} of {{ company.organization.created|date:"F, Y" }}</li>
+                    <li>{{ company.floor_tag }} Floor, {{ company.building.name }}</li>
                 </ul>
-                <a class="networked-switch{% if organization in account.networked %} active{% endif %}" href="" title="Add {{ organization.name }} to Your Network">
-                    <img src="{{ STATIC_URL }}/images/z.gif" alt="Add {{ organization.name }} to Your Network" width="30" height="30" />
+                <a href=""
+                    class="networked-switch{% if company.organization in user.get_profile.networked.all %} active{% endif %}"
+                    title="{% if company.organization in user.get_profile.networked.all %}Remove {{ company.organization.name }} from Your Network{% else %}Add {{ company.organization.name }} to Your Network{% endif %}">
+                    <img src="{{ STATIC_URL }}/images/z.gif" alt="" width="30" height="30" />
                 </a>
             </div>
         </div>
@@ -57,22 +96,22 @@
                 </li>
                 <li>
                     <span class="strong">{{ stats.members|length }}</span> Member{{ stats.members|pluralize }} of Staff
-                    <span class="see-all"><a href="../{{ organization.codename }}/staff">See All</a></span>
+                    <span class="see-all"><a href="../{{ company.organization.codename }}/staff">See All</a></span>
                 </li>
                 <li>
                     <span class="strong">{{ stats.expertise|length }}</span> Area{{ stats.expertise|pluralize }} of Expertise
-                    <span class="see-all"><a href="../{{ organization.codename }}">See All</a></span>
+                    <span class="see-all"><a href="../{{ company.organization.codename }}">See All</a></span>
                 </li>
             </ul>
         </div>
         <div class="box padded">
             <p class="is-network">
-                <span class="is-network{% if organization in account.networked %} active{% endif %}">
+                <span class="is-network{% if company.organization in user.get_profile.networked.all %} active{% endif %}">
                     <img src="{{ STATIC_URL }}/images/z.gif" alt="" width="30" height="30" />
                 </span>
-                <span rel="choice">{% if organization in account.networked %}
-                    <span class="strong">{{ organization.name }}</span> is in Your Network{% else %}
-                    <span class="strong">{{ organization.name }}</span> is not yet in Your Network{% endif %}</span>
+                <span rel="choice">{% if company.organization in user.get_profile.networked.all %}
+                    <span class="strong">{{ company.organization.name }}</span> is in Your Network{% else %}
+                    <span class="strong">{{ company.organization.name }}</span> is not yet in Your Network{% endif %}</span>
             </p>
         </div>
         <div class="box">
@@ -88,52 +127,78 @@
 {% block extrajs %}{{ block.super }}
 <script type="text/javascript">
     var choices = {
-        'on': '<span class="strong">{{ organization.name }}</span> is in Your Network',
-        'off': '<span class="strong">{{ organization.name }}</span> is not yet in Your Network'
+        'on': '<span class="strong">{{ company.organization.name }}</span> is in Your Network',
+        'off': '<span class="strong">{{ company.organization.name }}</span> is not yet in Your Network'
     };
 
     $(document).ready(function () {
 
         // Build board
-        var buildings = [];
-        var building = '{{ account.active_building.codename }}';
-        buildings.push(building); // Can only post to active building
-        var token = '{{ account.token }}';
         new NIRIT.Board({
             'data': {{ data|safe }},
             'notices': {{ notices|safe }},
-            'buildings': buildings,
-            'token': token,
+            'buildings': ['{{ company.building.codename }}'], // Can only post to active building
+            'token': '{{ user.get_profile.token }}',
             'account': {
-                'username': '{{ account.username }}',
+                'username': '{{ user.get_profile.codename }}',
                 'company': {
-                    'name': '{{ account.company.name }}',
-                    'codename': '{{ account.company.codename }}'
+                    'name': '{{ user.get_profile.company.name }}',
+                    'codename': '{{ user.get_profile.company.codename }}'
                 },
-                'roles': '{{ account.roles }}'.split(', '),
-                'starred': {{ starred|safe }}
+                'roles': {{ user.get_profile.roles|safe }},
+                'starred': {{ user.get_profile.get_starred|safe }}
             },
             'filter': {
                 'type': 'company',
-                'value': '{{ organization.codename }}'
+                'value': '{{ company.organization.codename }}'
             }
         });
 
         // Add/remove to/from network
         $('.networked-switch').click(function () {
             var self = $(this);
-            NIRIT.utils.set_member_preference('network', '{{ organization.codename }}', function (data) {
+            NIRIT.utils.set_member_preference('network', '{{ company.organization.codename }}', function (data) {
                 if (self.hasClass('active')) {
                     self.removeClass('active');
+                    self.attr('title', 'Add {{ company.organization.name }} to Your Network');
                     $('span.is-network').removeClass('active');
                     $('span[rel="choice"]').html(choices['off']);
                 } else {
                     self.addClass('active');
+                    self.attr('title', 'Remove {{ company.organization.name }} from Your Network');
                     $('span.is-network').addClass('active');
                     $('span[rel="choice"]').html(choices['on']);
                 }
             });
             return false;
+        });
+
+        // Contact Form
+        $('.elastic').elastic();
+        $('#contact_button').bind('click', function () {
+            $('#contact_form_subject').val(''); // clear content
+            if ($('.contact-form').is(':visible')) {
+                $('.contact-form').slideUp(250);
+            } else {
+                $('.contact-form').slideDown(250, function () {
+                    $('#contact_form_subject').focus();
+                });
+            }
+            return false;
+        });
+        $('.contact-form').find('span.close').bind('click', function () {
+            $('.contact-form').slideUp(250);
+        });
+        $('#contact_form_submit').bind('click', function () {
+            var subject = $('#contact_form_subject').val();
+            if (subject.length > 0) {
+                $.post('/contact/company/{{ company.organization.codename }}', {
+                        'subject': trim(subject)
+                }, function (response) {
+                    $('.contact-form').slideUp(250);
+                    $('.contact-success').slideDown(250);
+                });
+            }
         });
 
     });

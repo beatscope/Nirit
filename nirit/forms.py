@@ -35,7 +35,6 @@ class PassResetForm(PasswordResetForm):
         Generates a one-use only link for resetting password and sends to the
         user.
         """
-        logger.debug('Is this used at all?')
         for user in self.users_cache:
             if not domain_override:
                 current_site = get_current_site(request)
@@ -62,7 +61,7 @@ class PassResetForm(PasswordResetForm):
             msg.send()
 
 
-class CompanyForm(forms.ModelForm):
+class OrganizationForm(forms.ModelForm):
     class Meta:
         model = Organization
         widgets = {
@@ -71,21 +70,25 @@ class CompanyForm(forms.ModelForm):
             'square_logo': ImageWidget(),
         }
 
-    def clean(self):
-        cleaned_data = super(CompanyForm, self).clean()
-        if not cleaned_data.has_key('department'):
-            raise ValidationError('Company Department is required.')
-        if not cleaned_data.has_key('size'):
-            raise ValidationError('Company Size is required.')
-        if not cleaned_data.has_key('floor'):
-            raise ValidationError('Floor is required.')
-        if not cleaned_data.has_key('founded') or not cleaned_data['founded']:
-            raise ValidationError('Year Founded is required.')
-        if cleaned_data.has_key('founded'):
-            # founded needs to be a valid year
-            # validate_year raise a ValidationError exception if the year is not valid
-            validate_year(cleaned_data['founded'])
-        return cleaned_data
+    def clean_founded(self):
+        year = self.cleaned_data['founded']
+        # founded needs to be a valid year
+        # validate_year raise a ValidationError exception if the year is not valid
+        validate_year(year)
+        return year
+
+class CompanyForm(OrganizationForm):
+    floor = forms.IntegerField(label='Floor')
+
+    def save(self, commit=True):
+        organization = super(CompanyForm, self).save(commit)
+        logger.debug(organization)
+        # Return list of additional data,
+        # as well as the organization object
+        return {
+            'organization': organization,
+            'floor': self.cleaned_data['floor']
+        }
 
 
 class SignUpForm(forms.Form):
@@ -207,7 +210,7 @@ class SignUpForm(forms.Form):
                 t.save() # we assign the user to the token as well to keep a record of who redeemed it
                 profile = user.get_profile()
                 profile.building = t.building
-                profile.status = 1 # activate user
+                profile.status = UserProfile.VERIFIED # activate user
                 profile.save()
         return user
 

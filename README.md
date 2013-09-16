@@ -13,3 +13,7 @@ Requirements
 - Python 2.7+
 - Django 1.5+
 - Django REST framework 2.3+
+- django-grappelli
+- django-filebrowser
+- markdown
+- django-markitup

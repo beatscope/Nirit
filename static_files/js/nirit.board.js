@@ -22,18 +22,18 @@ NIRIT.Board = function (settings) {
     this.cards = [];
     this.more = null;
 
+    this.loading = false;
+
     if (this.data.hasOwnProperty('results')) {
         this.cards = this.data.results;
         this.more = this.get_next_uri(this.data.next);
     }
     if (!this.data.hasOwnProperty('results') || this.data.results.length == 0) {
         this.cards.push({
-            "subject": "There are no actives notices matching these criteria.", 
-            "type": "EMPTY" 
+            "subject": "There are currently no notices on this board."
         });
     }
     this.notices = settings['notices'];
-    this.types = settings['types'];
 
     // Parse query string parameters
     if (document.location.search) {
@@ -111,7 +111,7 @@ NIRIT.Board.prototype.listen = function () {
                 }
             },
             error: function (e) {
-                console.log('FAILED -- ' + JSON.parse(e.responseText).detail);
+                //console.log('FAILED -- ' + JSON.parse(e.responseText).detail);
             },
             headers: {
                 "Authorization": "Token " + self.token
@@ -138,50 +138,58 @@ NIRIT.Board.prototype.add_notices = function (update) {
         if (typeof(update) !== 'undefined' && update) {
             // Flash all newly displayed cards
             this.flash_card(this.cards[card].id);
-        }/* else {
-            // For newly-created cards (less than a minute ago), flash the card
-            // this is typically used when new cards are posted
-            try {
-                var min = this.cards[card].age.split('minutes');
-                if (min.length == 2) { // within the last hour
-                    if (parseInt(min[0]) <= 0) {
-                        this.flash_card(this.cards[card].id);
-                    }
-                }
-            } catch (e) {}
-        }*/
+        }
     }
 
     // Bind listeners
     this.set_listeners();
 
+    var plus = $('a#plus');
+    plus.hide();
+
     // Check if additional notices are available
     if (this.more) {
         var self = this;
-        var plus = $('a#plus');
         plus.show().unbind('click').bind('click', function () {
-            $.get(self.more, function (data) {
-
-                // Update internal variables
-                self.cards = data.results;
-                self.more = self.get_next_uri(data.next);
-
-                // Add new notices to board
-                self.add_notices(true);
-
-                // Remove the 'plus' icon if no more cards left
-                if (!self.more) {
-                    plus.hide();
-                }
-
-                // Bind new elements
-                self.set_listeners();
-
-            }, 'json');
+            self.fetch(plus);
             return false;
         });
     }
 
+};
+
+NIRIT.Board.prototype.fetch = function (element, callback) {
+    var self = this;
+    if (!self.more) {
+        return false;
+    }
+    element.addClass('loading');
+    element.find('span').text('Loading more notices...');
+    $.get(self.more, function (data) {
+        element.removeClass('loading');
+        element.find('span').text('More');
+
+        // Update internal variables
+        self.cards = data.results;
+        self.more = self.get_next_uri(data.next);
+
+        // Add new notices to board
+        self.add_notices(true);
+
+        // Remove the 'plus' icon if no more cards left
+        if (!self.more) {
+            element.hide();
+        }
+
+        // Bind new elements
+        self.set_listeners();
+
+        // Callback
+        if (typeof(callback) === 'function') {
+            callback();
+        }
+
+    }, 'json');
 };
 
 /**
@@ -193,7 +201,11 @@ NIRIT.Board.prototype.add_replies = function (uri, target) {
     target.data('uri', uri); // store URI in target object context
 
     // Fetch replies
+    target.parent().find('.plus').addClass('loading');
+    target.parent().find('.plus').find('span').text('Loading more notices...');
     $.get(uri, function (data) {
+        target.parent().find('.plus').removeClass('loading');
+        target.parent().find('.plus').find('span').text('More');
         var cards = data.results;
 
         // Append cards
@@ -242,29 +254,16 @@ NIRIT.Board.prototype.add_notice = function (html, target, before) {
 NIRIT.Board.prototype.apply_template = function (card, template) {
     try {
         // Sender's display name
-        var sender = card.sender.username;
+        var sender = card.sender.full_name;
         if (card.sender.is_admin) {
             sender = 'System Administrator';
-        } else {
-            var full_name = [];
-            if (card.sender.first_name.length > 0) {
-                full_name.push(card.sender.first_name);
-            }
-            if (card.sender.last_name.length > 0) {
-                full_name.push(card.sender.last_name);
-            }
-            if (full_name.length > 0) {
-                sender = full_name.join(' ');
-            }
         }
-
         // Card avatar
         // use company logo when sent officially
         var avatar = card.sender.avatar;
         if (card.official && card.sender.company.square_logo)  {
             avatar = card.sender.company.square_logo;
         }
-
     } catch (e) {
         var sender = null;
         var avatar = NIRIT.STATIC_URL + 'images/useravatar_60x60.png';
@@ -299,17 +298,41 @@ NIRIT.Board.prototype.apply_template = function (card, template) {
     card_tag += '"></div>';
 
     card_tag += '<div class="avatar"><img src="' + avatar + '" alt="' + sender + '" width="60px" height="auto" /></div>';
-    card_tag += '<div class="subject">';
-    card_tag += card.subject + '</div>';
+
+    // Subject is not shown on replies
+    if (typeof(template) === 'undefined') {
+        card_tag += '<div class="subject">' + card.subject + '</div>';
+    }
+
+    // The body is initially truncated to 255 characters
+    var body = card.hasOwnProperty('body') ? card.body : false;
+    if (body) {
+        // Only truncate body on cards, not on reply cards
+        if (typeof(template) === 'undefined') {
+            var truncated = (body.length > 255) ? true : false;
+            if (truncated) {
+                card_tag += '<div class="body truncated">';
+                card_tag += '<div class="hidden full-body">' + body + '</div>';
+                card_tag += '<div class="truncated-body">' + body.substr(0, 255) + '...</div>';
+                card_tag += '</div>';
+            } else {
+                card_tag += '<div class="body">' + body + '</div>';
+            }
+        } else {
+            card_tag += '<div class="body">' + body + '</div>';
+        }
+    }
+
+    // Sender
     if (sender) {
         card_tag += '<div class="age">' + card.age + ' ago</div>';
         if (card.sender.is_admin) {
             card_tag += '<div class="sender">' + sender + '</a>'
         } else if (card.official) {
             card_tag += '<div class="sender"><span><a href="/company/' + card.sender.company.slug + '">' + card.sender.company.name + '</span></a>';
-            card_tag += ' - <a href="/member/' + card.sender.username + '">' + sender + '</a>';
+            card_tag += ' - <a href="/member/' + card.sender.codename + '">' + sender + '</a>';
         } else {
-            card_tag += '<div class="sender"><a href="/member/' + card.sender.username + '">' + sender + '</a>';
+            card_tag += '<div class="sender"><a href="/member/' + card.sender.codename + '">' + sender + '</a>';
             card_tag += ', <span><a href="/company/' + card.sender.company.slug + '">' + card.sender.company.name + '</a></span>';
         }
     }
@@ -413,11 +436,14 @@ NIRIT.Board.prototype.flash_card = function (card_id, delay) {
  */
 NIRIT.Board.prototype.set_listeners = function () {
     var self = this;
-    var max_characters = 255;
+    var max_characters = 2000;
 
     // Expandable textareas
     $('.elastic').elastic();
     $('.elastic').each(function () {
+        if ($(this).hasClass('no-limit')) {
+            return;
+        }
         var char_counter = $('<div>');
         char_counter.addClass('char_count');
         char_counter.html(max_characters);
@@ -426,11 +452,15 @@ NIRIT.Board.prototype.set_listeners = function () {
         $(this).bind('keydown', function(e) {
             // once the limit has been reached, the following keyCodes needs to be enabled
             // to allow user to edit the text:
-            //  - backspace: 8
-            //  - left: 37
-            //  - up: 38
-            //  - right: 39
-            //  - down: 40
+            //  - backspace     8
+            //  - left          37
+            //  - up            38
+            //  - right         39
+            //  - down          40
+            //  - home          36
+            //  - end           35
+            //  - page up       33
+            //  - page down     34
             if (parseInt(max_characters - $(this).val().length) <= 0 
                 && (e.keyCode !== 8 && e.keyCode !== 37 && e.keyCode !== 38 && e.keyCode !== 39 && e.keyCode !== 40)) {
                 return false;
@@ -440,13 +470,17 @@ NIRIT.Board.prototype.set_listeners = function () {
             char_counter.html(Math.max(0, max_characters - $(this).val().length));
             // when pasting, extra characters can still be inserted,
             // so we need to strip the text to make sure
-            $(this).val($(this).val().substring(0, max_characters));
+            if ($(this).val().length > max_characters) {
+                $(this).val($(this).val().substring(0, max_characters));
+            }
         });
     });
 
     // New Notice
     $('#new_card').unbind('click').bind('click', function () {
-        $('#add_card_subject').val(''); // clear content
+        // clear content
+        $('#add_card_subject').val('');
+        $('#add_card_body').val('');
         if ($('.card-add').is(':visible')) {
             $('.card-add').slideUp(250);
         } else {
@@ -461,6 +495,7 @@ NIRIT.Board.prototype.set_listeners = function () {
     });
     $('#add_card').unbind('click').bind('click', function () {
         var subject = $('#add_card_subject').val();
+        var body = $('#add_card_body').val();
         // we assume a user is a member of only 1 org
         var is_official = $('#add_is_official').is(':checked') ? 'on' : '';
         var type = $('#add_is_type').find('option:selected');
@@ -469,7 +504,8 @@ NIRIT.Board.prototype.set_listeners = function () {
             $.ajax({
                 url: '/api/notices/post',
                 data: JSON.stringify({
-                    'subject': trim_all(subject),
+                    'subject': trim(subject),
+                    'body': trim(body),
                     'buildings': self.buildings,
                     'official': is_official,
                     'type': type
@@ -478,16 +514,10 @@ NIRIT.Board.prototype.set_listeners = function () {
                 contentType: "application/json; charset=UTF-8",
                 dataType: "json",
                 success: function (response) {
-                    // Reload page to get 1 ad impression
                     location.reload(true);
-                    //$('.card-add').slideUp(250);
-                    //var notice = self.apply_template(response);
-                    //self.add_notice(notice, null, true);
-                    //notice = null;
-                    //self.set_listeners(); // reset listeners
                 },
                 error: function (e) {
-                    console.log('FAILED -- ' + JSON.parse(e.responseText).detail);
+                    //console.log('FAILED -- ' + JSON.parse(e.responseText).detail);
                 },
                 headers: {
                     "Authorization": "Token " + self.token
@@ -498,14 +528,15 @@ NIRIT.Board.prototype.set_listeners = function () {
 
     // Reply to Notice
     $('.open-reply').unbind('click').bind('click', function () {
-        var self = $(this);
+        var _self = $(this);
         $('.card-reply').each(function() {
             // Accordion: close all other boxes
-            if ($(this).attr('rel') == self.attr('rel')) {
+            if ($(this).attr('rel') == _self.attr('rel')) {
                 if ($(this).is(':visible')) {
                     $(this).slideUp();
                 } else {
-                    $(this).find('textarea').val(''); // clear content before opening
+                    // clear content before opening
+                    $(this).find('textarea').val('');
                     $(this).slideDown(250, function () {
                         $(this).find('textarea').focus();
                     });
@@ -523,14 +554,23 @@ NIRIT.Board.prototype.set_listeners = function () {
         var _self = $(this);
         $(this).attr('card_id', $(this).attr('rel'));
         $(this).find('button').unbind('click').bind('click', function () {
-            var subject = _self.find('textarea').val();
+            var subject = null;
+            // Find the subject of the card being replied to
+            for (var c in self.cards) {
+                if (self.cards[c].id == _self.attr('card_id')) {
+                    subject = self.cards[c].subject;
+                    break;
+                }
+            }
+            var body = _self.find('textarea').val();
             // we assume a user is a member of only 1 org
             var is_official = _self.find('.reply-is-official').is(':checked') ? 'on' : '';
-            if (subject.length > 0) {
+            if (subject && body.length > 0) {
                 $.ajax({
                     url: '/api/notices/post',
                     data: JSON.stringify({
-                        'subject': trim_all(subject),
+                        'subject': subject,
+                        'body': trim(body),
                         'buildings': self.buildings,
                         'official': is_official,
                         'nid': _self.attr('card_id')
@@ -543,7 +583,7 @@ NIRIT.Board.prototype.set_listeners = function () {
                         location.reload(true);
                     },
                     error: function (e) {
-                        console.log('FAILED -- ' + JSON.parse(e.responseText).detail);
+                        //console.log('FAILED -- ' + JSON.parse(e.responseText).detail);
                     },
                     headers: {
                         "Authorization": "Token " + self.token
@@ -566,7 +606,7 @@ NIRIT.Board.prototype.set_listeners = function () {
                     card.slideDown(250, function () {
                         card.find('.card-replies-holder').each(function () {
                             var holder = $(this);
-                            var uri = '/api/notices/' + _self.attr('rel') + '/replies';
+                            var uri = '/api/notices/' + _self.attr('rel') + '/';
                             self.add_replies(uri, holder);
                         });
                     });
@@ -581,14 +621,64 @@ NIRIT.Board.prototype.set_listeners = function () {
         $('.card-replies').slideUp(250);
     });
 
+    // Mark card as READ
+    $('.card.is-new').unbind('click').bind('click', function () {
+        var _self = $(this);
+        _self.animate({ 
+            backgroundColor:'#fff'
+        }, 500, function () {
+            _self.removeClass('is-new');
+        });
+    });
+
+    // Expand/Collapse
+    $('.body.truncated').each(function () {
+        var _self = $(this);
+        _self.find('.label').remove(); // remove existing labels first
+        var button = $('<span class="label">expand</span>');
+        // no need to unbind the event as this element is entirely re-created
+        button.bind('click', function () {
+            if (_self.hasClass('open')) {
+                // close
+                _self.find('.full-body').hide();
+                _self.find('.truncated-body').show();
+                _self.removeClass('open');
+                button.text('expand');
+            } else {
+                // open
+                _self.find('.truncated-body').hide();
+                _self.find('.full-body').show();
+                _self.addClass('open');
+                _button.text('collapse');
+            }
+        });
+
+        button.appendTo(_self);
+    });
+
     // Flag/Unflag Notices
     $('a.star').unbind('click').bind('click', function () {
-        var self = $(this);
-        NIRIT.utils.set_member_preference('starred', self.attr('rel'), function (data) {
-            if (self.hasClass('active')) { self.removeClass('active'); }
-            else { self.addClass('active'); }
+        var _self = $(this);
+        NIRIT.utils.set_member_preference('starred', _self.attr('rel'), function (data) {
+            if (_self.hasClass('active')) { _self.removeClass('active'); }
+            else { _self.addClass('active'); }
         });
         return false;
+    });
+
+    // Fetch more when end of page is reached
+    $(window).scroll(function() {
+        if (!self.loading) {
+            var trigger = $("body").height() - 173;
+            if ($(document).scrollTop() + $(window).height() >= trigger) {
+                var plus = $('a#plus');
+                self.loading = true;
+                self.fetch(plus, function () {
+                    console.log('Done');
+                    self.loading = false;
+                });
+            }
+        }
     });
 
 };
