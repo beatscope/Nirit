@@ -11,6 +11,7 @@ Nirit is a business to business network. It aims at connecting local businesses.
 Requirements
 ------------
 - Python 2.7+
+- Python Imaging (PIL)
 - Django 1.5+
 - Django REST framework 2.3+
 - django-grappelli
