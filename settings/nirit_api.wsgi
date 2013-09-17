@@ -1,5 +1,6 @@
 import inspect
 import os
+import re
 import socket
 import sys
 import django.core.handlers.wsgi
@@ -11,5 +12,5 @@ if SCRIPT_DIR not in sys.path:
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
 sys.path.append(ROOT_DIR)
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.settings_api-' + socket.gethostname()
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.settings_api-' + re.sub(r'\.', '-', socket.gethostname())
 application = django.core.handlers.wsgi.WSGIHandler()

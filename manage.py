@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import inspect
 import os
+import re
 import socket
 import sys
 from django.core.management import execute_from_command_line
@@ -13,5 +14,5 @@ ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
 sys.path.append(ROOT_DIR)
 
 if __name__ == "__main__":
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.settings-' + socket.gethostname()
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.settings-' + re.sub(r'\.', '-', socket.gethostname())
     execute_from_command_line(sys.argv)
