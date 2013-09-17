@@ -80,7 +80,7 @@
                 {% endif %}
                 <p class="description">{{ member.building }}</p>
             </div>
-            {% if member.buildings.count > 1 %}
+            {% if member.buildings|length > 1 %}
             <div class="box padded">
                 <h3>Select primary building</h3>
                 <p class="description">The primary building defines your active view,
