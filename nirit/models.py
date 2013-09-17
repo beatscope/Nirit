@@ -445,7 +445,7 @@ class UserProfile(models.Model):
     @property
     def roles(self):
         roles = self.user.groups.all()
-        return [g.name for g in roles]
+        return [str(g.name) for g in roles]
 
     @property
     def buildings(self):
