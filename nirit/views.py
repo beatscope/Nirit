@@ -237,7 +237,7 @@ def user_profile(request, codename=None):
     r = requests.options("https://{}/api/notices".format(request.META['HTTP_HOST']), verify=verify, cookies=cookies)
     try:
         notices = json.dumps(json.loads(r.text)['results']['notices'])
-    except (IndexError, ValueError):
+    except (IndexError, KeyError, ValueError):
         notices = '{}'
 
     # Load user's Notices
@@ -426,7 +426,7 @@ def board(request, codename):
         context['types'] = json.dumps(d['types'])
         context['types_escaped'] = d['types']
         context['count'] = int(d['results']['all'])
-    except IndexError:
+    except (IndexError, KeyError):
         context['notices'] = '{}'
         context['types'] = '{}'
         context['types_escaped'] = {}
@@ -449,7 +449,7 @@ def board(request, codename):
     }
     try:
         notice_count = json.loads(response.text)['count']
-    except ValueError:
+    except (KeyError, ValueError):
         notice_count = 0
     context['stats']['notices'] = notice_count
 
