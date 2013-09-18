@@ -40,21 +40,6 @@ jQuery.cookie = function (key, value, options) {
     return (result = new RegExp('(?:^|; )' + encodeURIComponent(key) + '=([^;]*)').exec(document.cookie)) ? decode(result[1]) : null;
 };
 
-// UserVoice
-(function(){var uv=document.createElement('script');uv.type='text/javascript';uv.async=true;uv.src='//widget.uservoice.com/UaLxQ5lfg2BrMOxj33zDA.js';var s=document.getElementsByTagName('script')[0];s.parentNode.insertBefore(uv,s)})()
-UserVoice = window.UserVoice || [];
-UserVoice.push(['showTab', 'classic_widget', {
-  mode: 'full',
-  primary_color: '#393939',
-  link_color: '#2e7fa1',
-  default_mode: 'support',
-  forum_id: 222019,
-  tab_label: 'Feedback & Support',
-  tab_color: '#236b87',
-  tab_position: 'middle-left',
-  tab_inverted: false
-}]);
-
 /**
 *   @name                           Elastic
 *   @descripton                     Elastic is jQuery plugin that grow and shrink your textareas automatically

@@ -38,7 +38,12 @@ def landing(request):
         else:
             form = AuthenticationForm()
         context['form'] = form
-    context['buildings'] = Building.objects.all()
+    else:
+        # Redirect authenticated user to their primary building's Notice Board
+        destination = 'board/{}'.format(request.user.get_profile().building.link)
+        return HttpResponseRedirect(destination)
+
+    #context['buildings'] = Building.objects.all()
     t = loader.get_template('nirit/index.html')
     c = RequestContext(request, context)
     return HttpResponse(t.render(c))

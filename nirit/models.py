@@ -444,7 +444,7 @@ class UserProfile(models.Model):
 
     @property
     def roles(self):
-        roles = self.user.groups.all()
+        roles = self.user.groups.exclude(name='Administrator')
         return [str(g.name) for g in roles]
 
     @property

@@ -81,60 +81,62 @@
         <div class="padded">          
         </div>
         <div class="box filled padded">
+            <div class="company-about">
 
-            {% if company.organization.description %}
-            <h3>About {{ company.organization.name }}</h3>
-            <div class="textfield">
-                {{ company.organization.description|linebreaks }}
-            </div>
-            {% endif %}
-
-            {% if company.organization.get_department_display  %} 
-            <h3>Department</h3>
-            <div class="charfield">
-                {{ company.organization.get_department_display }}
-            </div>
-            {% endif %}
-            
-            {% if company.organization.expertise.all  %}
-            <h3>Areas of Expertise</h3>
-            <div class="charfield">
-                {% if company.organization.expertise.all %}
-                    {{ company.organization.expertise.all|join:", " }}
-                {% else %}
-                    &nbsp;
-                {% endif %}
-            </div>
-            {% endif %}
-
-            <div class="inline">
-                {% if company.organization.get_size_display %}
-                <div class="inline-block">
-                    <h3>Company Size</h3>
-                    <div class="charfield">
-                        {% if company.organization.size == 'A' or company.organization.size == 'B' %}
-                            1-10 employees
-                        {% else %}
-                            {{ company.organization.get_size_display }} employees
-                        {% endif %}
-                    </div>
+                {% if company.organization.description %}
+                <h3>About {{ company.organization.name }}</h3>
+                <div class="textfield">
+                    {{ company.organization.description|linebreaks }}
                 </div>
                 {% endif %}
-                {% if company.organization.founded %}
-                <div class="inline-block">
-                    <h3>Year Founded</h3>
-                    <div class="charfield">
-                        {{ company.organization.founded }}
-                    </div>
+
+                {% if company.organization.get_department_display  %} 
+                <h3>Department</h3>
+                <div class="charfield">
+                    {{ company.organization.get_department_display }}
                 </div>
                 {% endif %}
-            </div>
+                
+                {% if company.organization.expertise.all  %}
+                <h3>Areas of Expertise</h3>
+                <div class="charfield">
+                    {% if company.organization.expertise.all %}
+                        {{ company.organization.expertise.all|join:", " }}
+                    {% else %}
+                        &nbsp;
+                    {% endif %}
+                </div>
+                {% endif %}
 
-            <h3>Nirit Status</h3>
-            <div class="charfield">
-                {{ company.get_status_display }}
-            </div>
+                <div class="inline">
+                    {% if company.organization.get_size_display %}
+                    <div class="inline-block">
+                        <h3>Company Size</h3>
+                        <div class="charfield">
+                            {% if company.organization.size == 'A' or company.organization.size == 'B' %}
+                                1-10 employees
+                            {% else %}
+                                {{ company.organization.get_size_display }} employees
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if company.organization.founded %}
+                    <div class="inline-block">
+                        <h3>Year Founded</h3>
+                        <div class="charfield">
+                            {{ company.organization.founded }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
 
+                <h3>Nirit Status</h3>
+                <div class="charfield">
+                    {{ company.get_status_display }}
+                </div>
+
+            </div>
         </div>
     </div>
 

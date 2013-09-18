@@ -151,6 +151,7 @@ Filters
         float:right;
         width:20%;
         list-style-type:none;
+        text-align:center;
     }
     .banner button {
         padding:3px 10px;
@@ -167,8 +168,7 @@ Filters
         color:#fff;
         background:#348FB5;
     }
-
-
+    .banner div:hover a { text-decoration:underline; }
 
 header {
     width:100%;
@@ -366,6 +366,7 @@ footer #skyline {
     background-repeat:repeat-x;
     background-position:0 0;
 }
+    #footer em { color:#666; }
     #footer ul {
         margin:0 auto;
         padding-top:60px;
@@ -377,6 +378,23 @@ footer #skyline {
     #footer ul li.inline {
         display:inline;
     }
+    #footer ul li.twitter {
+        position:relative;
+        text-align:right;
+        margin-top:10px;
+    }
+        #footer ul li.twitter em { 
+            position:relative;
+            padding-right:5px;
+            top:-2px;
+        }
+        #footer ul li.twitter a {
+            display:inline-block;
+            width:61px;
+            height:15px;
+            background-image:url(../images/icon_twitter.png);
+            background-repeat:no-repeat;
+        }
     #footer ul li.last {
         text-align:right;
         margin-top:10px;
@@ -507,7 +525,9 @@ ul.errorlist {
     }
     #content #login-card ul#login-links li input.button {
         margin:0;
+        opacity:0.75;
     }
+    #content #login-card ul#login-links li input.button:hover { opacity:1; }
 
 
 /** PAGES **/
@@ -532,14 +552,82 @@ ul.errorlist {
     }
 
 
-/** LANDING **/
+/** HOME/LANDING **/
+body.home {
+    background-image:url(../images/homepage-background.jpg);
+    background-repeat:no-repeat;
+    background-position:center 0;
+    background-size:cover;
+    background-attachment:fixed;
+}
+body.home header { display:none; }
+
 #content .index {
     position:relative;
     padding:10px 0;
+    height:500px;
 }
-#content .index #login-card { margin:20px; }
+#content .index:after {
+    clear:both;
+    content: "";
+    display:table;
+}
+#content .index .sign-up-info {
+    position:relative;
+    width:547px;
+    padding-top:140px;
+    padding-left:45px;
+    float:left;
+}
+    #content .index .sign-up-info .nirit,
+    #content .index .sign-up-info .nirit a { 
+        color:#fff;
+        font-size:40px;
+        font-weight:bold;
+        text-decoration:none;
+        text-shadow:0 1px 0 #666;
+    }
+    #content .index .sign-up-info .nirit img {
+        display:block;
+        width:35px;
+        height:40px;
+        position:absolute;
+        top:142px;
+        left:0;
+    }
+    #content .index .sign-up-info h2 {
+        color:#fff;
+        font-size:32px;
+        text-shadow:0 1px 0 #666;
+        width:70%;
+    }
+    #content .index .sign-up-info .actions {
+        padding-top:30px;
+    }
+    #content .index .sign-up-info .actions a {
+        padding:8px 15px;
+        color:#ffffff;
+        font-weight:bold;
+        opacity:0.75;
+        background-color:#17566F;
+    }
+    #content .index .sign-up-info .actions a:hover {
+        opacity:1;
+        text-decoration:none;
+    }
+        
+#content .index .sign-in-card { 
+    width:382px;
+    float:left;
+    padding-top:140px;
+}
+#landing footer {
+    margin:0;
+    padding:0;
+}
+    #landing footer #skyline { display:none; }
 
-#building-card {
+/*#building-card {
     position:relative;
     width:280px;
     height:95px;
@@ -566,7 +654,7 @@ ul#building-links li {
 }
 ul#building-links li:first-child {
     padding-left:0;
-}
+}*/
 
 
 /** BOARDS **/
@@ -1158,15 +1246,15 @@ ul#building-links li:first-child {
 #content .company-profile .networked-switch {
     position:absolute;
     bottom:5px;
-    right:5px;
+    right:7px;
     width:30px;
     height:30px;
     overflow:hidden;
     background:url(../images/icon_networked.png) no-repeat;
 }
-#content .company-profile .networked-switch.active {
-    background-position:0 -30px;
-}
+#content .company-profile .networked-switch:hover,
+#content .company-profile .networked-switch:active { background-position:0 -30px; }
+#content .company-profile .networked-switch.active { background-position:0 -60px; }
 #content .company-profile ul.company-info {
     margin:0;
     padding:0;
@@ -1197,6 +1285,10 @@ ul#building-links li:first-child {
         background:#348FB5;
         color:#fff;
     }
+
+#content .company-profile .company-about {
+    padding:20px;
+}
 #content .company-profile h2 {
     padding:.8em 0 .2em;
 }

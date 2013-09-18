@@ -3,6 +3,7 @@
 <head>
     <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
     <title>{% block title %}Nirit{% endblock %}</title>
+    <link rel="icon" href="{{ STATIC_URL }}/images/favicon.ico" type="image/x-icon">
     <link href="{% static "css/nirit.css" %}" type="text/css" rel="stylesheet" media="all" />
     {% block extrastyle %}{% endblock %}
     <script type="text/javascript" src="{% static "js/jquery-1.9.1.min.js" %}"></script>
@@ -14,20 +15,17 @@
     {% block extrahead %}{% endblock %}
     {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
 </head>
-<body>
+<body {% block bodyclass %}{% endblock %}>
     <div class="wrapper">
          <div id="niritcookies" class="banner">
             <section class="container">
                 <div>
                     <h2 class="banner-title">Cookies on Nirit</h2>
-                    <p class="banner-content">
-                        We use cookies to ensure that we give you the best experience on our website. We also use cookies to ensure we show you advertising that is relevant to you.
-                        If you continue without changing your settings, we'll assume that you are happy to receive all cookies on Nirit.
-                        However, if you would like to, you can change your cookie settings at any time.
-                    </p>
+                    <p class="banner-content">We use cookies to ensure that we give you the best experience on our website.
+                        We also use cookies to ensure we show you advertising that is relevant to you.
+                        If you continue without changing your settings, we'll assume that you are happy to receive all cookies on Nirit.</p>
                     <ul class="banner-options">
                         <li id="cookies-continue"><button type="button" id="cookies-continue-button">Continue</button></li>
-                        <li id="cookies-settings"><a href="/cookie-settings">Change settings</a></li>
                         <li id="cookies-more"><a href="/cookies">Find out more</a></li>
                     </ul>
                 </div>
@@ -72,6 +70,7 @@
                 {% endif %}
             </div>
         </nav>
+
         <section>
             <div class="container">
                 <div id="content">
@@ -79,10 +78,13 @@
                 </div>
             </div>
         </section>
+
     </div>
+
+    {% block footer %}
     <footer>
         <div id="skyline"></div>
-        {% block footer %}<div id="footer">
+        <div id="footer">
             <ul class="container">
                 <li><a href="/what-is-nirit">What's Nirit</a></li>
                 <li><a href="/member/sign-up">Sign-up</a></li>
@@ -90,11 +92,12 @@
                 <li class="inline"><a href="/terms-of-use">Terms &amp; conditions</a></li>
                 <li class="inline"><a href="/privacy-policy">Privacy policy</a></li>
                 <li class="inline"><a href="/cookies">Cookies</a></li>
-                <li class="inline"><a href="/cookie-settings">Change cookie settings</a></li>
+                <li class="twitter"><em>Follow us on</em> <a href="https://twitter.com/Niritdev" target="_blank" title="Twitter"> </a></li>
                 <li class="last"><em>Powered by Beatscope Engineering</em>, &copy; 2008-{% now "Y" %} <a href="http://www.beatscope.co.uk/" target="_blank">Beatscope Limited</a></li>
             </ul>
-        </div>{% endblock %}
+        </div>
     </footer>
+    {% endblock %}
     {% block extrajs %}{% endblock %}
 
 </body>

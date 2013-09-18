@@ -649,7 +649,7 @@ NIRIT.Board.prototype.set_listeners = function () {
                 _self.find('.truncated-body').hide();
                 _self.find('.full-body').show();
                 _self.addClass('open');
-                _button.text('collapse');
+                button.text('collapse');
             }
         });
 
