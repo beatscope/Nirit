@@ -174,7 +174,6 @@ def sign_up_activate(request):
                             'content-type': 'application/json',
                             'authorization': 'Token {}'.format(token)
                         }
-                        subject = u'{}\n\n{}'.format(title, force_unicode(company.description))
                         data = {
                             'subject': u'{} has just joined Nirit'.format(company.name),
                             'body': force_unicode(company.description),
