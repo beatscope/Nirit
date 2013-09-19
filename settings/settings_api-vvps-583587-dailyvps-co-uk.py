@@ -1,6 +1,7 @@
 from common import *
 
-DEBUG = True
+DEBUG = False
+ALLOWED_HOSTS = ['api.nirit.co.uk']
 
 ADMINS = (
     ('Nirit API', 'support@nirit.co.uk'),

@@ -1,8 +1,10 @@
 # Production Settings
+import sys
 from common import *
 
 DEBUG = True
 TEMPLATE_DEBUG = False
+ALLOWED_HOSTS = ['nirit.co.uk']
 
 INTERNAL_IPS = ('127.0.0.1', '10.1.29.10', '10.1.29.248', '46.255.116.84')
 DEBUG_TOOLBAR_CONFIG = {
@@ -45,6 +47,16 @@ TEMPLATE_DIRS = (
 )
 
 LOGGING['loggers']['nirit']['level'] = 'ERROR'
+#LOGGING['loggers']['django.request'] = {
+#    'handlers': ['log_to_file'],
+#    'level': 'INFO',
+#    'propagate': True,
+#}
+#LOGGING['filters'] = {
+#    'require_debug_false': {
+#        '()': 'django.utils.log.RequireDebugFalse'
+#    }
+#}
 
 EMAIL_SUBJECT_PREFIX = '[NIRIT] '
 SERVER_EMAIL = 'noreply@nirit.co.uk'
