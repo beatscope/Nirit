@@ -14,6 +14,7 @@ if (typeof(NIRIT) === 'undefined') {
  * @param object
  */
 NIRIT.Directory = function (settings) {
+    this.building = settings['building'];
     this.data = settings['data'];
     this.group = settings['group'];
     this.groups = this.data.results;
@@ -31,7 +32,9 @@ NIRIT.Directory = function (settings) {
 NIRIT.Directory.prototype.add_cards = function (update) {
 
     // Add results count
-    var counter = '<div class="counter box"><span>' + this.data.count + '</span> results</div>';
+    var counter = '<div class="card"><span class="counter">' + this.data.count + '</span> ';
+    counter += this.data.count > 1 ? 'companies' : 'company';
+    counter += ' listed.</div>';
     this.insert(counter);
 
     // Create group of cards
@@ -45,9 +48,11 @@ NIRIT.Directory.prototype.add_cards = function (update) {
     }
 
     // Check if additional notices are available
+    /* N/A we always show them all in one page
+    var plus = $('#plus');
+    plus.hide();
     if (this.data.next) {
         var self = this;
-        var plus = $('#plus');
         plus.show().unbind('click').bind('click', function () {
             $.get(self.data.next, function (data) {
 
@@ -69,7 +74,7 @@ NIRIT.Directory.prototype.add_cards = function (update) {
             }, 'json');
             return false;
         });
-    }
+    }*/
 
 };
 
@@ -96,7 +101,7 @@ NIRIT.Directory.prototype.apply_template = function (object, template) {
     switch (template) {
 
         case 'floor-group':
-            html += '<div class="box padded">';
+            html += '<div class="card">';
             html += '<h3>' + object['label'] + '</h3>';
             for (var c in object['cards']) {
                 var card = this.apply_template(object['cards'][c], 'company');
@@ -107,7 +112,7 @@ NIRIT.Directory.prototype.apply_template = function (object, template) {
             break;
 
         case 'department-group':
-            html += '<div class="box padded">';
+            html += '<div class="card">';
             html += '<h3>' + object['label'] + '</h3>';
             for (var c in object['cards']) {
                 var card = this.apply_template(object['cards'][c], 'company');
@@ -118,7 +123,7 @@ NIRIT.Directory.prototype.apply_template = function (object, template) {
             break;
 
         case 'name-group':
-            html += '<div class="box padded">';
+            html += '<div class="card">';
             html += '<h3>' + object['label'] + '</h3>';
             for (var c in object['cards']) {
                 var card = this.apply_template(object['cards'][c], 'company');
@@ -129,8 +134,30 @@ NIRIT.Directory.prototype.apply_template = function (object, template) {
             break;
 
         case 'company':
-            html += '<div>';
-            html += '<a href="/company/' + object.slug + '" title="' + object.name + '">' + object.name + '</a>';
+            console.log(this.group);
+            var floor = null;
+            for (var b in object.buildings) {
+                if (object.buildings[b].codename == this.building) {
+                    floor = object.buildings[b].floor_tag;
+                }
+            }
+            var square_logo =  NIRIT.STATIC_URL  + 'images/useravatar_32x32.png';
+            if (object.square_logo) {
+                square_logo = object.square_logo;
+            }
+            html += '<div class="company-item">';
+            html += '<img src="' + square_logo + '" alt="" width="32" height="32" />';
+            html += '<div class="company-info">';
+            html += '<div class="company-name"><a href="/company/' + object.slug + '" title="' + object.name + '">' + object.name + '</a></div>';
+            console.log(floor);
+            if (floor && this.group != 'floor') {
+                html += '<div class="company-floor">' + floor + ' Floor</div>';
+            }
+            if (this.group != 'department') {
+                html += '<div class="company-department">' + object.department + '</div>';
+            }
+            html += '<div class="company-expertise">' + object.expertise.join(', ') + '</div>';
+            html += '</div>';
             html += '</div>';
             break;
 

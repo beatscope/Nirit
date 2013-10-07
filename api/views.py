@@ -309,7 +309,7 @@ class OrganizationListView(generics.ListAPIView):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
     lookup_field = 'codename'
-    paginate_by = 15
+    paginate_by = 999
 
     def get_queryset(self):
         """

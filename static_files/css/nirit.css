@@ -1099,9 +1099,9 @@ ul#building-links li:first-child {
     }
 
 #content .directory #results {
-    width:582px;
+    width:602px;
     margin-right:10px;
-    padding:10px;
+    margin-top:-5px;
 }
 
 #content .directory #sidebar-narrow {
@@ -1111,28 +1111,63 @@ ul#building-links li:first-child {
 
 #content .directory #selection .tabs {}
 
-#results #stream { 
-    padding-bottom:10px;
-}
-#results .counter {
-    padding:10px 0;
-    color:#666;
-}
-#results .counter span { font-weight:bold; }
-#results a#plus {
-    display:none;
+#results #stream {}
+#results a#plus { display:none }
+/*#results a#plus {
+    display:block;
     font-weight:bold;
+    color:#fff;
+    background:#2E7FA1;
 }
-#results a#plus:hover { text-decoration:none; }
+    #results a#plus span {
+        display:block;
+        text-align:center;
+        padding:5px;
+        line-height:14px;
+    }
+    #results a#plus:hover {
+        text-decoration:none;
+        background:#348FB5;
+    }
+    #results a#plus.loading {
+        background:url(../images/ajax-loader.gif) no-repeat 10px center;
+    }*/
 
 #results .card {
     position:relative;
-    margin:5px;
+    margin:5px 0;
     padding:10px;
     background:#fff;
     border:solid 1px #CED9E4;
     overflow:hidden;
 }
+#results .card span.counter {
+    color:#666;
+    font-weight:bold;
+}
+#results .card h3 { 
+    font-size:1.2em;
+    padding:0 5px;
+    text-align:center;
+}
+#results .company-item {
+    position:relative;
+    margin:15px 5px;
+}
+    #results .company-item img {
+        display:block;
+        width:32px;
+        height:32px;
+        position:absolute;
+    }
+    #results .company-item .company-info {
+        padding-left:42px;
+    }
+    #results .company-item .company-info .company-floor,
+    #results .company-item .company-info .company-department {
+        font-weight:bold;
+    }
+    #results .company-item .company-info .company-expertise { color:#666; }
 
 
 /** ACCOUNT **/

@@ -556,11 +556,12 @@ def directory(request, codename=None):
     data['results'] = groups
 
     # override pagination links
-    if data.has_key('next') and data['next']:
-        next_page = re.search(r'&page=(?P<page>\d+)', data['next'])
-        if next_page is not None:
-            next_page = next_page.group('page')
-            data['next'] = request.META['PATH_INFO'] + '?page=' + next_page
+    # /!\ not working, though pagination is currently not used
+    #if data.has_key('next') and data['next']:
+    #    next_page = re.search(r'&page=(?P<page>\d+)', data['next'])
+    #    if next_page is not None:
+    #        next_page = next_page.group('page')
+    #        data['next'] = request.META['PATH_INFO'] + '?page=' + next_page
 
     # the result object is fed to the JS app directly,
     # give a JSON-formatted object

@@ -24,9 +24,9 @@
         </div>
     </div>
     
-    <div id="results" class="filled">
+    <div id="results">
         <div id="stream"></div>
-        <a href="" id="plus">[+]</a>
+        {% comment %}<a href="" id="plus"><span>More</span></a>{% endcomment %}
     </div>
 
     <div id="sidebar-narrow" class="filled">
@@ -41,8 +41,8 @@
 {% block extrajs %}{{ block.super }}
 <script type="text/javascript">
     $(document).ready(function () {
-        var building = '{{ building.codename }}';
         new NIRIT.Directory({
+            'building': '{{ building.codename }}',
             'data': {{ data|safe }},
             'group': '{{ group }}'
         });
