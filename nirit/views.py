@@ -246,8 +246,10 @@ def user_profile(request, codename=None):
 
     # Load user's Notices
     url = "https://{}/api/notices/?member={}".format(request.META['HTTP_HOST'], profile.codename)
-    response = requests.get(url, verify=verify, cookies=cookies)
-
+    response = requests.get("https://{}/api/notices".format(request.META['HTTP_HOST']),
+                         verify=verify,
+                         cookies=cookies,
+                         params={'member': profile.codename})
     context = {
         'member': profile,
         'data': response.text,
