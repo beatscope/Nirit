@@ -443,14 +443,18 @@ def board(request, codename):
         context['count'] = 0
     
     # Load Building's first Notices
-    url = "https://{}/api/notices/?building={}".format(request.META['HTTP_HOST'], building.codename)
+    url = "https://{}/api/notices/".format(request.META['HTTP_HOST'])
+    params = {
+        'building': building.codename
+    }
     if request.GET.has_key('filter'):
         # when filters are provided, we also pass in the member to the API query
-        url += '&member=' + request.user.get_profile().codename
-        url += '&filter=' + request.GET['filter']
+        params['member'] = request.user.get_profile().codename
+        params['filter'] = request.GET['filter']
         # we also add it to the context for the template to use
         context['filter'] = request.GET['filter']
-    response = requests.get(url, verify=verify, cookies=cookies)
+    response = requests.get(url, verify=verify, cookies=cookies, params=params)
+    logger.debug(response.url)
     context['data'] = response.text
 
     # Add statistics
