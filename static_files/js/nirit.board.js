@@ -260,8 +260,9 @@ NIRIT.Board.prototype.apply_template = function (card, template) {
         }
         // Card avatar
         // use company logo when sent officially
+        // or when the card is an INTRO
         var avatar = card.sender.avatar;
-        if (card.official && card.sender.company.square_logo)  {
+        if ((card.official || card.type == 'INTRO') && card.sender.company.square_logo)  {
             avatar = card.sender.company.square_logo;
         }
     } catch (e) {
@@ -288,6 +289,7 @@ NIRIT.Board.prototype.apply_template = function (card, template) {
             break;
         case 'INTRO':
             card_tag += ' official';
+            break;
         case 'NOTICE':
         default:
             if (card.official) {

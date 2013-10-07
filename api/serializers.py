@@ -15,9 +15,10 @@ logger = logging.getLogger('api.serializers')
 
 class ShortCompanySerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(source='link', read_only=True)
+    square_logo = serializers.Field(source='get_square_logo')
     class Meta:
         model = Organization
-        fields = ('name', 'codename', 'slug')
+        fields = ('name', 'codename', 'slug', 'square_logo')
 
 
 class ShortUserSerializer(serializers.ModelSerializer):
