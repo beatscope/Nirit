@@ -50,8 +50,6 @@
                             {% for link in menu %}
                                 <li><a href="{{ link.href }}" class="{{ link.name }} {{ link.class }}">{{ link.link }}<span></span></a></li>
                             {% endfor %}
-                        {% else %}
-                            {% if user.is_anonymous %}<li><a href="/what-is-nirit">What's Nirit?</a></li>{% endif %}
                         {% endif %}
                     </ul>
                 {% endblock %}
