@@ -1099,13 +1099,13 @@ ul#building-links li:first-child {
     }
 
 #content .directory #results {
-    width:580px;
+    width:582px;
     margin-right:10px;
     padding:10px;
 }
 
 #content .directory #sidebar-narrow {
-    width:162px;
+    width:160px;
     height:600px;
 }
 
