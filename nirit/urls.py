@@ -17,8 +17,10 @@ urlpatterns = patterns('',
 
     # Pages
     url(r'^$', 'nirit.views.landing'),
-    url(r'^board/[\w-]*/(?P<codename>\w+)', 'nirit.views.board'),
+    url(r'^board/[\w-]*/(?P<codename>\w+)', 'nirit.views.board', name='board'),
+    url(r'^board/$', 'nirit.views.board'),
     url(r'^directory/[\w-]*/(?P<codename>\w+)', 'nirit.views.directory'),
+    url(r'^directory/$', 'nirit.views.directory'),
 
     # Member pages
     url(r'^member/sign-up$', 'nirit.views.sign_up'),
@@ -48,6 +50,7 @@ urlpatterns = patterns('',
     url(r'^member/account/edit$', 'nirit.views.user_profile_edit'),
     url(r'^member/account$', 'nirit.views.user_profile'),
     url(r'^member/(?P<codename>.+)$', 'nirit.views.user_profile'),
+    url(r'^member/$', 'nirit.views.user_profile'),
     url(r'^logout', 'django.contrib.auth.views.logout_then_login'),
 
     # Company Pages

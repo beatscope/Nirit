@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import Group
 from django.contrib.auth import authenticate, login as auth_login
-from django.shortcuts import get_object_or_404, render_to_response
+from django.shortcuts import get_object_or_404, render_to_response, redirect
 from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.template import RequestContext, loader
 from django.utils.encoding import force_unicode
@@ -407,10 +407,15 @@ def set_preference(request, setting, value):
 
 @login_required
 @ensure_csrf_cookie
-def board(request, codename):
+def board(request, codename=None):
     context = {}
+    if not request.user.get_profile().building:
+        raise PermissionDenied
+    if not codename:
+        url = '/board/{}/{}'.format(request.user.get_profile().building.slug, request.user.get_profile().building.codename)
+        return redirect(url)
+
     building = get_object_or_404(Building, codename=codename)
-    context['building'] = building
 
     # Check the user is a member of this building
     if request.user not in building.members:
@@ -419,6 +424,8 @@ def board(request, codename):
     # Check the user is active
     if not request.user.get_profile().status == UserProfile.VERIFIED:
         raise PermissionDenied
+
+    context['building'] = building
 
     # ignore SSL Certificate verification when DEBUG in True
     verify = not settings.DEBUG
@@ -454,7 +461,6 @@ def board(request, codename):
         # we also add it to the context for the template to use
         context['filter'] = request.GET['filter']
     response = requests.get(url, verify=verify, cookies=cookies, params=params)
-    logger.debug(response.url)
     context['data'] = response.text
 
     # Add statistics
@@ -473,10 +479,15 @@ def board(request, codename):
 
 
 @login_required
-def directory(request, codename):
+def directory(request, codename=None):
     context = {}
+    if not request.user.get_profile().building:
+        raise PermissionDenied
+    if not codename:
+        url = '/directory/{}/{}'.format(request.user.get_profile().building.slug, request.user.get_profile().building.codename)
+        return redirect(url)
+
     building = get_object_or_404(Building, codename=codename)
-    context['building'] = building
 
     # Check the user is a member of this building
     if request.user not in building.members:
@@ -486,6 +497,7 @@ def directory(request, codename):
     if not request.user.get_profile().status == UserProfile.VERIFIED:
         raise PermissionDenied
 
+    context['building'] = building
     context['tabs'] = [
         {'name': 'floor','label': 'By Floor', 'href': '?by=floor'},
         {'name': 'department', 'label': 'By Department', 'href': '?by=department'},
