@@ -92,6 +92,29 @@
                     {{ form.floor.errors }}
                 </div>
             </div>
+            <div class="box padded">
+                <div class="fieldWrapper">
+                    <h3>{{ form.website.label_tag }}</h3>
+                    <p class="description">{{ form.website.help_text }}</p>
+                    {{ form.website }}
+                    {{ form.website.errors }}
+                </div>
+                <div class="fieldWrapper">
+                    <h3>{{ form.facebook.label_tag }}</h3>
+                    {{ form.facebook }}
+                    {{ form.facebook.errors }}
+                </div>
+                <div class="fieldWrapper">
+                    <h3>{{ form.twitter.label_tag }}</h3>
+                    {{ form.twitter }}
+                    {{ form.twitter.errors }}
+                </div>
+                <div class="fieldWrapper">
+                    <h3>{{ form.linkedin.label_tag }}</h3>
+                    {{ form.linkedin }}
+                    {{ form.linkedin.errors }}
+                </div>
+            </div>
         </div>
 
         <div class="hidden">

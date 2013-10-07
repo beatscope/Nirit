@@ -129,6 +129,11 @@ class Organization(models.Model):
     founded = models.CharField("Year Founded", max_length=4, null=True, blank=True)
     expertise = models.ManyToManyField(Expertise, help_text="Areas of Expertise", null=True, blank=True)
 
+    website = models.URLField("Website", null=True, blank=True, help_text="Company website URL")
+    facebook = models.URLField("Facebook", null=True, blank=True, help_text="Facebook Page")
+    twitter = models.URLField("Twitter", null=True, blank=True, help_text="Twitter Profile")
+    linkedin = models.URLField("LinkedIn", null=True, blank=True, help_text="LinkedIn Page")
+
     def __unicode__(self):
         return self.name
 

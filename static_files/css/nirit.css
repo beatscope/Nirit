@@ -1367,6 +1367,43 @@ ul#building-links li:first-child {
     margin-top:-2px;
     color:#666;
 }
+#content .company-profile ul.company-links {
+    list-style-type:none;
+    height:32px;
+    margin:0;
+    margin-top:15px;
+}
+    #content .company-profile ul.company-links li {
+        float:left;
+        margin-left:0;
+        margin-right:15px;
+    }
+    #content .company-profile ul.company-links li a,
+    #content .company-profile ul.company-links li img,
+    #content .company-profile ul.company-links li span { 
+        display:block;
+        float:left;
+    }
+    #content .company-profile ul.company-links li span {
+        font-size:1.2em;
+        padding:5px 0;
+        padding-left:5px;
+        height:22px;
+        line-height:22px;
+    }
+    #content .company-profile ul.company-links li img {
+        width:32px;
+        height:32px;
+        background:url(../images/social-link-icons.png) no-repeat;
+    }
+        #content .company-profile ul.company-links li.website img {}
+        #content .company-profile ul.company-links li.website:hover img { background-position:0 -32px; }
+        #content .company-profile ul.company-links li.facebook img { background-position:-96px 0; }
+        #content .company-profile ul.company-links li.facebook:hover img { background-position:-96px -32px; }
+        #content .company-profile ul.company-links li.twitter img { background-position:-64px 0; }
+        #content .company-profile ul.company-links li.twitter:hover img { background-position:-64px -32px; }
+        #content .company-profile ul.company-links li.linkedin img { background-position:-32px 0; }
+        #content .company-profile ul.company-links li.linkedin:hover img { background-position:-32px -32px; }
 
 #content .company-profile ul.staff {
     list-style-type:none;

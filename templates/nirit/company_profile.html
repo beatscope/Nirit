@@ -136,6 +136,32 @@
                     {{ company.get_status_display }}
                 </div>
 
+                {% if company.organization.website or company.organization.facebook or company.organization.twitter or company.organization.linkedin %}
+                <ul class="charfield company-links">
+                    {% if company.organization.facebook %}<li class="facebook">
+                        <a href="{{ company.organization.facebook }}" title="Like us on Facebook" target="_blank">
+                            <img src="{{ STATIC_URL}}images/z.gif" width="32" height="32" alt="Facebook" />
+                        </a>
+                    </li>{% endif %}
+                    {% if company.organization.twitter %}<li class="twitter">
+                        <a href="{{ company.organization.twitter }}" title="Follow us on Twitter" target="_blank">
+                            <img src="{{ STATIC_URL}}images/z.gif" width="32" height="32" alt="Twitter" />
+                        </a>
+                    </li>{% endif %}
+                    {% if company.organization.linkedin %}<li class="linkedin">
+                        <a href="{{ company.organization.linkedin }}" title="Follow us on LinkedIn" target="_blank">
+                            <img src="{{ STATIC_URL}}images/z.gif" width="32" height="32" alt="LinkedIn" />
+                        </a>
+                    </li>{% endif %}
+                    {% if company.organization.website %}<li class="website">
+                        <a href="{{ company.organization.website }}" target="_blank">
+                            <img src="{{ STATIC_URL}}images/z.gif" width="32" height="32" alt="" />
+                            <span>{{ company.organization.website }}</span>
+                        </a>
+                    </li>{% endif %}
+                </ul>
+                {% endif %}
+
             </div>
         </div>
     </div>
