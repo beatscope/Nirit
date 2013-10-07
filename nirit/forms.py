@@ -101,7 +101,8 @@ class SignUpForm(forms.Form):
                 help_text="You need a valid <strong>Authorization Code</strong> to be able to create a "\
                          +"<strong>Business Profile</strong> for your <strong>Company</strong>."\
                          +"<p>If you would like to register your <strong>Company</strong>, "\
-                         +"please contact us via <a href=\"/contact\">this form</a>, "\
+                         +"please contact us using <a href=\"javascript:void(0)\" data-uv-lightbox=\"classic_widget\""\
+                         +" data-uv-mode=\"support\" data-uv-primary-color=\"#ced9e4\" data-uv-link-color=\"#2e7fa1\">this form</a>, "\
                          +"and we\'ll generate a new <strong>Authorization Code</strong> for you.</p>")
     agreed = forms.BooleanField()
 

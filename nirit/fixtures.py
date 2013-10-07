@@ -178,7 +178,7 @@ class Message(object):
             '<h3>Email Domain Not Found</h3>'\
             + '<p>We did not find any company matching your email address.</p>'\
             + '<p>You might be using a private domain (such as google.com or outlook.com), or your company hasn\'t joined Nirit yet.</p>'\
-            + '<p>Regardless, <a href="/contact">get in touch</a> so that we can help you get set up.</p>',
+            + '<p>Regardless, <a href="https://nirit.uservoice.com">get in touch</a> so that we can help you get set up.</p>',
             'text'
         ),
 
@@ -186,7 +186,7 @@ class Message(object):
         'invalid_token': (
             '<h3>Invalid Authorization Code</h3>'\
             + '<p>The code you have entered is invalid. Please make sure you have typed it correctly.</p>'\
-            + '<p>Contact us via <a href="/contact">this form</a> if you have any problems.</p>',
+            + '<p>Contact us via <a href="https://nirit.uservoice.com">this form</a> if you have any problems.</p>',
             'text'
         ),
 
