@@ -54,6 +54,9 @@ class OrganizationAdmin(admin.ModelAdmin):
             del actions['delete_selected']
         return actions
 
+class NoticeAdmin(admin.ModelAdmin):
+    list_filter = ('building', 'sender__profile__company')
+
 class PageAdmin(admin.ModelAdmin):
     list_display = ('title', 'slug', 'status')
 
@@ -63,6 +66,6 @@ site.register(User, UserAdmin)
 site.register(Group, GroupAdmin)
 site.register(Building, BuildingAdmin)
 site.register(Organization, OrganizationAdmin)
-site.register(Notice)
+site.register(Notice, NoticeAdmin)
 site.register(Expertise)
 site.register(Page, PageAdmin)
