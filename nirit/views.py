@@ -261,13 +261,6 @@ def user_profile(request, codename=None):
         if profile.building and 'Building Manager' in profile.roles:
             context['companies_awaiting'] = profile.building.get_pending_companies()
 
-    # Add staff awaiting approval
-    #   - for Editors
-    #   - only on member's own page
-    if profile.user == request.user:
-        if profile.company and profile.company.is_editor(profile.user):
-            context['staff_awaiting'] = profile.company.get_staff_awaiting()
-
     t = loader.get_template('nirit/user_profile.html')
     c = RequestContext(request, context)
     return HttpResponse(t.render(c))
@@ -295,6 +288,17 @@ def user_set_status(request, codename, action):
         if action == 'activate':
             profile.status = UserProfile.VERIFIED
             profile.save()
+            # email user
+            subject = 'Your membership has been approved'
+            text_content = Message().get('email_sign_up_activated_text', {
+                'first_name': profile.name,
+                'link': '{}/member/{}'.format(settings.HOST, profile.codename)
+            })
+            html_content = Message().get('email_sign_up_activated_html', {
+                'first_name': profile.name,
+                'link': '{}/member/{}'.format(settings.HOST, profile.codename)
+            })
+            profile.mail(subject, text_content, html_content)
         elif action == 'ban':
             profile.status = UserProfile.BANNED
             profile.save()
@@ -667,7 +671,7 @@ def company_staff(request, codename):
     company = CompanyProfile.objects.get(building=building, organization=organization)
     context['company'] = company
     context['staff'] = organization.members.all()
-
+    
     # check the user is a member of the building this organization belongs to
     if not request.user in building.members:
         raise PermissionDenied
@@ -689,8 +693,9 @@ def company_staff(request, codename):
         'expertise': organization.expertise.all()
     }
 
-    # Add whether the user is a company Owner
+    # Add user Ownership and Editorial rights
     context['is_owner'] = organization.is_owner(request.user)
+    context['is_editor'] = organization.is_editor(request.user)
 
     # load template
     t = loader.get_template('nirit/company_profile_staff.html')

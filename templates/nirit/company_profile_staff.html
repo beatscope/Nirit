@@ -83,7 +83,7 @@
         <div>
             {% for member in staff %}
                 <div class="staff-list">
-                    <div class="staff">
+                    <div class="staff{% if is_editor and member.get_profile.is_pending %} pending{% endif %}" rel="{{ member.get_profile.codename }}">
                         <div class="left">
                             <a class="avatar" href="/member/{{ member.get_profile.codename }}">
                                 <img src="{{ member.get_profile.avatar }}"
@@ -95,6 +95,12 @@
                             <a class="link" href="/member/{{ member.get_profile.codename }}">
                                 {{ member.get_profile.name }}
                             </a>
+                            {% if is_editor and member.get_profile.is_pending %}
+                                <span class="approval-list">
+                                    <a href="" class="label action activate" rel="{{ member.get_profile.codename }}">Activate</a>
+                                    <a href="" class="label action ban" rel="{{ member.get_profile.codename }}">Ban</a>
+                                </span>
+                            {% endif %}
                             {% if member.get_profile.job_title %}
                                 <div class="job-title">{{ member.get_profile.job_title }}</div>
                             {% endif %}
@@ -190,6 +196,31 @@
                 }
             });
             return false;
+        });
+
+        // Activate/Ban Members
+        $('.staff-list .staff').each(function () {
+            var staff = $(this);
+            staff.find('.approval-list').each(function () {
+                var selection = $(this);
+                selection.find('a.action').bind('click', function () {
+                    var entity = $(this);
+                    var action = entity.hasClass('activate') ? 'activate' : 'ban';
+                    var url = '/approval/member/' + entity.attr('rel') + '/' + action;
+                    $.get(url, function () {
+                        // Remove the entire line from the screen on success
+                        selection.fadeOut(250, function () {
+                            $(this).remove();
+                            if (action == 'ban') {
+                                staff.slideUp();
+                            } else {
+                                staff.removeClass('pending');
+                            }
+                        });
+                    });
+                    return false;
+                });
+            });
         });
 
         // Assign/Revoke "Rep" Role

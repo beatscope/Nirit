@@ -169,11 +169,6 @@ class Organization(models.Model):
                .exclude(profile__status=UserProfile.BANNED)\
                .distinct()
 
-    #@property
-    #def buildings(self):
-    #    Building.objects.none()
-    #    #return Building.objects.filter(organizations=self)
-
     @property
     def slug(self):
         return re.sub(r'\s', '-', self.name).lower()
@@ -181,10 +176,6 @@ class Organization(models.Model):
     @property
     def link(self):
         return '{}/{}'.format(self.slug, self.codename)
-
-    def get_staff_awaiting(self):
-        # Return pending staff
-        return self.members.filter(profile__status=UserProfile.PENDING)
 
     def get_image(self):
         try:
@@ -477,6 +468,9 @@ class UserProfile(models.Model):
         else:
             return '{}images/useravatar_32x32.png'.format(settings.STATIC_URL)
 
+    def is_pending(self):
+        return self.status == self.PENDING
+
     def generate_hash(self):
         # Generate a random binary string
         # Configured to use PBKDF2 + HMAC + SHA256 with 10000 iterations.
@@ -488,6 +482,13 @@ class UserProfile(models.Model):
     def get_starred(self):
         # Convert logged-in user starred notices into list of IDs
         return [int(n.id) for n in self.starred.all()]
+
+    def mail(self, subject, text_content, html_content=None):
+        from_email = settings.EMAIL_FROM
+        msg = EmailMultiAlternatives(subject, text_content, from_email, [self.user.email])
+        if html_content:
+            msg.attach_alternative(html_content, "text/html")
+        msg.send()
 
 
 def create_user_profile(sender, instance, created, **kwargs):

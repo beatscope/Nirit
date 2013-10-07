@@ -47,11 +47,13 @@ ul li { margin:0 0 0 1.5em; padding:.2em 0; }
     color:#fff;
     text-decoration:none;
 }
-.label.revoke {
+.label.revoke,
+.label.ban {
     padding-left:18px;
     background:#BF1E2D;
 }
-.label.revoke:after {
+.label.revoke:after,
+.label.ban:after {
     content:'';
     display:block;
     position:absolute;
@@ -63,7 +65,8 @@ ul li { margin:0 0 0 1.5em; padding:.2em 0; }
     background-repeat:no-repeat;
     background-position:-136px 0;
 }
-.label.assign {
+.label.assign,
+.label.activate {
     background:#2BB673;
 }
 
@@ -955,6 +958,7 @@ ul#building-links li:first-child {
 
 
 /** SIGN-UP **/
+#content .sign-up { padding-bottom:160px; }
 #content .sign-up p { padding:.5em 0; }
 #signup-card {
     position:relative;
@@ -1386,6 +1390,8 @@ ul#building-links li:first-child {
     content: "";
     display:table;
 }
+#content .company-profile.staff .staff.pending { opacity:0.5; }
+#content .company-profile.staff .staff:hover { opacity:1; }
 #content .company-profile.staff .left { width:60px; }
 #content .company-profile.staff .right { width:540px; }
 #content .company-profile.staff .avatar {
@@ -1399,6 +1405,7 @@ ul#building-links li:first-child {
         height:auto;
         margin:auto;
     }
+#content .company-profile.staff .approval-list { padding-left:10px }
 #content .company-profile.staff .job-title { color:#666; }
 #content .company-profile.staff .see-all {
     text-align:right;

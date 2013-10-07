@@ -255,6 +255,22 @@ class Message(object):
             'file'
         ),
 
+        # Sign up activated (text)
+        'email_sign_up_activated_text': (
+            'Hi {first_name}\n\n'\
+            + 'Your account on Nirit has been approved.\n\n'\
+            + 'Please click the following link to access you profile:\n\n'\
+            + '{link}\n\n'\
+            + 'The team @ Nirit',
+            'text'
+        ),
+
+        # Sign up activated (html)
+        'email_sign_up_activated_html': (
+            'sign_up_activated.html',
+            'file'
+        ),
+
         # contact Company (text)
         'email_company_contact_text': (
             '{name} has sent a message to {company} via Nirit.\n\n'\
