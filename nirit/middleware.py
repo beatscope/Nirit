@@ -19,9 +19,7 @@ logger = logging.getLogger('nirit.middleware')
 class NiritMiddleware(object):
 
     def process_response(self, request, response):
-        # super users only access the B/O,
-        # so skip request handling for them
-        if hasattr(request, 'user') and request.user.is_authenticated() and not request.user.is_superuser:
+        if hasattr(request, 'user') and request.user.is_authenticated():
             if request.GET.has_key('set-active-building'):
                 # Active building reset requested
                 manager = ModelManager()
