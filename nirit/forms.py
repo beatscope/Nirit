@@ -79,7 +79,7 @@ class OrganizationForm(forms.ModelForm):
 
 class CompanyForm(OrganizationForm):
     floor = forms.IntegerField(label='Floor')
-    directions = forms.CharField(label='Detailed Directions', widget=forms.Textarea, help_text="\
+    directions = forms.CharField(label='Detailed Directions', widget=forms.Textarea, required=False, help_text="\
                  Detailed desription on how to find your office within the building.\
                  e.g.: turn right coming out of the lift, opposite the kitchen.")
 
