@@ -149,11 +149,13 @@ def sign_up_activate(request):
                         data = form.save()
                         company = data['organization']
                         floor = data['floor']
+                        directions = data['directions']
 
                         # Create a Company Profile on this building
                         CompanyProfile.objects.create(organization=company,
                                                       building=t.building,
-                                                      floor=floor)
+                                                      floor=floor,
+                                                      directions=directions)
 
                         # Assign user to the company
                         profile = user.get_profile()
@@ -807,9 +809,13 @@ def company_edit(request, codename):
     # user is allowed to edit the company
     # add the Organization form
     profile = CompanyProfile.objects.get(building=request.user.get_profile().building, organization=organization)
+    initial = {
+        'floor': profile.floor,
+        'directions': profile.directions
+    } # initial company profile data, used is both bound and unbound forms
     if request.method == 'POST':
         # do NOT handle files in this form, as they are being uploaded via AJAX
-        form = CompanyForm(request.POST, instance=organization, initial={'floor': profile.floor})
+        form = CompanyForm(request.POST, instance=organization, initial=initial)
         if form.is_valid():
             # save the model directly,
             # to avoid re-submitting the file (which would be empty at this point)
@@ -837,12 +843,13 @@ def company_edit(request, codename):
             form.instance.save()
             # save profile data
             profile.floor = form.cleaned_data['floor']
+            profile.directions = form.cleaned_data['directions']
             profile.save()
             # all done, redirect to company page
             destination = '/company/{}/{}'.format(organization.slug, organization.codename)
             return HttpResponseRedirect(destination)
     else:
-        form = CompanyForm(instance=organization, initial={'floor': profile.floor})
+        form = CompanyForm(instance=organization, initial=initial)
     context['form'] = form
 
     # load template

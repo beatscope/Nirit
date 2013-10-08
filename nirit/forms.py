@@ -79,15 +79,18 @@ class OrganizationForm(forms.ModelForm):
 
 class CompanyForm(OrganizationForm):
     floor = forms.IntegerField(label='Floor')
+    directions = forms.CharField(label='Detailed Directions', widget=forms.Textarea, help_text="\
+                 Detailed desription on how to find your office within the building.\
+                 e.g.: turn right coming out of the lift, opposite the kitchen.")
 
     def save(self, commit=True):
         organization = super(CompanyForm, self).save(commit)
-        logger.debug(organization)
         # Return list of additional data,
         # as well as the organization object
         return {
             'organization': organization,
-            'floor': self.cleaned_data['floor']
+            'floor': self.cleaned_data['floor'],
+            'directions': self.cleaned_data['directions'],
         }
 
 

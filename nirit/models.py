@@ -340,7 +340,8 @@ class CompanyProfile(models.Model):
     organization = models.ForeignKey(Organization, related_name='company_profile')
     building = models.ForeignKey(Building, null=True, blank=True, related_name='building_profile')
     floor = models.IntegerField("Floor", null=True, blank=True)
-    status = models.IntegerField("Verification Status", choices=STATUS_CHOICES, default=PENDING)
+    status = models.IntegerField("Verification status", choices=STATUS_CHOICES, default=PENDING)
+    directions = models.TextField("Detailed Directions", null=True, blank=True)
 
     def __unicode__(self):
         if self.building:

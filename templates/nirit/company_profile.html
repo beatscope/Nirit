@@ -90,6 +90,13 @@
                 </div>
                 {% endif %}
 
+                {% if company.directions %}
+                <h3>How to find {{ company.organization.name }}</h3>
+                <div class="textfield">
+                    {{ company.directions|linebreaks }}
+                </div>
+                {% endif %}
+
                 {% if company.organization.get_department_display  %} 
                 <h3>Department</h3>
                 <div class="charfield">
