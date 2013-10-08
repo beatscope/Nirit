@@ -117,7 +117,7 @@ NIRIT.Board.prototype.listen = function () {
                 "Authorization": "Token " + self.token
             }
         });
-    }, 5000);
+    }, 30000);
 };
 
 /**
