@@ -167,8 +167,6 @@ def sign_up_activate(request):
                         t.save()
 
                         # Post INTRO notice to board
-                        # ignore SSL Certificate verification when DEBUG in True
-                        verify = not settings.DEBUG
                         # verification is token-based
                         token = profile.token
                         headers = {
@@ -184,7 +182,7 @@ def sign_up_activate(request):
                             'official': 'on'
                         }
                         r = requests.post("https://{}/api/notices/post".format(request.META['HTTP_HOST']),
-                                          verify=verify,
+                                          verify=False,
                                           headers=headers,
                                           data=json.dumps(data))
 
@@ -231,8 +229,6 @@ def user_profile(request, codename=None):
     else:
         profile = request.user.get_profile()
 
-    # ignore SSL Certificate verification when DEBUG in True
-    verify = not settings.DEBUG
     # verification is session-based
     cookies = {
         'csrftoken': request.COOKIES['csrftoken'],
@@ -240,7 +236,7 @@ def user_profile(request, codename=None):
     }
 
     # Make an OPTIONS request to retrieve the full list of Notices for this user
-    r = requests.options("https://{}/api/notices".format(request.META['HTTP_HOST']), verify=verify, cookies=cookies)
+    r = requests.options("https://{}/api/notices".format(request.META['HTTP_HOST']), verify=False, cookies=cookies)
     try:
         notices = json.dumps(json.loads(r.text)['results']['notices'])
     except (IndexError, KeyError, ValueError):
@@ -249,9 +245,9 @@ def user_profile(request, codename=None):
     # Load user's Notices
     url = "https://{}/api/notices/?member={}".format(request.META['HTTP_HOST'], profile.codename)
     response = requests.get("https://{}/api/notices".format(request.META['HTTP_HOST']),
-                         verify=verify,
-                         cookies=cookies,
-                         params={'member': profile.codename})
+                            verify=False,
+                            cookies=cookies,
+                            params={'member': profile.codename})
     context = {
         'member': profile,
         'data': response.text,
@@ -429,8 +425,6 @@ def board(request, codename=None):
 
     context['building'] = building
 
-    # ignore SSL Certificate verification when DEBUG in True
-    verify = not settings.DEBUG
     # verification is session-based
     cookies = {
         'csrftoken': request.COOKIES['csrftoken'],
@@ -438,7 +432,7 @@ def board(request, codename=None):
     }
 
     # Make an OPTIONS request to retrieve the full list of Notices for this user 
-    r = requests.options("https://{}/api/notices".format(request.META['HTTP_HOST']), verify=verify, cookies=cookies)
+    r = requests.options("https://{}/api/notices".format(request.META['HTTP_HOST']), verify=False, cookies=cookies)
     try:
         d = json.loads(r.text)
         context['notices'] = json.dumps(d['results']['notices'])
@@ -462,7 +456,7 @@ def board(request, codename=None):
         params['filter'] = request.GET['filter']
         # we also add it to the context for the template to use
         context['filter'] = request.GET['filter']
-    response = requests.get(url, verify=verify, cookies=cookies, params=params)
+    response = requests.get(url, verify=False, cookies=cookies, params=params)
     context['data'] = response.text
 
     # Add statistics
@@ -518,14 +512,12 @@ def directory(request, codename=None):
     url = "{}&{}={}".format(url, 'order-by', group)
     if request.GET.has_key('page'):
         url += '&page=' + request.GET['page']
-    # ignore SSL Certificate verification when DEBUG in True
-    verify = not settings.DEBUG
     # verification is session-based
     cookies = {
         'csrftoken': request.COOKIES['csrftoken'],
         'sessionid': request.COOKIES['sessionid']
     }
-    response = requests.get(url, verify=verify, cookies=cookies)
+    response = requests.get(url, verify=False, cookies=cookies)
     data = json.loads(response.text)
 
     # group results by label
@@ -645,13 +637,12 @@ def company(request, codename):
 
     # Load company Notices
     url = "https://{}/api/notices/?company={}".format(request.META['HTTP_HOST'], organization.codename)
-    verify = not settings.DEBUG # ignore SSL Certificate verification when DEBUG in True
     # verification is session-based
     cookies = {
         'csrftoken': request.COOKIES['csrftoken'],
         'sessionid': request.COOKIES['sessionid']
     }
-    response = requests.get(url, verify=verify, cookies=cookies)
+    response = requests.get(url, verify=False, cookies=cookies)
 
     # This is the list displayed on the RHS
     context['staff'] = organization.members.all()[:4]
@@ -699,13 +690,12 @@ def company_staff(request, codename):
 
     # Load company Notices
     url = "https://{}/api/notices/?company={}".format(request.META['HTTP_HOST'], organization.codename)
-    verify = not settings.DEBUG # ignore SSL Certificate verification when DEBUG in True
     # verification is session-based
     cookies = {
         'csrftoken': request.COOKIES['csrftoken'],
         'sessionid': request.COOKIES['sessionid']
     }
-    response = requests.get(url, verify=verify, cookies=cookies)
+    response = requests.get(url, verify=False, cookies=cookies)
 
     # Add statistics
     context['stats'] = {
@@ -748,8 +738,6 @@ def company_board(request, codename):
     if not request.user in building.members:
         raise PermissionDenied
 
-    # ignore SSL Certificate verification when DEBUG in True
-    verify = not settings.DEBUG
     # verification is session-based
     cookies = {
         'csrftoken': request.COOKIES['csrftoken'],
@@ -757,7 +745,7 @@ def company_board(request, codename):
     }
 
     # Make an OPTIONS request to retrieve the full list of Notices for this user
-    r = requests.options("https://{}/api/notices".format(request.META['HTTP_HOST']), verify=verify, cookies=cookies)
+    r = requests.options("https://{}/api/notices".format(request.META['HTTP_HOST']), verify=False, cookies=cookies)
     try:
         context['notices'] = json.dumps(json.loads(r.text)['results']['notices'])
     except IndexError:
@@ -765,7 +753,7 @@ def company_board(request, codename):
 
     # Load company Notices
     url = "https://{}/api/notices/?company={}".format(request.META['HTTP_HOST'], organization.codename)
-    response = requests.get(url, verify=verify, cookies=cookies)
+    response = requests.get(url, verify=False, cookies=cookies)
     context['data'] = response.text
 
     # Add statistics
