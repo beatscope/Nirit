@@ -439,7 +439,7 @@ def board(request, codename=None):
         context['types'] = json.dumps(d['types'])
         context['types_escaped'] = d['types']
         context['count'] = int(d['results']['all'])
-    except (IndexError, KeyError):
+    except (IndexError, KeyError, ValueError):
         context['notices'] = '{}'
         context['types'] = '{}'
         context['types_escaped'] = {}
