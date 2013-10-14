@@ -165,6 +165,10 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': LOGFILE.name,
             'formatter': 'verbose',
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler'
         }
     },
     'loggers': {
