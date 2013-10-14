@@ -564,6 +564,10 @@ ul.errorlist {
         float:right;
         margin-left:40px;
     }
+    #content .page iframe {
+        float:right;
+        margin-left:40px;
+    }
 
 
 /** HOME/LANDING **/

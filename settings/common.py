@@ -137,7 +137,7 @@ AUTHENTICATION_BACKENDS = (
     'nirit.auth.EmailBackend',
 )
 
-MARKITUP_FILTER = ('markdown.markdown', {'safe_mode': True})
+MARKITUP_FILTER = ('markdown.markdown', {'safe_mode': False})
 MARKITUP_SET = 'markitup/sets/markdown'
 MARKITUP_AUTO_PREVIEW = True
 JQUERY_URL='js/jquery-1.9.1.min.js'
