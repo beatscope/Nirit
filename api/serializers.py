@@ -69,14 +69,17 @@ class BuildingProfileSerializer(serializers.ModelSerializer):
     """
     name = serializers.Field(source='organization.name')
     codename = serializers.Field(source='organization.codename')
+    department = serializers.Field(source='organization.get_department_display')
+    expertise = serializers.RelatedField(source='organization.expertise', many=True)
     slug = serializers.Field(source='organization.link')
     status = serializers.Field(source='get_status')
     floor = serializers.RelatedField()
     floor_tag = serializers.RelatedField()
+    square_logo = serializers.Field(source='organization.get_square_logo')
 
     class Meta:
         model = CompanyProfile
-        fields = ('name', 'codename', 'slug', 'status', 'floor', 'floor_tag')
+        fields = ('name', 'codename', 'department', 'expertise', 'slug', 'status', 'floor', 'floor_tag', 'square_logo')
 
 
 class OrganizationSerializer(serializers.ModelSerializer):

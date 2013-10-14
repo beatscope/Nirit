@@ -47,35 +47,6 @@ NIRIT.Directory.prototype.add_cards = function (update) {
         group = null;
     }
 
-    // Check if additional notices are available
-    /* N/A we always show them all in one page
-    var plus = $('#plus');
-    plus.hide();
-    if (this.data.next) {
-        var self = this;
-        plus.show().unbind('click').bind('click', function () {
-            $.get(self.data.next, function (data) {
-
-                // Update internal variables
-                self.data = data;
-                self.groups = data.results;
-
-                // Add new notices to board
-                self.add_cards(true);
-
-                // Remove the 'plus' icon if no more cards left
-                if (!self.data.next) {
-                    plus.hide();
-                }
-
-                // Bind new elements
-                //self.set_listeners();
-
-            }, 'json');
-            return false;
-        });
-    }*/
-
 };
 
 /**
@@ -134,7 +105,6 @@ NIRIT.Directory.prototype.apply_template = function (object, template) {
             break;
 
         case 'company':
-            console.log(this.group);
             var floor = null;
             for (var b in object.buildings) {
                 if (object.buildings[b].codename == this.building) {
@@ -149,7 +119,6 @@ NIRIT.Directory.prototype.apply_template = function (object, template) {
             html += '<img src="' + square_logo + '" alt="" width="32" height="32" />';
             html += '<div class="company-info">';
             html += '<div class="company-name"><a href="/company/' + object.slug + '" title="' + object.name + '">' + object.name + '</a></div>';
-            console.log(floor);
             if (floor && this.group != 'floor') {
                 html += '<div class="company-floor">' + floor + ' Floor</div>';
             }

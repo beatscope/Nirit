@@ -507,11 +507,7 @@ def directory(request, codename=None):
     context['group'] = group
 
     # Fetch companies using Nirit API
-    url = "https://{}/api/organizations?building={}".format(request.META['HTTP_HOST'], building.codename)
-    # add ordering
-    url = "{}&{}={}".format(url, 'order-by', group)
-    if request.GET.has_key('page'):
-        url += '&page=' + request.GET['page']
+    url = "https://{}/api/buildings/{}".format(request.META['HTTP_HOST'], building.codename)
     # verification is session-based
     cookies = {
         'csrftoken': request.COOKIES['csrftoken'],
@@ -520,19 +516,24 @@ def directory(request, codename=None):
     response = requests.get(url, verify=False, cookies=cookies)
     data = json.loads(response.text)
 
+    # order by group
+    companies = data['organizations']
+    companies = sorted(companies, key=operator.itemgetter(group))
+
     # group results by label
     groups = []
     index = -1
     previous_value = None
-    for result in data['results']:
+    for result in companies:
         # use the first letter as the alphabetical group
         # otherwise, the label is the group name
         if group == 'name':
             label = result[group][:1]
-        elif group == 'department':
-            label = result[group]
         elif group == 'floor':
-            label = result['buildings'][0]['floor_tag']
+            label = result['floor_tag']
+        else:
+            label = result[group]
+        # group
         if label != previous_value:
             _group = {
                 'label': label,
@@ -547,18 +548,9 @@ def directory(request, codename=None):
             groups[index]['results'].append(result)
 
     # override the result list with the grouped list
+    data['count'] = len(companies)
     data['results'] = groups
 
-    # override pagination links
-    # /!\ not working, though pagination is currently not used
-    #if data.has_key('next') and data['next']:
-    #    next_page = re.search(r'&page=(?P<page>\d+)', data['next'])
-    #    if next_page is not None:
-    #        next_page = next_page.group('page')
-    #        data['next'] = request.META['PATH_INFO'] + '?page=' + next_page
-
-    # the result object is fed to the JS app directly,
-    # give a JSON-formatted object
     context['data'] = json.dumps(data)
 
     t = loader.get_template('nirit/directory.html')

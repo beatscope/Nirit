@@ -38,7 +38,6 @@ class BuildingListView(generics.ListAPIView):
     """
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
-    permission_classes = (permissions.IsAdminUser,)
 
 
 class BuildingView(generics.RetrieveAPIView):
@@ -49,7 +48,6 @@ class BuildingView(generics.RetrieveAPIView):
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
     lookup_field = 'codename'
-    permission_classes = (permissions.IsAdminUser,)
 
 
 class NoticeListView(generics.ListAPIView):
