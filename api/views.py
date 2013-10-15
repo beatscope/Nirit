@@ -2,7 +2,6 @@
 import logging
 import re
 from django.http import Http404
-from rest_framework import authentication
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import permissions
@@ -38,8 +37,6 @@ class BuildingListView(generics.ListAPIView):
     """
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
-    #authentication_classes = (authentication.TokenAuthentication, authentication.SessionAuthentication,)
-    authentication_classes = (authentication.TokenAuthentication, )
 
 
 class BuildingView(generics.RetrieveAPIView):
@@ -214,9 +211,6 @@ class NoticePostView(APIView):
     Provides a post method handler.
 
     """
-    # Check Token Authentication first, as this is how it will be used form AJAX
-    #authentication_classes = (authentication.TokenAuthentication, authentication.SessionAuthentication,)
-
     def post(self, request, format=None):
         # subject is required
         if not request.DATA.has_key('subject') or not request.DATA['subject']:
@@ -381,8 +375,6 @@ class ExpertiseCreateView(generics.CreateAPIView):
     """
     model = Expertise
     serializer_class = ExpertiseSerializer
-    # Check Token Authentication first, as this is how it will be used form AJAX
-    authentication_classes = (authentication.TokenAuthentication, authentication.SessionAuthentication,)
 
 
 class ExpertiseView(generics.RetrieveUpdateDestroyAPIView):
