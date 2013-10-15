@@ -21,6 +21,7 @@ NIRIT.Board = function (settings) {
     this.account = settings['account'];
     this.cards = [];
     this.more = null;
+    this.title = document.title; // original window title
 
     this.loading = false;
 
@@ -40,20 +41,32 @@ NIRIT.Board = function (settings) {
         this.filter = document.location.search.split('=')[1];
     }
 
-    // Counters (used by filters)
-    // not enabled when query string parameters are given
-    this.counters = {
-        'latest': settings['count']
-    };
-
     // We store the latest view into a cookie
     // this is the view we'll use to decide which notice/reply is new for a particular user
     this.view = $.cookie('notices');
     if (this.view) {
         this.view = JSON.parse(this.view);
+    } else {
+        // The view is empty for first-time users,
+        // we assign the current notices to the view, otherwise everything is new
+        // (which is kind of already obvious, right)
+        this.view = this.notices;
     }
     $.cookie('notices', JSON.stringify(this.notices), {'expires': 30, 'path': '/'});
 
+    // We count the total number of notices + relies the user has seen
+    // this includes the notices displayed.
+    var count = 0;
+    for (var n in this.notices) {
+        count++;
+        for (var r in this.notices[n]) {
+            count++;
+        }
+    }
+    this.counters = {
+        'latest': count
+    };
+    
     // Add initial cards to the board
     this.add_notices();
 
@@ -62,10 +75,6 @@ NIRIT.Board = function (settings) {
         case 'building':
             this.building = settings['filter']['value'];
             // start listening for updates
-            // only if we are looking at all notices
-            if (document.location.search) {
-                break;
-            }
             this.listen();
             break;
     }
@@ -95,8 +104,11 @@ NIRIT.Board.prototype.listen = function () {
             contentType: "application/json; charset=UTF-8",
             dataType: "json",
             success: function (response) {
+                // The returned counter includes all notices and their replies
+                // it is used to detect new replies as well as new notices
                 var latest_diff = response['results']['all'] - self.counters['latest'];
                 if (latest_diff > 0) {
+                    document.title = '(' + latest_diff  + ') ' + self.title;
                     $('#latest_count').find('span').css('visibility', 'visible');
                     $('#latest_count').find('span').html('('+latest_diff+')');
                     $('#latest_count').animate({
@@ -676,7 +688,6 @@ NIRIT.Board.prototype.set_listeners = function () {
                 var plus = $('a#plus');
                 self.loading = true;
                 self.fetch(plus, function () {
-                    console.log('Done');
                     self.loading = false;
                 });
             }
