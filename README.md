@@ -14,7 +14,6 @@ Requirements
 - Python MysqlDb (python-mysqldb)
 - Python Imaging (python-imaging)
 - Python Markdown (markdown)
-
 - Django 1.5+
 - Django REST framework 2.3+
 - django-grappelli

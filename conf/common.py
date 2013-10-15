@@ -1,13 +1,15 @@
+# Common Settings
 import inspect
 import os
 import stat
 
+### DEBUG
 DEBUG = False
+LOG_LEVEL = 'ERROR'
 TEMPLATE_DEBUG = False
-
-LOGIN_URL = '/'
-LOGIN_REDIRECT_URL = '/'
-AUTH_PROFILE_MODULE = 'nirit.UserProfile'
+DEBUG_TOOLBAR_CONFIG = {
+    'INTERCEPT_REDIRECTS': False,
+}
 
 ADMINS = ()
 DATABASES = {}
@@ -16,6 +18,15 @@ DATABASE_OPTIONS = {
     'charset': 'utf8_general_ci'
 }
 
+### AUTH CONTRIB MODULE
+LOGIN_URL = '/'
+LOGIN_REDIRECT_URL = '/'
+AUTH_PROFILE_MODULE = 'nirit.UserProfile'
+AUTHENTICATION_BACKENDS = (
+    'nirit.auth.EmailBackend',
+)
+
+### SECURITY
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
@@ -81,9 +92,6 @@ STATICFILES_FINDERS = (
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
-# Make this unique, and don't share it with anybody.
-SECRET_KEY = 'tkd2d)a%nhw+ay!zfogg&w0wrb1kdphia6)3r8id$mt_qwxqqu'
-
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
@@ -133,17 +141,25 @@ INSTALLED_APPS = (
     'debug_toolbar'
 )
 
-AUTHENTICATION_BACKENDS = (
-    'nirit.auth.EmailBackend',
-)
+### REST FRAMEWORK
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
 
+### ADMIN SITE
+GRAPPELLI_ADMIN_TITLE = 'Nirit'
 MARKITUP_FILTER = ('markdown.markdown', {'safe_mode': False})
 MARKITUP_SET = 'markitup/sets/markdown'
 MARKITUP_AUTO_PREVIEW = True
 JQUERY_URL='js/jquery-1.9.1.min.js'
 
-GRAPPELLI_ADMIN_TITLE = 'Nirit'
-
+### LOGGING
 SCRIPT_DIR = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
 LOGFILENAME = os.path.abspath(os.path.join(SCRIPT_DIR, '../../runtime/runtime.log'))
 LOGFILE = open(LOGFILENAME, 'a+')
@@ -160,6 +176,11 @@ LOGGING = {
             'format': '[%(levelname)s] %(asctime)s %(module)s: %(message)s'
         },
     },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        }
+    },
     'handlers': {
         'log_to_file': {
             'class': 'logging.FileHandler',
@@ -168,18 +189,19 @@ LOGGING = {
         },
         'mail_admins': {
             'level': 'ERROR',
+            'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
         }
     },
     'loggers': {
         'nirit': {
             'handlers': ['log_to_file'],
-            'level': 'ERROR',
+            'level': LOG_LEVEL,
             'propagate': True,
         },
         'api': {
             'handlers': ['log_to_file'],
-            'level': 'ERROR',
+            'level': LOG_LEVEL,
             'propagate': True,
         },
     }

@@ -14,5 +14,6 @@ ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
 sys.path.append(ROOT_DIR)
 
 if __name__ == "__main__":
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.settings-' + re.sub(r'\.', '-', socket.gethostname())
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'conf.settings'
+    # + re.sub(r'\.', '-', socket.gethostname())
     execute_from_command_line(sys.argv)

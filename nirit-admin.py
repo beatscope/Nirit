@@ -2,8 +2,6 @@
 import argparse
 import inspect
 import os
-import re
-import socket
 import sys
 
 SCRIPT_DIR = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
@@ -15,7 +13,7 @@ sys.path.append(ROOT_DIR)
 
 
 if __name__ == "__main__":
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'settings.settings-' + re.sub(r'\.', '-', socket.gethostname())
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'conf.nirit_settings'
     from nirit.manager import ModelManager
 
     choices = [

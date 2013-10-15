@@ -105,12 +105,7 @@ NIRIT.Directory.prototype.apply_template = function (object, template) {
             break;
 
         case 'company':
-            var floor = null;
-            for (var b in object.buildings) {
-                if (object.buildings[b].codename == this.building) {
-                    floor = object.buildings[b].floor_tag;
-                }
-            }
+            var floor = ( object.hasOwnProperty('floor_tag') && typeof(object.floor_tag) !== 'undefined' ) ? object.floor_tag : null;
             var square_logo =  NIRIT.STATIC_URL  + 'images/useravatar_32x32.png';
             if (object.square_logo) {
                 square_logo = object.square_logo;

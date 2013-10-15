@@ -38,6 +38,8 @@ class BuildingListView(generics.ListAPIView):
     """
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
+    #authentication_classes = (authentication.TokenAuthentication, authentication.SessionAuthentication,)
+    authentication_classes = (authentication.TokenAuthentication, )
 
 
 class BuildingView(generics.RetrieveAPIView):
@@ -213,7 +215,7 @@ class NoticePostView(APIView):
 
     """
     # Check Token Authentication first, as this is how it will be used form AJAX
-    authentication_classes = (authentication.TokenAuthentication, authentication.SessionAuthentication,)
+    #authentication_classes = (authentication.TokenAuthentication, authentication.SessionAuthentication,)
 
     def post(self, request, format=None):
         # subject is required

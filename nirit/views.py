@@ -181,10 +181,8 @@ def sign_up_activate(request):
                             'type': '{}'.format(Notice.INTRO),
                             'official': 'on'
                         }
-                        r = requests.post("https://{}/api/notices/post".format(request.META['HTTP_HOST']),
-                                          verify=False,
-                                          headers=headers,
-                                          data=json.dumps(data))
+                        url = "{}/notices/post".format(settings.API_HOST)
+                        r = requests.post(url, verify=False, headers=headers, data=json.dumps(data))
 
                         # Notify Building Managers and Admins
                         subject = 'A new Company has just joined Nirit'
@@ -229,25 +227,27 @@ def user_profile(request, codename=None):
     else:
         profile = request.user.get_profile()
 
-    # verification is session-based
-    cookies = {
-        'csrftoken': request.COOKIES['csrftoken'],
-        'sessionid': request.COOKIES['sessionid']
+    # Authentication is Token-based
+    headers = {
+        'referer': settings.API_HOST,
+        'content-type': 'application/json',
+        # use the logged-in user authorization token
+        'authorization': 'Token {}'.format(request.user.get_profile().token)
     }
 
     # Make an OPTIONS request to retrieve the full list of Notices for this user
-    r = requests.options("https://{}/api/notices".format(request.META['HTTP_HOST']), verify=False, cookies=cookies)
+    url = "{}/notices".format(settings.API_HOST)
+    r = requests.options(url, verify=False, headers=headers)
     try:
         notices = json.dumps(json.loads(r.text)['results']['notices'])
     except (IndexError, KeyError, ValueError):
         notices = '{}'
 
     # Load user's Notices
-    url = "https://{}/api/notices/?member={}".format(request.META['HTTP_HOST'], profile.codename)
-    response = requests.get("https://{}/api/notices".format(request.META['HTTP_HOST']),
-                            verify=False,
-                            cookies=cookies,
-                            params={'member': profile.codename})
+    params = {
+        'member': profile.codename
+    }
+    response = requests.get(url, verify=False, headers=headers, params=params)
     context = {
         'member': profile,
         'data': response.text,
@@ -425,14 +425,17 @@ def board(request, codename=None):
 
     context['building'] = building
 
-    # verification is session-based
-    cookies = {
-        'csrftoken': request.COOKIES['csrftoken'],
-        'sessionid': request.COOKIES['sessionid']
+    # Authentication is Token-based
+    headers = {
+        'referer': settings.API_HOST,
+        'content-type': 'application/json',
+        # use the logged-in user authorization token
+        'authorization': 'Token {}'.format(request.user.get_profile().token)
     }
 
     # Make an OPTIONS request to retrieve the full list of Notices for this user 
-    r = requests.options("https://{}/api/notices".format(request.META['HTTP_HOST']), verify=False, cookies=cookies)
+    url = "{}/notices".format(settings.API_HOST)
+    r = requests.options(url, verify=False, headers=headers)
     try:
         d = json.loads(r.text)
         context['notices'] = json.dumps(d['results']['notices'])
@@ -446,7 +449,6 @@ def board(request, codename=None):
         context['count'] = 0
     
     # Load Building's first Notices
-    url = "https://{}/api/notices/".format(request.META['HTTP_HOST'])
     params = {
         'building': building.codename
     }
@@ -456,7 +458,7 @@ def board(request, codename=None):
         params['filter'] = request.GET['filter']
         # we also add it to the context for the template to use
         context['filter'] = request.GET['filter']
-    response = requests.get(url, verify=False, cookies=cookies, params=params)
+    response = requests.get(url, verify=False, headers=headers, params=params)
     context['data'] = response.text
 
     # Add statistics
@@ -506,14 +508,17 @@ def directory(request, codename=None):
         group = 'floor'
     context['group'] = group
 
-    # Fetch companies using Nirit API
-    url = "https://{}/api/buildings/{}".format(request.META['HTTP_HOST'], building.codename)
-    # verification is session-based
-    cookies = {
-        'csrftoken': request.COOKIES['csrftoken'],
-        'sessionid': request.COOKIES['sessionid']
+    # Authentication is Token-based
+    headers = {
+        'referer': settings.API_HOST,
+        'content-type': 'application/json',
+        # use the logged-in user authorization token
+        'authorization': 'Token {}'.format(request.user.get_profile().token)
     }
-    response = requests.get(url, verify=False, cookies=cookies)
+
+    # Fetch companies using Nirit API
+    url = "{}/buildings/{}".format(settings.API_HOST, building.codename)
+    response = requests.get(url, verify=False, headers=headers)
     data = json.loads(response.text)
 
     # order by group
@@ -627,14 +632,20 @@ def company(request, codename):
     # add whether the user is a company editor to the context
     context['is_user_editor'] = organization.is_editor(request.user)
 
-    # Load company Notices
-    url = "https://{}/api/notices/?company={}".format(request.META['HTTP_HOST'], organization.codename)
-    # verification is session-based
-    cookies = {
-        'csrftoken': request.COOKIES['csrftoken'],
-        'sessionid': request.COOKIES['sessionid']
+    # Authentication is Token-based
+    headers = {
+        'referer': settings.API_HOST,
+        'content-type': 'application/json',
+        # use the logged-in user authorization token
+        'authorization': 'Token {}'.format(request.user.get_profile().token)
     }
-    response = requests.get(url, verify=False, cookies=cookies)
+
+    # Load company Notices
+    url = "{}/notices".format(settings.API_HOST)
+    params = {
+        'company': organization.codename
+    }
+    response = requests.get(url, verify=False, headers=headers, params=params)
 
     # This is the list displayed on the RHS
     context['staff'] = organization.members.all()[:4]
@@ -680,14 +691,20 @@ def company_staff(request, codename):
     if not request.user in building.members:
         raise PermissionDenied
 
-    # Load company Notices
-    url = "https://{}/api/notices/?company={}".format(request.META['HTTP_HOST'], organization.codename)
-    # verification is session-based
-    cookies = {
-        'csrftoken': request.COOKIES['csrftoken'],
-        'sessionid': request.COOKIES['sessionid']
+    # Authentication is Token-based
+    headers = {
+        'referer': settings.API_HOST,
+        'content-type': 'application/json',
+        # use the logged-in user authorization token
+        'authorization': 'Token {}'.format(request.user.get_profile().token)
     }
-    response = requests.get(url, verify=False, cookies=cookies)
+
+    # Load company Notices
+    url = "{}/notices".format(settings.API_HOST)
+    params = {
+        'company': organization.codename
+    }
+    response = requests.get(url, verify=False, headers=headers, params=params)
 
     # Add statistics
     context['stats'] = {
@@ -730,22 +747,27 @@ def company_board(request, codename):
     if not request.user in building.members:
         raise PermissionDenied
 
-    # verification is session-based
-    cookies = {
-        'csrftoken': request.COOKIES['csrftoken'],
-        'sessionid': request.COOKIES['sessionid']
+    # Authentication is Token-based
+    headers = {
+        'referer': settings.API_HOST,
+        'content-type': 'application/json',
+        # use the logged-in user authorization token
+        'authorization': 'Token {}'.format(request.user.get_profile().token)
     }
 
     # Make an OPTIONS request to retrieve the full list of Notices for this user
-    r = requests.options("https://{}/api/notices".format(request.META['HTTP_HOST']), verify=False, cookies=cookies)
+    url = "{}/notices".format(settings.API_HOST)
+    r = requests.options(url, verify=False, headers=headers)
     try:
         context['notices'] = json.dumps(json.loads(r.text)['results']['notices'])
     except IndexError:
         context['notices'] = '{}'
 
     # Load company Notices
-    url = "https://{}/api/notices/?company={}".format(request.META['HTTP_HOST'], organization.codename)
-    response = requests.get(url, verify=False, cookies=cookies)
+    params = {
+        'company': organization.codename
+    }
+    response = requests.get(url, verify=False, headers=headers, params=params)
     context['data'] = response.text
 
     # Add statistics
