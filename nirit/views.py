@@ -240,7 +240,7 @@ def user_profile(request, codename=None):
     r = requests.options(url, verify=False, headers=headers)
     try:
         notices = json.dumps(json.loads(r.text)['results']['notices'])
-    except (IndexError, KeyError, ValueError):
+    except:
         notices = '{}'
 
     # Load user's Notices
@@ -442,7 +442,7 @@ def board(request, codename=None):
         context['types'] = json.dumps(d['types'])
         context['types_escaped'] = d['types']
         context['count'] = int(d['results']['all'])
-    except (IndexError, KeyError, ValueError):
+    except:
         context['notices'] = '{}'
         context['types'] = '{}'
         context['types_escaped'] = {}
@@ -467,7 +467,7 @@ def board(request, codename=None):
     }
     try:
         notice_count = json.loads(response.text)['count']
-    except (KeyError, ValueError):
+    except:
         notice_count = 0
     context['stats']['notices'] = notice_count
 
@@ -760,7 +760,7 @@ def company_board(request, codename):
     r = requests.options(url, verify=False, headers=headers)
     try:
         context['notices'] = json.dumps(json.loads(r.text)['results']['notices'])
-    except IndexError:
+    except:
         context['notices'] = '{}'
 
     # Load company Notices
