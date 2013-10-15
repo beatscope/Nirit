@@ -236,8 +236,12 @@ def user_profile(request, codename=None):
     }
 
     # Make an OPTIONS request to retrieve the full list of Notices for this user
-    url = "{}/notices".format(settings.API_HOST)
-    r = requests.options(url, verify=False, headers=headers)
+    cookies = {
+        'csrftoken': request.COOKIES['csrftoken'],
+        'sessionid': request.COOKIES['sessionid']
+    }
+    url = "https://{}/api/notices".format(request.META['HTTP_HOST'])
+    r = requests.options(url, verify=False, cookies=cookies)
     try:
         notices = json.dumps(json.loads(r.text)['results']['notices'])
     except:
@@ -425,30 +429,33 @@ def board(request, codename=None):
 
     context['building'] = building
 
-    # Authentication is Token-based
-    headers = {
-        'referer': settings.API_HOST,
-        'content-type': 'application/json',
-        # use the logged-in user authorization token
-        'authorization': 'Token {}'.format(request.user.get_profile().token)
-    }
-
     # Make an OPTIONS request to retrieve the full list of Notices for this user 
-    url = "{}/notices".format(settings.API_HOST)
-    r = requests.options(url, verify=False, headers=headers)
+    cookies = {
+        'csrftoken': request.COOKIES['csrftoken'],
+        'sessionid': request.COOKIES['sessionid']
+    }
+    url = "https://{}/api/notices".format(request.META['HTTP_HOST'])
+    r = requests.options(url, verify=False, cookies=cookies)
     try:
         d = json.loads(r.text)
         context['notices'] = json.dumps(d['results']['notices'])
         context['types'] = json.dumps(d['types'])
         context['types_escaped'] = d['types']
         context['count'] = int(d['results']['all'])
-    except:
+    except Exception as e:
+        logger.error(e)
         context['notices'] = '{}'
         context['types'] = '{}'
         context['types_escaped'] = {}
         context['count'] = 0
     
     # Load Building's first Notices
+    headers = {
+        'referer': settings.API_HOST,
+        'content-type': 'application/json',
+        # use the logged-in user authorization token
+        'authorization': 'Token {}'.format(request.user.get_profile().token)
+    }
     params = {
         'building': building.codename
     }
@@ -458,6 +465,7 @@ def board(request, codename=None):
         params['filter'] = request.GET['filter']
         # we also add it to the context for the template to use
         context['filter'] = request.GET['filter']
+    url = "{}/notices".format(settings.API_HOST)
     response = requests.get(url, verify=False, headers=headers, params=params)
     context['data'] = response.text
 
@@ -756,8 +764,12 @@ def company_board(request, codename):
     }
 
     # Make an OPTIONS request to retrieve the full list of Notices for this user
-    url = "{}/notices".format(settings.API_HOST)
-    r = requests.options(url, verify=False, headers=headers)
+    cookies = {
+        'csrftoken': request.COOKIES['csrftoken'],
+        'sessionid': request.COOKIES['sessionid']
+    }
+    url = "https://{}/api/notices".format(request.META['HTTP_HOST'])
+    r = requests.options(url, verify=False, cookies=cookies)
     try:
         context['notices'] = json.dumps(json.loads(r.text)['results']['notices'])
     except:

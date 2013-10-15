@@ -20,7 +20,6 @@ from api.serializers import BuildingSerializer, \
 logger = logging.getLogger('api.views')
 
 @api_view(('GET',))
-@permission_classes((permissions.IsAdminUser, ))
 def api_root(request, format=None):
     return Response({
         'buildings': reverse('buildings-list', request=request, format=format),
