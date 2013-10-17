@@ -106,10 +106,23 @@ class UploadStorage(object):
             #logger.debug("{} {} {}".format(image.format, image.size, image.mode))
             # resize image
             if self.size:
-                image = Image.open(self._path)
+                #logger.debug(self.size)
+                image = image.convert('RGBA')
                 image.thumbnail(self.size, Image.ANTIALIAS)
-                image.save(self._path)
                 #logger.debug("{} {} {}".format(image.format, image.size, image.mode))
+                # when the image is not square, we pad it to make it square
+                # by pasting it int the middle of a transparent background
+                background = Image.new('RGBA', size = self.size, color = (255, 255, 255, 0))
+                if self.size[0] == image.size[0]:
+                    # the width fits the container, center the height
+                    x = 0
+                    y = (self.size[1] / 2) - (image.size[1] / 2)
+                else:
+                    # center the width
+                    x = (self.size[0] / 2) - (image.size[0] / 2)
+                    y = 0
+                background.paste(image, (x, y))
+                background.save(self._path)
             return True
         except Exception as e:
             logger.error(e)

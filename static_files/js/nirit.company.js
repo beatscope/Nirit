@@ -29,7 +29,9 @@ NIRIT.Company.prototype.init = function () {
     new NIRIT.Upload({
         'field': 'logo',
         'model': 'Organization',
-        'token': this.csrf_token
+        'token': this.csrf_token,
+        'width': 180,
+        'height': 90
     });
 
     // Square logo upload

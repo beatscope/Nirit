@@ -120,7 +120,7 @@ class Organization(models.Model):
     image = models.ImageField(upload_to='./company/%Y/%m/%d', null=True, blank=True, \
                               help_text="PNG, JPEG, or GIF; max size 2 MB. Image must be 626 x 192 pixels or larger.")
     logo = models.ImageField(upload_to='./company/%Y/%m/%d', null=True, blank=True, \
-                             help_text="PNG, JPEG, or GIF; max size 2 MB.")
+                             help_text="PNG, JPEG, or GIF; max size 2 MB. Image must be 180 x 90 pixels or larger.")
     square_logo = models.ImageField(upload_to='./company/%Y/%m/%d', null=True, blank=True, \
                                     help_text="PNG, JPEG, or GIF; max size 2 MB. Image must be 60 x 60 pixels or larger.")
 
@@ -190,7 +190,10 @@ class Organization(models.Model):
 
     def get_logo(self):
         try:
-            return self.logo.url
+            logo = self.logo.url
+            if logo.endswith('False'):
+                return ''
+            return logo
         except ValueError:
             return ''
 

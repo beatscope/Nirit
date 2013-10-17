@@ -1,7 +1,7 @@
 /** 
  * Nirit Styles.
  * 
- * @version     2013-04-26 1.0.2
+ * @version     2013-10-17 1.0.3
  * @author      Michael Giuliano <michael@beatscope.co.uk>
  * @copyright   2013 Beatscope Limited | http://www.beatscope.co.uk/
  */
@@ -715,7 +715,7 @@ ul#building-links li:first-child {
         #cards .card .avatar img {
             display:block;
             width:60px;
-            height:auto;
+            height:60px;
             margin:auto;
         }
     #cards .card .subject {
@@ -1251,6 +1251,7 @@ ul#building-links li:first-child {
         right:10px;
         display:block;
         width:60px;
+        height:60px;
     }
 
 #content .account .notices h3 {
@@ -1293,7 +1294,11 @@ ul#building-links li:first-child {
     box-shadow:2px 2px 3px #333;
 }
 #content .company-profile .company-card .company-logo {}
-#content .company-profile .company-card .company-logo img {display:block; }
+#content .company-profile .company-card .company-logo img {
+    display:block;
+    width:180px;
+    height:90px;
+}
 #content .company-profile .company-card h1 { padding:10px 0; }
 #content .company-profile .company-card a { color:#000; }
 #content .company-profile .company-card a:hover { text-decoration:none; }
@@ -1430,6 +1435,7 @@ ul#building-links li:first-child {
     left:5px;
     display:block;
     width:16px;
+    height:16px;
     border-top:solid 1px #fff;
     border-left:solid 1px #fff;
     border-bottom:solid 1px #CED9E4;
@@ -1489,7 +1495,7 @@ ul#building-links li:first-child {
     #content .company-profile.staff .avatar img {
         display:block;
         width:60px;
-        height:auto;
+        height:60px;
         margin:auto;
     }
 #content .company-profile.staff .approval-list { padding-left:10px }
