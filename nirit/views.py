@@ -354,12 +354,15 @@ def user_profile_edit(request):
                 # we do this to avoid creating the file twice
                 member_form.instance.job_title = member_form.cleaned_data['job_title']
                 member_form.instance.bio = member_form.cleaned_data['bio']
+                # handle AJAX image uploads;
+                # if a new file was uploaded, we use this one;
+                # otherwise, when an image is already assigned to the field,
+                # we re-assign the existing value. Without doing this, the value would be cleared
                 if request.POST.has_key('thumbnail') and request.POST['thumbnail']:
-                    # if a new image was uploaded, use this one instead
                     member_form.instance.thumbnail = request.POST['thumbnail'].split(settings.MEDIA_URL)[1]
-                else:
-                    # otherwise use the current image
+                elif member_form.instance.thumbnail:
                     member_form.instance.thumbnail = member_form.cleaned_data['thumbnail']
+                # save the instance
                 member_form.instance.save()
                 # all done, redirect to the profile page
                 destination = '/member/account'
@@ -839,20 +842,21 @@ def company_edit(request, codename):
             form.instance.expertise = form.cleaned_data['expertise']
             form.instance.department = form.cleaned_data['department']
             form.instance.size = form.cleaned_data['size']
+            # handle AJAX image uploads;
+            # if a new file was uploaded, we use this one;
+            # otherwise, when a logo is already assigned to the field,
+            # we re-assign the existing value. Without doing this, the value would be cleared
             if request.POST.has_key('image') and request.POST['image']:
-                # if a new image was uploaded, use this one instead
                 form.instance.image = request.POST['image'].split(settings.MEDIA_URL)[1]
-            else:
-                # otherwise, use current image
+            elif form.instance.image:
                 form.instance.image = form.cleaned_data['image']
-            # the same logic applies for the logo and square_logo fields
             if request.POST.has_key('logo') and request.POST['logo']:
                 form.instance.logo = request.POST['logo'].split(settings.MEDIA_URL)[1]
-            else:
+            elif form.instance.logo:
                 form.instance.logo = form.cleaned_data['logo']
             if request.POST.has_key('square_logo') and request.POST['square_logo']:
                 form.instance.square_logo = request.POST['square_logo'].split(settings.MEDIA_URL)[1]
-            else:
+            elif form.instance.square_logo:
                 form.instance.square_logo = form.cleaned_data['square_logo']
             form.instance.save()
             # save profile data
