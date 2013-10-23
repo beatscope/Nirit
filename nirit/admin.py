@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from nirit.models import Building, Organization, Notice, Expertise, \
-                         UserProfile, CompanyProfile, Page
+                         UserProfile, CompanyProfile, Page, OToken
 
 class BackOffice(admin.sites.AdminSite):
     pass
@@ -15,7 +15,7 @@ class UserProfileInline(admin.StackedInline):
     verbose_name_plural = 'profile'
 
 class UserAdmin(UserAdmin):
-    list_display = ('profile', 'building', 'company', 'username', 'email', 'is_staff')
+    list_display = ('profile', 'building', 'company', 'username', 'email', 'token', 'is_staff')
     list_filter = ('profile__building__name', 'profile__company__name')
     inlines = (UserProfileInline, )
 
@@ -32,6 +32,13 @@ class UserAdmin(UserAdmin):
         else:
             return '-'
     company.short_description = 'Company'
+
+    def token(self, obj):
+        try:
+            token = OToken.objects.get(user=obj)
+            return token.key
+        except OToken.DoesNotExist:
+            return ''
 
 class BuildingAdmin(admin.ModelAdmin):
 
