@@ -58,6 +58,7 @@ urlpatterns = patterns('',
     url(r'^company/[\w-]*/(?P<codename>\w+)/edit$', 'nirit.views.company_edit'),
     url(r'^company/[\w-]*/(?P<codename>\w+)/staff$', 'nirit.views.company_staff'),
     url(r'^company/[\w-]*/(?P<codename>\w+)$', 'nirit.views.company'),
+    url(r'^company$', 'nirit.views.company'),
 
     # Pages
     url(pages_regex, 'nirit.views.page'),

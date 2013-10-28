@@ -618,7 +618,7 @@ def company_set_status(request, codename, action):
 
 
 @login_required
-def company(request, codename):
+def company(request, codename=None):
     """
     A company can be viewed by all of the Building's members.
     The 'Edit' button will be made available to company editors only.
@@ -627,6 +627,9 @@ def company(request, codename):
     # Check the user is active
     if not request.user.get_profile().status == UserProfile.VERIFIED:
         raise PermissionDenied
+    if not codename:
+        url = '/company/{}/{}'.format(request.user.get_profile().company.slug, request.user.get_profile().company.codename)
+        return redirect(url)
 
     context = {}
     organization = get_object_or_404(Organization, codename=codename)
