@@ -2,12 +2,20 @@
 {% load i18n %}
 {% load building_card %}
 
+{% block extrahead %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui.js"></script>
+<link media="all" rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/jquery-ui.css" />
+{% endblock %}
+
 {% block bodyclass %}class="home"{% endblock %}
 
 {% block content %}
 <div class="content index edit">
 
     {% if user.is_anonymous %}
+
+        <iframe id="nirit-video" class="hidden" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+
         <div class="sign-up-info">
             <div class="nirit">
                 <a href="/"><img alt="Nirit icon" src="{{ STATIC_URL}}/images/icon_nirit-rings.png">Nirit</a>
@@ -15,6 +23,7 @@
             <h2>The local business network.</h2>
             <div class="actions">
                 <a href="/what-is-nirit" class="learn-more">learn more</a>
+                <a href="/what-is-nirit" class="video"><span></span>play video</a>
             </div>
         </div>
 
@@ -66,6 +75,25 @@
             $('#form-errors').fadeOut();
             $('#id_username').focus();
         }, 2000);
+
+        $('.actions a.video').click(function () {
+            $('#nirit-video').dialog({
+                'modal': true,
+                'width': 527,
+                'height': 334,
+                'open': function () {
+                    $('#nirit-video').css({
+                        'width': 500,
+                        'height': 334
+                    });
+                    $('#nirit-video').attr('src', "//player.vimeo.com/video/76692971?title=0&amp;byline=0&amp;portrait=0&autoplay=true");
+                },
+                'close': function () {
+                    $('#nirit-video').attr('src', null);
+                }
+            });
+            return false;
+        });
     });
 </script>
 {% endblock %}
