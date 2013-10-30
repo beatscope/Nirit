@@ -681,7 +681,7 @@ NIRIT.Board.prototype.set_listeners = function () {
     });
 
     // Fetch more when end of page is reached
-    $(window).scroll(function() {
+    /*$(window).scroll(function() {
         if (!self.loading) {
             var trigger = $("body").height() - 173;
             if ($(document).scrollTop() + $(window).height() >= trigger) {
@@ -692,6 +692,6 @@ NIRIT.Board.prototype.set_listeners = function () {
                 });
             }
         }
-    });
+    });*/
 
 };
