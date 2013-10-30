@@ -6,6 +6,7 @@ import re
 import requests
 from django.core.exceptions import PermissionDenied
 from django.core.mail import EmailMultiAlternatives, mail_admins
+from django.core.validators import validate_email
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
@@ -21,6 +22,7 @@ from nirit.models import Page, Building, Notice, Organization, OToken, UserProfi
 from nirit.manager import ModelManager
 from nirit.forms import CompanyForm, MemberForm, UserForm, SignUpForm
 from nirit.fixtures import Message
+from nirit.utils import lookup_email
 
 logger = logging.getLogger('nirit.views')
 
@@ -646,6 +648,10 @@ def company(request, codename=None):
     # add whether the user is a company editor to the context
     context['is_user_editor'] = organization.is_editor(request.user)
 
+    # extract user email domain
+    # this is used by the 'Invite Colleague' feature
+    context['domain'] = request.user.email.split('@')[1]
+
     # Authentication is Token-based
     headers = {
         'referer': settings.API_HOST,
@@ -924,6 +930,68 @@ def contact_company(request, codename):
     response['Content-Type'] = 'application/json; charset=utf-8'
     return response
 
+
+@login_required
+def invite_members(request, codename):
+    """
+    Invite staff to join Company.
+    Available through AJAX. POST only allowed.
+
+    """
+    if request.method == 'GET':
+        return HttpResponseBadRequest(json.dumps({
+            'status': '400',
+            'reason': 'Method Not Allowed.'
+        }), mimetype="application/json")
+
+    # Check the user is active
+    if not request.user.get_profile().status == UserProfile.VERIFIED:
+        raise PermissionDenied
+
+    try:
+        company = Organization.objects.get(codename=codename)
+        if request.POST.has_key('list') and request.POST['list']:
+            # emails can be separated by whitespaces, commas or semi-colons
+            cleaned_list = re.sub(r'[,;\s]', ' ', request.POST['list']).split()
+            recipients_list = []
+            for recipient in cleaned_list:
+                try:
+                    validate_email(recipient)
+                except:
+                    # skip invalid email addresses
+                    continue
+                match = lookup_email(recipient)
+                if not match or match != company:
+                    # skip non-company emails,
+                    # or emails from a different company
+                    continue
+                recipients_list.append(recipient)
+            if recipients_list:
+                subject = 'You are invited to join Nirit'
+                c = {
+                    'name': request.user.get_profile().name,
+                    'company': company.name,
+                    'link': '{}/member/sign-up'.format(settings.HOST),
+                }
+                text_content = Message().get('email_invite_members_text', c)
+                html_content = Message().get('email_invite_members_html', c)
+                from_email = settings.EMAIL_FROM
+                msg = EmailMultiAlternatives(subject, text_content, from_email, recipients_list)
+                if html_content:
+                    msg.attach_alternative(html_content, "text/html")
+                msg.send()
+    except Organization.DoesNotExist:
+        return HttpResponseBadRequest(json.dumps({
+            'status': '404',
+            'reason': 'Unknown Company.'
+        }), mimetype="application/json")
+
+    response = HttpResponse(json.dumps({
+        'status': '200',
+    }), mimetype="application/json")
+    response['Content-Type'] = 'application/json; charset=utf-8'
+    return response
+    
 
 @login_required
 def contact_member(request, codename):

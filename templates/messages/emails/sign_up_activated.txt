@@ -1,0 +1,5 @@
+Hi {{ first_name }}\n\n
+Your account on Nirit has been approved.\n\n
+Please click the following link to access you profile:\n\n
+{{ link }}\n\n
+The team @ Nirit

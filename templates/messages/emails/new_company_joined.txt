@@ -1,0 +1,3 @@
+{{ name }} has just joined Nirit.\n\n
+Visit your account to activate this company: {{ link }}\n\n
+The team @ Nirit

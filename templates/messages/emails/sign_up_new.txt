@@ -1,0 +1,5 @@
+{{ name }} has just joined {{ company }}.\n\n
+This user needs to be approved in order to access Nirit's features.\n\n
+Visit {{ company }}'s Staff page to activate this account.\n
+{{ link }}\n\n
+The team @ Nirit

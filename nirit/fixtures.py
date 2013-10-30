@@ -1,5 +1,45 @@
 # nirit/fixtures.py
+from django.template import loader
 from django.conf import settings
+
+
+class Message(object):
+
+    MESSAGES = {
+
+        ### Sign-up Messages ###
+        'welcome': 'welcome.html',                                              # Welcome message on Sign-up page
+        'email_failed': 'email_failed.html',                                    # Email domain match failed message on Sign-up page
+        'invalid_token': 'invalid_token.html',                                  # Invalid Token message on Sign-up page
+
+        ### Emails ###
+        'email_activation_required_text': 'emails/activation_required.txt',     # Activation Required Email (text)
+        'email_activation_required_html': 'emails/activation_required.html',    # Activation Required Email (html)
+        'email_new_company_text': 'emails/new_company_joined.txt',              # New Company Joined (text)
+        'email_new_company_html': 'emails/new_company_joined.html',             # New Company Joined (html)
+        'email_sign_up_success_text': 'emails/sign_up_new.txt',                 # Sign up success (text)
+        'email_sign_up_success_html': 'emails/sign_up_new.html',                # Sign up success (html)
+        'email_sign_up_failed_text': 'emails/sign_up_failed.txt',               # Sign up failed (text)
+        'email_sign_up_failed_html': 'emails/sign_up_failed.html',              # Sign up failed (html)
+        'email_sign_up_activated_text': 'emails/sign_up_activated.txt',         # Sign up activated (text)
+        'email_sign_up_activated_html': 'emails/sign_up_activated.html',        # Sign up activated (html)
+        'email_company_contact_text': 'emails/company_contact.txt',             # Contact Company (text)
+        'email_company_contact_html': 'emails/company_contact.html',            # Contact Company (html)
+        'email_invite_members_text': 'emails/invite_members.txt',               # Invite Members (text)
+        'email_invite_members_html': 'emails/invite_members.html',              # Invite Members (html)
+        'email_member_contact_text': 'emails/member_contact.txt',               # Contact Member (text)
+        'email_member_contact_html': 'emails/member_contact.html',              # Contact Member (html)
+
+    }
+
+    def get(self, key, data={}):
+        if self.MESSAGES.has_key(key):
+            filename = self.MESSAGES[key]
+            content = loader.render_to_string('messages/{}'.format(filename), data)
+            return content
+        else:
+            return ''
+
 
 """ Full list of Departments / Main Industries. """
 DEPARTMENTS = (
@@ -151,172 +191,3 @@ DEPARTMENTS = (
 (145, 'Wireless'),
 (146, 'Writing & Editing'),
 )
-
-class Message(object):
-
-    MESSAGES = {
-
-        # Welcome
-        'welcome': (
-            '<h3>Why sign up to Nirit?</h3>'\
-            + '<p><strong>Nirit</strong> is a <strong>Business-to-Business Network</strong>. '\
-            + 'It aims to connect local businesses to each other, primarily based on location. '\
-            + 'It allows businesses to find and communicate with suppliers and customers, '\
-            + 'who might be very close, potentially in the same building, but otherwise might never find each other.</p>'\
-            + '<h3>How does it work?</h3>'\
-            + '<p><strong>Staff Members</strong> are authenticated by their work email addresses, '\
-            + 'and anytime a coworker (someone from the same email domain, like @beatscope.co.uk) joins Nirit, '\
-            + 'they automatically become a member of their associated Company, '\
-            + 'and can instantly browse the <strong>Building Directory</strong>, and use the <strong>Notice Board</strong>.</p>'\
-            + '<p><strong>Business Owners</strong> with a valid <strong>Authorization Code</strong> can create a Business Profile for their Company '\
-            + 'by registering it with Nirit.</p>',
-            'text'
-        ),
-
-        # Email domain match failed
-        'email_failed': (
-            '<h3>Email Domain Not Found</h3>'\
-            + '<p>We did not find any company matching your email address.</p>'\
-            + '<p>You might be using a private domain (such as google.com or outlook.com), or your company hasn\'t joined Nirit yet.</p>'\
-            + '<p>Regardless, <a href="https://nirit.uservoice.com">get in touch</a> so that we can help you get set up.</p>',
-            'text'
-        ),
-
-        # Invalid Token
-        'invalid_token': (
-            '<h3>Invalid Authorization Code</h3>'\
-            + '<p>The code you have entered is invalid. Please make sure you have typed it correctly.</p>'\
-            + '<p>Contact us via <a href="https://nirit.uservoice.com">this form</a> if you have any problems.</p>',
-            'text'
-        ),
-
-        ### EMAILS ###
-
-        # Activation Required Email (text)
-        'email_activation_required_text': (
-            'Hi {first_name}\n\n'\
-            + 'An account has been created on Nirit using this email address.\n\n'\
-            + 'Please click the following link to confirm your email address and activate your account and create a Business Profile.\n\n'\
-            + '{link}\n\n'\
-            + 'If you did not create this account please contact the Nirit team via support@nirit.co.uk.\n\n'\
-            + 'The team @ Nirit',
-            'text'
-        ),
-
-        # Activation Required Email (html)
-        'email_activation_required_html': (
-            'sign_up_activation_required.html',
-            'file'
-        ),
-
-        # New Company Joined (text)
-        'email_new_company_text': (
-            '{name} has just joined Nirit.\n\n'\
-            + 'Visit your account to activate this company: {link}\n\n'\
-            + 'The team @ Nirit',
-            'text'
-        ),
-
-        # New Company Joined (html)
-        'email_new_company_html': (
-            'new_company_joined.html',
-            'file'
-        ),
-
-        # Sign up success (text)
-        'email_sign_up_success_text': (
-            '{name} has just joined {company}.\n\n'\
-            + 'This user needs to be approved in order to access Nirit\'s features.\n\n'\
-            + 'Visit {company}\'s Staff page to activate this account.\n'\
-            + '{link}\n\n'\
-            + 'The team @ Nirit',
-            'text'
-        ),
-
-        # Sign up success (html)
-        'email_sign_up_success_html': (
-            'sign_up_new.html',
-            'file'
-        ),
-
-        # Sign up failed (text)
-        'email_sign_up_failed_text': (
-            'A user has attempted to create an account.\n\n'\
-            + 'The user might have an email address in a public domain (i.e. google.com). '\
-            + 'In which case the Company would need to be created manually.\n\n'\
-            + 'Please contact: {contact}\n\n'\
-            + 'The team @ Nirit',
-            'text'
-        ),
-
-        # Sign up failed (html)
-        'email_sign_up_failed_html': (
-            'sign_up_failed.html',
-            'file'
-        ),
-
-        # Sign up activated (text)
-        'email_sign_up_activated_text': (
-            'Hi {first_name}\n\n'\
-            + 'Your account on Nirit has been approved.\n\n'\
-            + 'Please click the following link to access you profile:\n\n'\
-            + '{link}\n\n'\
-            + 'The team @ Nirit',
-            'text'
-        ),
-
-        # Sign up activated (html)
-        'email_sign_up_activated_html': (
-            'sign_up_activated.html',
-            'file'
-        ),
-
-        # contact Company (text)
-        'email_company_contact_text': (
-            '{name} has sent a message to {company} via Nirit.\n\n'\
-            + '{subject}\n\n'\
-            + 'Visit {name}\'s Profile: {link}\n\n'\
-            + 'The team @ Nirit',
-            'text'
-        ),
-
-        # Contact Company (html)
-        'email_company_contact_html': (
-            'company_contact.html',
-            'file'
-        ),
-
-        # Contact Member(text)
-        'email_member_contact_text': (
-            '{name} from {company} has sent you a message via Nirit.\n\n'\
-            + '{subject}\n\n'\
-            + 'Visit {name}\'s Profile: {link}\n\n'\
-            + 'The team @ Nirit',
-            'text'
-        ),
-
-        # Contact Member (html)
-        'email_member_contact_html': (
-            'member_contact.html',
-            'file'
-        ),
-
-    }
-
-    def get(self, key, data={}):
-        if self.MESSAGES.has_key(key):
-            msg = self.MESSAGES[key]
-            if msg[1] == 'file':
-                html_file = open('{}/emails/{}'.format(settings.TEMPLATE_DIRS[0], msg[0]))
-                html = html_file.read()
-                html_file.close()
-                if data:
-                    html = html.format(**data)
-                return html
-            else:
-                text = msg[0]
-                if data:
-                    text = text.format(**data)
-                return text
-        else:
-            return ''

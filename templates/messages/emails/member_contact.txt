@@ -1,0 +1,4 @@
+{{ name }} from {{ company }} has sent you a message via Nirit.\n\n
+{{ subject}}\n\n
+Visit {{ name }}'s Profile: {{ link }}\n\n
+The team @ Nirit

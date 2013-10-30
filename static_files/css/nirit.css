@@ -80,6 +80,35 @@ blockquote {
     background:#348FB5;
 }
 
+#content a.invite {
+    position:relative;
+    display:block;
+    background:#2E7FA1;
+    margin:10px 0 0;
+    color:#fff;
+    text-decoration:none;
+    padding:5px 10px;
+    padding-right:32px;
+}
+    #content a.invite:hover {
+        color:#fff;
+        background:#348FB5;
+    }
+    #content a.invite span {
+        position:absolute;
+        top:5px;
+        right:10px;
+        display:block;
+        width:17px;
+        height:16px;
+        background-image:url(../images/master-icon.png);
+        background-repeat:no-repeat;
+        background-position:-51px -16px;
+    }
+    #content a.invite:hover span {
+        background-position:-51px 0;
+    }
+
 /**
 Colours
     Black               393939
@@ -1450,6 +1479,46 @@ ul#building-links li:first-child {
     background-repeat:no-repeat;
     background-position:right center;
 }
+
+#content .company-profile .invite-box {}
+    #content .company-profile .invite-box textarea {
+        width:292px;
+        padding:2px;
+        border:1px solid #CED9E4;
+        resize:none;
+    }
+    #content .company-profile .invite-box .help {
+        padding:.5em 10px;
+        font-style:italic;
+        color:#666;
+    }
+    #content .company-profile .invite-box .button {
+        display:block;
+        margin:10px 0 0 auto;
+        padding:3px 10px;
+        font-weight:bold;
+        cursor:pointer;
+        background:#CED9E4;
+        border:solid 1px #236A87;
+        border-radius:3px;
+        outline:none;
+    }
+    #content .company-profile .invite-box .button.loading,
+    #content .company-profile .invite-box .button.loading:hover,
+    #content .company-profile .invite-box .button.loading:focus {
+        width:40px;
+        background:#348FB5 url(../images/ajax-loader.gif) no-repeat 10px center;
+        border:none;
+        text-indent:-99999px;
+        z-index:999;
+    }
+    #content .company-profile .invite-box .button::-moz-focus-inner { border: 0; }
+    #content .company-profile .invite-box .button:hover,
+    #content .company-profile .invite-box .button:focus {
+        color:#fff;
+        background:#348FB5;
+    }
+
 
 #content .company-profile p.is-network {
     position:relative;

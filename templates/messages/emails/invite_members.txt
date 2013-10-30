@@ -1,0 +1,7 @@
+You are invited to join Nirit\n
+You're only a few steps away\n\n
+{{ name }} at {{ company }} has created an account with Nirit and invited you to join. All you need to do is click the link below, enter your name, email address and a password (you don't need an authorization code as you are joining an existing company). You will automatically be added to your company on Nirit.\n\n
+{{ link }}\n\n
+Once you register, you'll have access to the notice board and the directory. You can read and post messages, and see the other companies registered on Nirit.\n
+If you have any questions, you can write to us at support@nirit.co.uk, and someone will get back to you. Alternatively you can visit our help and support section (https://nirit.uservoice.com/knowledgebase), for FAQ, tips and more information.\n\n
+The team @ Nirit

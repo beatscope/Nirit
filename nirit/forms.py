@@ -51,11 +51,11 @@ class PassResetForm(PasswordResetForm):
                 'token': token_generator.make_token(user),
                 'protocol': use_https and 'https' or 'http',
             }
-            subject = loader.render_to_string('emails/password_reset_subject.txt', c)
+            subject = loader.render_to_string('messages/emails/password_reset_subject.txt', c)
             # Email subject *must not* contain newlines
             subject = ''.join(subject.splitlines())
-            text_content = loader.render_to_string('emails/password_reset.txt', c)
-            html_content = loader.render_to_string('emails/password_reset.html', c)
+            text_content = loader.render_to_string('messages/emails/password_reset.txt', c)
+            html_content = loader.render_to_string('messages/emails/password_reset.html', c)
             msg = EmailMultiAlternatives(subject, text_content, from_email, [user.email])
             msg.attach_alternative(html_content, "text/html")
             msg.send()

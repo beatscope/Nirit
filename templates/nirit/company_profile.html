@@ -210,6 +210,21 @@
                 </li>
             {% endfor %}</ul>
             <div class="see-all"><a href="./{{ company.organization.codename }}/staff">See All</a></div>
+
+            {% comment %} Only company members can invite other colleagues {% endcomment %}
+            {% if user.get_profile.company == company.organization %}
+                <a class="invite" data-entity="invite" href="#">Invite your colleagues <span></span></a>
+                <div class="invite-box hidden" data-entity="invite">
+                    <p class="help"><strong>Invite colleagues using their company email addresses,
+                        i.e. someone from the same email domain, @{{ domain }}</strong></p>
+                    <p class="help">You can either add one email address per line, or use commas to separate them.</p>
+                    <textarea class="text elastic" rows="2" cols="30"></textarea>
+                    <button class="button">Submit</button>
+                </div>
+                <div class="invite-box hidden" data-entity="invite-success">
+                    <p class="help"><strong>The invite has been sent.</strong></p>
+                </div>
+            {% endif %}
         </div>
         <div class="box">
             <div class="ad-slot">
@@ -238,8 +253,9 @@
             return false;
         });
 
-        // Contact Form
         $('.elastic').elastic();
+
+        // Contact Form
         $('#contact_button').bind('click', function () {
             $('#contact_form_subject').val(''); // clear content
             if ($('.contact-form').is(':visible')) {
@@ -264,6 +280,41 @@
                     $('.contact-success').slideDown(250);
                 });
             }
+        });
+
+        // Invite Form
+        $('a[data-entity="invite"]').bind('click', function () {
+            var box = $('div[data-entity="invite"]');
+            if (box.is(':visible')) {
+                box.slideUp(250);
+            } else {
+                box.find('.text').val('');
+                box.slideDown(250, function () {
+                    box.find('.text').focus();
+                    if (!box.data('bound')) {
+                        box.data('bound', true);
+                        box.find('.button').bind('click', function () {
+                            var button = $(this);
+                            var list = box.find('.text').val();
+                            if (list.length > 0 && !box.data('submitting')) {
+                                box.data('submitting', true);
+                                box.find('.text').attr('disabled', 'disabled');
+                                button.addClass('loading');
+                                $.post('/invite/members/{{ company.organization.codename }}', {
+                                    'list': trim(list)
+                                }, function (response) {
+                                    box.data('submitting', false);
+                                    box.find('.text').attr('disabled', null);
+                                    button.removeClass('loading');
+                                    box.slideUp(250);
+                                    $('div[data-entity="invite-success"]').slideDown(250);
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+            return false;
         });
 
     });

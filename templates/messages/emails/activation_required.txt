@@ -1,0 +1,6 @@
+Hi {{ first_name }}\n\n
+An account has been created on Nirit using this email address.\n\n
+Please click the following link to confirm your email address and activate your account and create a Business Profile.\n\n
+{{ link }}\n\n
+If you did not create this account please contact the Nirit team via support@nirit.co.uk.\n\n
+The team @ Nirit

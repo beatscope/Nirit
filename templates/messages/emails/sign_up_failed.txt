@@ -1,0 +1,5 @@
+A user has attempted to create an account.\n\n
+The user might have an email address in a public domain (i.e. google.com).
+In which case the Company would need to be created manually.\n\n
+Please contact: {{ contact }}\n\n
+The team @ Nirit

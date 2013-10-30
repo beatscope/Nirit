@@ -67,6 +67,7 @@ urlpatterns = patterns('',
     url(r'^upload$', login_required(FileUploader())),
     url(r'^contact/company/(?P<codename>\w+)$', 'nirit.views.contact_company'),
     url(r'^contact/member/(?P<codename>.+)$', 'nirit.views.contact_member'),
+    url(r'^invite/members/(?P<codename>\w+)$', 'nirit.views.invite_members'),
     url(r'^approval/company/(?P<codename>\w+)/(?P<action>\w+)$', 'nirit.views.company_set_status'),
     url(r'^approval/member/(?P<codename>.+)/(?P<action>\w+)$', 'nirit.views.user_set_status'),
 
