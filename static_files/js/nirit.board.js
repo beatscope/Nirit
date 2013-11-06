@@ -647,7 +647,7 @@ NIRIT.Board.prototype.set_listeners = function () {
     $('.card.is-new').unbind('click').bind('click', function () {
         var _self = $(this);
         _self.animate({ 
-            backgroundColor:'#fff'
+            backgroundColor:'#F2F2F3'
         }, 500, function () {
             _self.removeClass('is-new');
         });
