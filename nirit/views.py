@@ -67,6 +67,9 @@ def sign_up(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
+            # Generate user hash/slug
+            user.get_profile().generate_hash()
+            # Handle user role
             if user.get_profile().company:
                 # Staff User created
                 # Notify company Owner/Rep of new Staff sign-up

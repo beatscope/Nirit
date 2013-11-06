@@ -3,6 +3,7 @@ import logging
 import base64
 import datetime
 import hashlib
+import random
 import re
 import uuid
 from django.db import models
@@ -488,6 +489,18 @@ class UserProfile(models.Model):
         self.codename = base64.b64encode(hash).decode('ascii').strip()
         self.save()
 
+    def generate_hash(self):
+        # Generate member codename based on his full name
+        if not self.codename:
+            # Slug format: hyphenise(fullname)/random(1-999)/(1+count(fullname)/random(1-999)*(1+count(fullname))
+            initials = ''.join(['{}.'.format(n[0]) for n in [self.user.first_name, self.user.last_name] if n])
+            hyphenized = re.sub(r'\s\s*', '-', initials.lower())
+            count = UserProfile.objects.filter(codename__contains=hyphenized).count()
+            slug = '{}/{}/{}/{}'.format(hyphenized, random.randint(1, 999), count+1, (count+1) * random.randint(1, 999))
+            self.codename = slug
+            self.save()
+
+
     def get_starred(self):
         # Convert logged-in user starred notices into list of IDs
         return [int(n.id) for n in self.starred.all()]
@@ -503,7 +516,6 @@ class UserProfile(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         profile = UserProfile.objects.create(user=instance)
-        profile.generate_hash()
 
 def create_auth_token(sender, instance, created, **kwargs):
     if created:
