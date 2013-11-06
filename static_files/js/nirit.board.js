@@ -112,11 +112,9 @@ NIRIT.Board.prototype.listen = function () {
                     $('#latest_count').find('span').css('visibility', 'visible');
                     $('#latest_count').find('span').html('('+latest_diff+')');
                     $('#latest_count').animate({
-                        color: '#ced9e4',
-                        backgroundColor: '#2e7ea0'
+                        color: '#C0202F'
                     }, 250).animate({
-                        color: '#1a5a74',
-                        backgroundColor: '#e2e8ee'
+                        color: '#393939'
                     }, 500, function () {
                         $(this).attr('style', '');
                     });
@@ -279,7 +277,7 @@ NIRIT.Board.prototype.apply_template = function (card, template) {
         }
     } catch (e) {
         var sender = null;
-        var avatar = NIRIT.STATIC_URL + 'images/useravatar_60x60.png';
+        var avatar = NIRIT.STATIC_URL + 'images/nirit-icon-60x60-grey.png';
     }
 
     var card_tag = '<div id="card_' + card.id + '" class="card ';
@@ -398,7 +396,7 @@ NIRIT.Board.prototype.apply_template = function (card, template) {
         card_tag += '<div class="card-replies hidden" rel="' + card.id + '">';
         card_tag += '<p class="box-title">All Replies <span class="close"></span></p>';
         card_tag += '<div class="card-replies-holder"></div>';
-        card_tag += '<a href="" class="plus"><span>More</span></a>';
+        card_tag += '<a href="" class="button plus"><span>More</span></a>';
         card_tag += '</div>';
 
         // Reply box
@@ -415,7 +413,7 @@ NIRIT.Board.prototype.apply_template = function (card, template) {
             card_tag += '</label>';
             card_tag += '</div>';
         }
-        card_tag += '<button class="reply">Reply</button>';
+        card_tag += '<button class="button reply">Reply</button>';
         card_tag += '</div>';
 
     }
@@ -436,7 +434,7 @@ NIRIT.Board.prototype.flash_card = function (card_id, delay) {
     card.addClass('highlight');
     setTimeout(function () {
         card.animate({
-            backgroundColor: '#fff'
+            backgroundColor: '#F2F2F3'
         }, duration, function () {
             $(this).removeClass('highlight');
             $(this).attr('style', '');
@@ -613,8 +611,17 @@ NIRIT.Board.prototype.set_listeners = function () {
         $('.card-replies').each(function() {
             var card = $(this);
             if (card.attr('rel') == _self.attr('rel')) {
+                // we also get the reply box
+                var reply_box = null;
+                $('.card-reply').each(function() {
+                    if ($(this).attr('rel') == card.attr('rel')) {
+                        reply_box = $(this);
+                    }
+                });
+                // toggle visibility
                 if (card.is(':visible')) {
                     card.slideUp();
+                    reply_box.slideUp();
                 } else {
                     card.find('.card-replies-holder').empty(); // empty container
                     card.slideDown(250, function () {
@@ -624,6 +631,7 @@ NIRIT.Board.prototype.set_listeners = function () {
                             self.add_replies(uri, holder);
                         });
                     });
+                    reply_box.slideDown();
                 }
             } else {
                 $(this).slideUp(250);

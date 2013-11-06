@@ -468,14 +468,14 @@ class UserProfile(models.Model):
         if self.thumbnail:
             return self.thumbnail.url
         else:
-            return '{}images/useravatar_60x60.png'.format(settings.STATIC_URL)
+            return '{}images/nirit-icon-60x60-grey.png'.format(settings.STATIC_URL)
 
     @property
     def small_avatar(self):
         if self.thumbnail:
             return self.thumbnail.url
         else:
-            return '{}images/useravatar_32x32.png'.format(settings.STATIC_URL)
+            return '{}images/nirit-icon-32x32-grey.png'.format(settings.STATIC_URL)
 
     def is_pending(self):
         return self.status == self.PENDING

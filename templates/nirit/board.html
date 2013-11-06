@@ -6,36 +6,35 @@
 {% block extrahead %}<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>
 <script type="text/javascript" src="{% static "js/nirit.board.js" %}"></script>{% endblock %}
 
-{% block sublinks %}
-<ul>
-    <li class="first">
-        <a id="latest_count" 
-            {% if not filter %} class="active" {% endif %}
-           href="/board/{{ building.link }}">Latest <span class="invisible"></span></a>
-    </li>
-    <li>
-        <a {% if filter and filter == 'starred' %}class="active" {% endif %}
-           href="/board/{{ building.link }}?filter=starred">Starred</a>
-    </li>
-    <li>
-        <a {% if filter and filter == 'network' %}class="active" {% endif %}
-           href="/board/{{ building.link }}?filter=network">Network</a>
-    </li>
-    <li class="last">
-        <a {% if filter and filter == 'company' %}class="active" {% endif %}
-           href="/board/{{ building.link }}?filter=company">Company</a>
-    </li>
-    <li class="right">
-        <a id="new_card" class="new-card" href="">Post New Notice <span></span></a>
-    </li>
-</ul>
-{% endblock %}
-
 {% block content %}
 <div class="content board">
 
     <div id="main">
-        <h1>{{ building.name }} <span>Notice Board</span></h1>
+        <h1>
+            <span>Notice Board</span>
+            <ul>
+                <li class="first">
+                    <a id="latest_count"
+                        {% if not filter %} class="active" {% endif %}
+                       href="/board/{{ building.link }}">Latest <span class="invisible"></span></a>
+                </li>
+                <li>
+                    <a {% if filter and filter == 'starred' %}class="active" {% endif %}
+                       href="/board/{{ building.link }}?filter=starred">Starred</a>
+                </li>
+                <li>
+                    <a {% if filter and filter == 'network' %}class="active" {% endif %}
+                       href="/board/{{ building.link }}?filter=network">Network</a>
+                </li>
+                <li class="last">
+                    <a {% if filter and filter == 'company' %}class="active" {% endif %}
+                       href="/board/{{ building.link }}?filter=company">Company</a>
+                </li>
+                <li class="right">
+                    <a id="new_card" class="button create new-card" href="">Post New Notice <span></span></a>
+                </li>
+            </ul>
+        </h1>
         <div id="cards">
             <div class="card-add hidden">
                 <p class="box-title">Post New Notice <span class="close"></span></p>
@@ -58,11 +57,11 @@
                 {% endfor %}
                 </select></div>
                 {% endif %}
-                <button id="add_card" class="add">Post</button>
+                <button id="add_card" class="button add">Post</button>
             </div>
             <div class="cards">
                 <div id="stream"></div>
-                <a id="plus" class="plus" href=""><span>More</span></a>
+                <a id="plus" class="button plus" href=""><span>More</span></a>
             </div>
         </div>
     </div>

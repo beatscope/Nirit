@@ -4,13 +4,26 @@
 
 {% block extrahead %}
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui.js"></script>
-<link media="all" rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/jquery-ui.css" />
+<link media="all" rel="stylesheet" type="text/css" href="{{ STATIC_URL }}ui/jquery-ui-1.10.3.custom.min.css" />
 {% endblock %}
 
 {% block bodyclass %}class="home"{% endblock %}
 
+{% if user.is_anonymous %}
+{% block sublinks %}
+<nav id="sub-links">
+    <div class="container">
+        <ul>
+            <li class="first"><a href="/member/sign-up">Sign-up</a></li>
+        </ul>
+    </div>
+</nav>
+{% endblock %}
+{% endif %}
+
+
 {% block content %}
-<div class="content index edit">
+<div class="content index">
 
     {% if user.is_anonymous %}
 
@@ -18,12 +31,12 @@
 
         <div class="sign-up-info">
             <div class="nirit">
-                <a href="/"><img alt="Nirit icon" src="{{ STATIC_URL}}/images/icon_nirit-rings.png">Nirit</a>
+                <a href="/"><img alt="Nirit icon" src="{{ STATIC_URL}}/images/icon_nirit-rings.png">nirit</a>
             </div>
             <h2>The local business network.</h2>
             <div class="actions">
-                <a href="/what-is-nirit" class="learn-more">learn more</a>
-                <a href="/what-is-nirit" class="video"><span></span>play video</a>
+                <a href="/what-is-nirit" class="button learn-more">learn more</a>
+                <a href="/what-is-nirit" class="button video"><span></span>play video</a>
             </div>
         </div>
 
@@ -86,7 +99,7 @@
                         'width': 500,
                         'height': 334
                     });
-                    $('#nirit-video').attr('src', "//player.vimeo.com/video/76692971?title=0&amp;byline=0&amp;portrait=0&autoplay=true");
+                    $('#nirit-video').attr('src', "//player.vimeo.com/video/78622982?title=0&amp;byline=0&amp;portrait=0&autoplay=true");
                 },
                 'close': function () {
                     $('#nirit-video').attr('src', null);

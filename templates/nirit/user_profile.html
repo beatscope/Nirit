@@ -6,16 +6,6 @@
 {% block extrahead %}<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>
 <script type="text/javascript" src="{% static "js/nirit.board.js" %}"></script>{% endblock %}
 
-{% block sublinks %}
-{% if user != member.user %}
-<ul>
-    <li class="right">
-        <a id="contact_button" class="new-card" href="">Contact <span></span></a>
-    </li>
-</ul>
-{% endif %}
-{% endblock %}
-
 {% block content %}
 <div class="content account">
 
@@ -24,7 +14,7 @@
         <div class="contact-form hidden">
             <p class="box-title">Contact {{ member.name }} <span class="close"></span></p>
             <textarea id="contact_form_subject" class="elastic no-limit" rows="2" cols="70"></textarea>
-            <button id="contact_form_submit">Submit</button>
+            <button id="contact_form_submit" class="button">Submit</button>
         </div>
         <div class="contact-success label big hidden">
             Your message has been sent to {{ member.name }}.
@@ -32,7 +22,18 @@
 
         <div class="heading">
             <div class="box filled padded">
-                <h1>{{ member.name }}</h1>
+                <h1>
+                    <span>{{ member.name }}</span>
+                    <ul>
+                        <li class="right">
+                            {% if user == member.user %}
+                            <a class="button" href="/member/account/edit">Edit</a>
+                            {% else %}
+                            <a id="contact_button" class="button create" href="">Contact <span></span></a>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </h1>
                 {% if member.avatar %}
                     <img id="avatar" src="{{ member.avatar }}" alt="{{ member.name }}" width="60" height="auto" />
                 {% endif %}
@@ -47,12 +48,11 @@
                 <h2>
                     <a href="/company/{{ member.company.link }}">{{ member.company.name }}</a>
                 </h2>
-                {% if user == member.user %}<a class="button" href="/member/account/edit">Edit</a>{% endif %}
             </div>
         </div>
 
         {% if member.bio %}
-        <div class="box filled padded">
+        <div class="bio">
             <h3>Background</h3>
             {{ member.bio|linebreaks }}
         </div>
@@ -62,7 +62,7 @@
             <h3>Active Notices</h3>
             <div id="cards">
                 <div id="stream"></div>
-                <a id="plus" class="plus" href=""><span>More</span></a>
+                <a id="plus" class="button plus" href=""><span>More</span></a>
             </div>
         </div>
 

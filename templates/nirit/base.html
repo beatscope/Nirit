@@ -25,7 +25,7 @@
                         We also use cookies to ensure we show you advertising that is relevant to you.
                         If you continue without changing your settings, we'll assume that you are happy to receive all cookies on Nirit.</p>
                     <ul class="banner-options">
-                        <li id="cookies-continue"><button type="button" id="cookies-continue-button">Continue</button></li>
+                        <li id="cookies-continue"><button type="button" class="button" id="cookies-continue-button">Continue</button></li>
                         <li id="cookies-more"><a href="/cookies">Find out more</a></li>
                     </ul>
                 </div>
@@ -36,9 +36,15 @@
                 <div id="logo"><a href="/"><img src="{{ STATIC_URL}}/images/nirit-logo.png" witdh="108" height="43" alt="Nirit" /></a></div>
                 <div id="user-corner">
                     {% if user.is_authenticated %}
-                    <a href="/board/{{ user.get_profile.building.link }}">{{ user.get_profile.building.name }}</a>
+                    <h3><a href="/board/{{ user.get_profile.building.link }}">{{ user.get_profile.building.name }}</a></h3>
                     {% endif %}
                     <div class="today">{% now "jS F Y" %}</div>
+                    {% if user.is_authenticated %}
+                    <div class="me">
+                        Logged in as <a href="/member/account">{{ user.get_profile.name }}</a>
+                        <span><a href="/logout">Logout</a></span>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </header>
@@ -55,19 +61,8 @@
                 {% endblock %}
             </nav>
         </div>
-        <nav id="sub-links">
-            <div class="container">
-                {% block sublinks %}{% if user.is_anonymous %}<ul>
-                    <li class="first"><a href="/member/sign-up">Sign-up</a></li>
-                </ul>{% endif %}{% endblock %}
-                {% if user.is_authenticated %}
-                <div id="me">
-                    Logged in as <a href="/member/account">{{ user.get_profile.name }}</a>
-                    <span><a href="/logout">Logout</a></span>
-                </div>
-                {% endif %}
-            </div>
-        </nav>
+
+        {% block sublinks %}{% endblock %}
 
         <section>
             <div class="container">
@@ -81,7 +76,6 @@
 
     {% block footer %}
     <footer>
-        <div id="skyline"></div>
         <div id="footer">
             <ul class="container">
                 <li><a href="/what-is-nirit">What's Nirit</a></li>

@@ -22,25 +22,6 @@
 {% endif %}
 {% endblock %}
 
-{% block sublinks %}
-<ul>
-    <li class="first">
-        <a href="/company/{{ company.organization.link }}" class="active">{{ company.organization.name }}</a>
-    </li>
-    <li>
-        <a href="/company/{{ company.organization.link }}/board">Notice Board</a>
-    </li>
-    <li class="last">
-        <a href="/company/{{ company.organization.link }}/staff">Members of Staff</a>
-    </li>
-    {% if user.get_profile.company != company.organization %}
-        <li class="right">
-            <a id="contact_button" class="new-card" href="">Contact <span></span></a>
-        </li>
-    {% endif %}
-</ul>
-{% endblock %}
-
 {% block content %}
 <div class="content company-profile">
 
@@ -49,15 +30,39 @@
         <div class="contact-form hidden">
             <p class="box-title">Contact {{ company.organization.name }} <span class="close"></span></p>
             <textarea id="contact_form_subject" class="elastic" rows="2" cols="70"></textarea>
-            <button id="contact_form_submit">Submit</button>
+            <button id="contact_form_submit" class="button">Submit</button>
         </div>
         <div class="contact-success label big hidden">
             Your message has been sent to {{ company.organization.name }}.
         </div>
 
+        <h1>
+            <ul>
+                <li class="first">
+                    <a href="/company/{{ company.organization.link }}" class="active">{{ company.organization.name }}</a>
+                </li>
+                <li>
+                    <a href="/company/{{ company.organization.link }}/board">Notice Board</a>
+                </li>
+                <li class="last">
+                    <a href="/company/{{ company.organization.link }}/staff">Members of Staff</a>
+                </li>
+                {% if user.get_profile.company != company.organization %}
+                    <li class="right">
+                        <a id="contact_button" class="button create" href="">Contact <span></span></a>
+                    </li>
+                {% endif %}
+                {% if is_user_editor %}
+                    <li class="right">
+                        <a class="button" href="./{{ company.organization.codename }}/edit">Edit</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </h1>
+
         <div class="heading">
             <div class="company-card">
-                <h1>
+                <h2>
                     {% if company.organization.get_logo %}
                         <div class="company-logo">
                             <img src="{{ company.organization.get_logo }}" alt="{{ company.organization.name }}" />
@@ -65,7 +70,7 @@
                     {% else %}
                         {{ company.organization.name }}
                     {% endif %}
-                </h1>
+                </h2>
                 <ul class="company-info">
                     <li>Joined {{ company.organization.created|date:"jS" }} of {{ company.organization.created|date:"F, Y" }}</li>
                     <li>{{ company.floor_tag }} Floor, {{ company.building.name }}</li>
@@ -76,7 +81,6 @@
                     <img src="{{ STATIC_URL }}/images/z.gif" alt="" width="30" height="30" />
                 </a>
             </div>
-            {% if is_user_editor %}<a class="button" href="./{{ company.organization.codename }}/edit">Edit</a>{% endif %}
         </div>
         <div class="padded">          
         </div>
@@ -213,7 +217,7 @@
 
             {% comment %} Only company members can invite other colleagues {% endcomment %}
             {% if user.get_profile.company == company.organization %}
-                <a class="invite" data-entity="invite" href="#">Invite your colleagues <span></span></a>
+                <a class="button invite" data-entity="invite" href="#">Invite your colleagues <span></span></a>
                 <div class="invite-box hidden" data-entity="invite">
                     <p class="help"><strong>Invite colleagues using their company email addresses,
                         i.e. someone from the same email domain, @{{ domain }}</strong></p>

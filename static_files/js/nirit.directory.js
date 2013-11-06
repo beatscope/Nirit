@@ -32,7 +32,7 @@ NIRIT.Directory = function (settings) {
 NIRIT.Directory.prototype.add_cards = function (update) {
 
     // Add results count
-    var counter = '<div class="card"><span class="counter">' + this.data.count + '</span> ';
+    var counter = '<div class="counter"><span>' + this.data.count + '</span> ';
     counter += this.data.count > 1 ? 'companies' : 'company';
     counter += ' listed.</div>';
     this.insert(counter);
@@ -106,7 +106,7 @@ NIRIT.Directory.prototype.apply_template = function (object, template) {
 
         case 'company':
             var floor = ( object.hasOwnProperty('floor_tag') && typeof(object.floor_tag) !== 'undefined' ) ? object.floor_tag : null;
-            var square_logo =  NIRIT.STATIC_URL  + 'images/useravatar_32x32.png';
+            var square_logo =  NIRIT.STATIC_URL  + 'images/nirit-icon-32x32-grey.png';
             if (object.square_logo) {
                 square_logo = object.square_logo;
             }
