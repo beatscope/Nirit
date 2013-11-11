@@ -104,3 +104,20 @@
 
 </div>
 {% endblock %}
+
+{% block extrajs %}{{ super }}
+<script type="text/javascript">
+    $(document).ready(function () {
+        var query = location.search.substr(1);
+        query = query.split('&');
+        for (var param in query) {
+            var term = query[param].split('=');
+            if (term[0] == 'token') {
+                // Pre-populate token field from querystring
+                $('#{{ form.auth_code.id_for_label }}').attr('disabled', 'disabled')
+                                                       .val(term[1]);
+            }
+        }
+    });
+</script>
+{% endblock %}
