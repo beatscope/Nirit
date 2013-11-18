@@ -4,6 +4,7 @@ Django views to handle Uploads via AJAX.
 
 """
 import os
+import re
 import time
 import logging
 from io import FileIO, BufferedWriter
@@ -15,6 +16,7 @@ from PIL import Image
 from nirit import models
 
 logger = logging.getLogger('nirit.uploads')
+
 
 class UploadStorage(object):
     BUFFER_SIZE = 10485760  # 10MB
@@ -108,21 +110,46 @@ class UploadStorage(object):
             if self.size:
                 #logger.debug(self.size)
                 image = image.convert('RGBA')
-                image.thumbnail(self.size, Image.ANTIALIAS)
-                #logger.debug("{} {} {}".format(image.format, image.size, image.mode))
-                # when the image is not square, we pad it to make it square
-                # by pasting it int the middle of a transparent background
-                background = Image.new('RGBA', size = self.size, color = (255, 255, 255, 0))
-                if self.size[0] == image.size[0]:
-                    # the width fits the container, center the height
-                    x = 0
-                    y = (self.size[1] / 2) - (image.size[1] / 2)
+                # the image is resized using the minimum dimension
+                width, height = self.size
+                if image.size[0] < image.size[1]:
+                    # the height is bigger than the width
+                    # we set the maximum height to the original height,
+                    # so that the image fits the width
+                    height = image.size[1]
+                elif image.size[0] > image.size[1]:
+                    # the width is bigger than the height
+                    # we set the maximum width to the original width,
+                    # so that the image fits the height
+                    width = image.size[0]
                 else:
-                    # center the width
-                    x = (self.size[0] / 2) - (image.size[0] / 2)
-                    y = 0
-                background.paste(image, (x, y))
-                background.save(self._path)
+                    # we have a square
+                    pass
+                image.thumbnail((width, height), Image.ANTIALIAS)
+                # if the image is not a square, we crop the exceeding width/length as required,
+                # to fit the square
+                if image.size[0] != image.size[1]:
+                    # we crop in the middle of the image
+                    if self.size[0] == image.size[0]:
+                        # the width fits the container, center the height
+                        x0 = 0
+                        y0 = (image.size[1] / 2) - (self.size[1] / 2)
+                        x1 = self.size[0]
+                        y1 = y0 + self.size[1]
+                    else:
+                        # center the width
+                        x0 = (image.size[0] / 2) - (self.size[0] / 2)
+                        y0 = 0
+                        x1 = x0 + self.size[0]
+                        y1 = self.size[1] 
+                    box = (x0, y0, x1, y1)
+                    region = image.crop(box)
+                    background = Image.new('RGBA', size = self.size, color = (255, 255, 255, 0))
+                    background.paste(region, (0, 0))
+                    #logger.debug("{} {} {}".format(background.format, background.size, background.mode))
+                    background.save(self._path)
+                else:
+                    image.save(self._path)
             return True
         except Exception as e:
             logger.error(e)
@@ -138,6 +165,17 @@ class FileUploader(object):
 
     def _ajax_upload(self, request):
         if request.method == "POST":
+            # determine which model and field this upload relates to
+            try:
+                model = request.POST['model']
+                field = request.POST['field']
+            except KeyError:
+                return HttpResponseBadRequest("AJAX request not valid")
+            else:
+                # is the field one of the fields allowed?
+                if field not in ('image','logo','square_logo','thumbnail'):
+                    return HttpResponseBadRequest("AJAX request not valid")
+
             if request.is_ajax():
                 # /!\ try this with Chrome / this is HTML5
                 # the file is stored raw in the request
@@ -163,16 +201,6 @@ class FileUploader(object):
                     filename = upload.name
                 else:
                     raise Http404("Bad Upload")
-            # determine which model and field this upload relates to
-            try:
-                model = request.POST['model']
-                field = request.POST['field']
-            except KeyError:
-                return HttpResponseBadRequest("AJAX request not valid")
-            else:
-                # is the field one of the fields allowed?
-                if field not in ('image','logo','square_logo','thumbnail'):
-                    return HttpResponseBadRequest("AJAX request not valid")
 
             # we have a filename, now determine where to put it
             # first, we need to figure out what model this refers to
@@ -194,7 +222,7 @@ class FileUploader(object):
             self.storage.setup(filename, upload_to)
             success = self.storage.upload(upload, is_raw)
             ret_json = {'success': success, 'filename': self.storage.filename}
-            return HttpResponse(json.dumps(ret_json, cls=DjangoJSONEncoder), content_type='text/html; charset=utf-8')
+            return HttpResponse(json.dumps(ret_json, cls=DjangoJSONEncoder), content_type='application/json; charset=utf-8')
         else:
             response = HttpResponseNotAllowed(['POST'])
             response.write("Only POST allowed")

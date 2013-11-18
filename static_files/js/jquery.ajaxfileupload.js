@@ -15,13 +15,12 @@
         var settings = {
           params: {},
           action: '',
-          onStart: function() { console.log('starting upload'); console.log(this); },
-          onComplete: function(response) { console.log('got response: '); console.log(response); console.log(this); },
-          onCancel: function() { console.log('cancelling: '); console.log(this); },
+          onStart: function() {},
+          onComplete: function(response) {},
+          onCancel: function() {},
           validate_extensions : true,
           valid_extensions : ['gif','png','jpg','jpeg'],
-          submit_button : null,
-          dataType: 'html'
+          submit_button : null
         };
 
         var uploading_file = false;
@@ -105,7 +104,7 @@
           //  and clean up after ourselves. 
           */
           var handleResponse = function(loadedFrame, element) {
-            var response, responseStr = settings.dataType == 'json' ? loadedFrame.contentWindow.document.body.innerText : loadedFrame.contentWindow.document.body.innerHTML;
+            var response, responseStr = $(loadedFrame).contents().text();
             try {
               //response = $.parseJSON($.trim(responseStr));
               response = JSON.parse(responseStr);
