@@ -1,7 +1,7 @@
 {% extends "nirit/base.html" %}
 {% load static %}
 
-{% block title %}Nirit | {{ building.name }} Directory{% endblock %}
+{% block title %}Nirit | {{ space.name }} Directory{% endblock %}
 
 {% block extrahead %}
 <script type="text/javascript" src="{% static "js/nirit.directory.js" %}"></script>
@@ -39,7 +39,7 @@
 <script type="text/javascript">
     $(document).ready(function () {
         new NIRIT.Directory({
-            'building': '{{ building.codename }}',
+            'space': '{{ space.codename }}',
             'data': {{ data|safe }},
             'group': '{{ group }}'
         });

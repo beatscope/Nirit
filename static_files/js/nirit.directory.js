@@ -14,7 +14,7 @@ if (typeof(NIRIT) === 'undefined') {
  * @param object
  */
 NIRIT.Directory = function (settings) {
-    this.building = settings['building'];
+    this.space = settings['space'];
     this.data = settings['data'];
     this.group = settings['group'];
     this.groups = this.data.results;

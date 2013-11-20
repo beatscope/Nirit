@@ -1,7 +1,7 @@
 # nirit/urls_api.py
 from django.conf.urls.defaults import patterns, include, url
 from rest_framework.urlpatterns import format_suffix_patterns
-from api.views import BuildingListView, BuildingView, \
+from api.views import SpaceListView, SpaceView, \
                       NoticeListView, NoticeView, NoticePostView, \
                       OrganizationListView, OrganizationView, \
                       ExpertiseListView, ExpertiseView, ExpertiseCreateView, \
@@ -10,8 +10,8 @@ from api.views import BuildingListView, BuildingView, \
 urlpatterns = patterns('',
 
     url(r'^$', 'api.views.api_root'),
-    url(r'^buildings/$', BuildingListView.as_view(), name='buildings-list'),
-    url(r'^buildings/(?P<codename>\w+)/$', BuildingView.as_view(), name='building-detail'),
+    url(r'^spaces/$', SpaceListView.as_view(), name='spaces-list'),
+    url(r'^spaces/(?P<codename>\w+)/$', SpaceView.as_view(), name='space-detail'),
     url(r'^notices/post$', NoticePostView.as_view(), name='notice-add'),
     url(r'^notices/$', NoticeListView.as_view(), name='notices-list'),
     url(r'^notices/(?P<pk>[0-9]+)/$', NoticeView.as_view(), name='notice-detail'),

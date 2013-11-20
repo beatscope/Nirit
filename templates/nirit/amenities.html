@@ -1,7 +1,7 @@
 {% extends "nirit/base.html" %}
 {% load static %}
 
-{% block title %}Nirit | {{ building.name }} Amenities{% endblock %}
+{% block title %}Nirit | {{ space.name }} Amenities{% endblock %}
 
 {% block extrahead %}
 {% if group == 'map' %}
@@ -101,7 +101,7 @@
             var self = this;
 
             // Initialize the map
-            var center = '{{ building.geocode }}'.split(',');
+            var center = '{{ space.geocode }}'.split(',');
             this.map = new Microsoft.Maps.Map(document.getElementById("map"), {
                 credentials: this.key,
                 mapTypeId: Microsoft.Maps.MapTypeId.road,

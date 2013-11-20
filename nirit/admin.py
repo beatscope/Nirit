@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
-from nirit.models import Building, Organization, Notice, Expertise, \
+from nirit.models import Space, Organization, Notice, Expertise, \
                          UserProfile, CompanyProfile, Page, OToken, Supplier
 
 class BackOffice(admin.sites.AdminSite):
@@ -15,16 +15,16 @@ class UserProfileInline(admin.StackedInline):
     verbose_name_plural = 'profile'
 
 class UserAdmin(UserAdmin):
-    list_display = ('profile', 'building', 'company', 'username', 'email', 'token', 'is_staff')
-    list_filter = ('profile__building__name', 'profile__company__name')
+    list_display = ('profile', 'space', 'company', 'username', 'email', 'token', 'is_staff')
+    list_filter = ('profile__space__name', 'profile__company__name')
     inlines = (UserProfileInline, )
 
-    def building(self, obj):
-        if obj.profile.building:
-            return obj.profile.building.name
+    def space(self, obj):
+        if obj.profile.space:
+            return obj.profile.space.name
         else:
             return '-'
-    building.short_description = 'Building'
+    space.short_description = 'Space'
 
     def company(self, obj):
         if obj.profile.company:
@@ -40,11 +40,11 @@ class UserAdmin(UserAdmin):
         except OToken.DoesNotExist:
             return ''
 
-class BuildingAdmin(admin.ModelAdmin):
+class SpaceAdmin(admin.ModelAdmin):
     list_display = ('name', 'postcode')
 
     def get_actions(self, request):
-        actions = super(BuildingAdmin, self).get_actions(request)
+        actions = super(SpaceAdmin, self).get_actions(request)
         if 'delete_selected' in actions:
             del actions['delete_selected']
         return actions
@@ -63,14 +63,14 @@ class OrganizationAdmin(admin.ModelAdmin):
         return actions
 
 class NoticeAdmin(admin.ModelAdmin):
-    list_filter = ('building', 'sender__profile__company')
+    list_filter = ('space', 'sender__profile__company')
 
 class PageAdmin(admin.ModelAdmin):
     list_display = ('title', 'slug', 'status')
 
 class SupplierAdmin(admin.ModelAdmin):
     list_display = ('name', 'type', 'address', 'postcode', 'location', 'locations')
-    list_filter = ('buildings',)
+    list_filter = ('spaces',)
 
     def postcode(self, obj):
         if obj.postcode:
@@ -79,17 +79,17 @@ class SupplierAdmin(admin.ModelAdmin):
             return '-'
 
     def locations(self, obj):
-        if obj.buildings.count():
-            return ', '.join([str(b) for b in obj.buildings.all()])
+        if obj.spaces.count():
+            return ', '.join([str(b) for b in obj.spaces.all()])
         else:
             return '-'
-    locations.short_description = 'Buildings'
+    locations.short_description = 'Spaces'
 
 
 site = BackOffice()
 site.register(User, UserAdmin)
 site.register(Group, GroupAdmin)
-site.register(Building, BuildingAdmin)
+site.register(Space, SpaceAdmin)
 site.register(Organization, OrganizationAdmin)
 site.register(Notice, NoticeAdmin)
 site.register(Expertise)

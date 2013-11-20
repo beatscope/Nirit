@@ -53,34 +53,34 @@ class ModelManager(object):
                 self.response = e
         return self.respond()
 
-    def create_token(self, building, count):
+    def create_token(self, space, count):
         self.status = 200
         self.response = ['No token created']
         try:
-            building = Building.objects.get(codename=building)
-        except Building.DoesNotExist:
+            space = Space.objects.get(codename=space)
+        except Space.DoesNotExist:
             self.status = 404
-            self.response = 'Building Not Found'
+            self.response = 'Space Not Found'
         else:
             self.response = []
             while count > 0:
                 token = OToken()
-                token.building = building
+                token.space = space
                 token.save()
                 self.response.append(token)
                 count -= 1
         return self.respond()
 
-    def list_tokens(self, building):
+    def list_tokens(self, space):
         self.status = 200
         self.response = []
         try:
-            building = Building.objects.get(codename=building)
-        except Building.DoesNotExist:
+            space = Space.objects.get(codename=space)
+        except Space.DoesNotExist:
             self.status = 404
         else:
             # return valid tokens
-            tokens = OToken.objects.filter(building=building, redeemed=False)
+            tokens = OToken.objects.filter(space=space, redeemed=False)
             self.response.extend(list(tokens))
         return self.respond()
 
@@ -92,19 +92,19 @@ class ModelManager(object):
             self.response = 'User Not Found'
         else:
             self.trace('> Set "{}" preference to "{}"'.format(preference, value))
-            if preference == 'active-building':
+            if preference == 'active-space':
                 try:
-                    building = Building.objects.get(pk=value)
-                except Building.DoesNotExist:
+                    space = Space.objects.get(pk=value)
+                except Space.DoesNotExist:
                     self.status = 404
-                    self.response = 'Building Not Found'
+                    self.response = 'Space Not Found'
                 else:
-                    # make sure the user is a member of this Building
-                    if user in building.members:
-                        user.get_profile().building = building
+                    # make sure the user is a member of this Space
+                    if user in space.members:
+                        user.get_profile().space = space
                         user.get_profile().save()
                         self.status = 200
-                        self.response = 'Active Building Set'
+                        self.response = 'Active Space Set'
                     else:
                         self.status = 401
                         self.response = 'Not a Member'

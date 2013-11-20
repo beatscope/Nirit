@@ -78,7 +78,7 @@
                 {% if member.company %}
                 <p class="description">{{ member.company }}</p>
                 {% endif %}
-                <p class="description">{{ member.building }}</p>
+                <p class="description">{{ member.space }}</p>
             </div>
         </div>
 
@@ -93,7 +93,7 @@
             {{ user_form.is_active }}
             {{ user_form.date_joined }}
             {{ member_form.user }}
-            {{ member_form.building }}
+            {{ member_form.space }}
             {{ member_form.company }}
             {{ member_form.starred }}
             {{ member_form.networked }}

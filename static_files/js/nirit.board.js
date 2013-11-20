@@ -15,7 +15,7 @@ if (typeof(NIRIT) === 'undefined') {
  */
 NIRIT.Board = function (settings) {
     this.data = settings['data'];
-    this.buildings = settings['buildings'];
+    this.spaces = settings['spaces'];
     this.token = settings['token'];
     this.filter = null;
     this.account = settings['account'];
@@ -72,8 +72,8 @@ NIRIT.Board = function (settings) {
 
     // Handle board-type specific features
     switch (settings['filter']['type']) {
-        case 'building':
-            this.building = settings['filter']['value'];
+        case 'space':
+            this.space = settings['filter']['value'];
             // start listening for updates
             this.listen();
             break;
@@ -102,7 +102,7 @@ NIRIT.Board.prototype.listen = function () {
     var self = this;
     setInterval(function() {
         $.ajax({
-            url: '/api/notices?building='+self.building,
+            url: '/api/notices?space='+self.space,
             type: 'OPTIONS',
             contentType: "application/json; charset=UTF-8",
             dataType: "json",
@@ -525,7 +525,7 @@ NIRIT.Board.prototype.set_listeners = function () {
                 data: JSON.stringify({
                     'subject': trim(subject),
                     'body': trim(body),
-                    'buildings': self.buildings,
+                    'spaces': self.spaces,
                     'official': is_official,
                     'type': type
                 }),
@@ -590,7 +590,7 @@ NIRIT.Board.prototype.set_listeners = function () {
                     data: JSON.stringify({
                         'subject': subject,
                         'body': trim(body),
-                        'buildings': self.buildings,
+                        'spaces': self.spaces,
                         'official': is_official,
                         'nid': _self.attr('card_id')
                     }),

@@ -11,9 +11,9 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.views import APIView
-from nirit.models import Building, Notice, Expertise, Supplier, \
+from nirit.models import Space, Notice, Expertise, Supplier, \
                          Organization, CompanyProfile, UserProfile
-from api.serializers import BuildingSerializer, \
+from api.serializers import SpaceSerializer, \
                             UserSerializer, \
                             NoticeSerializer, \
                             OrganizationSerializer, \
@@ -26,7 +26,7 @@ logger = logging.getLogger('api.views')
 @permission_classes((permissions.IsAdminUser, ))
 def api_root(request, format=None):
     return Response({
-        'buildings': reverse('buildings-list', request=request, format=format),
+        'spaces': reverse('spaces-list', request=request, format=format),
         'notices': reverse('notices-list', request=request, format=format),
         'organizations': reverse('organizations-list', request=request, format=format),
         'expertise': reverse('expertise-list', request=request, format=format),
@@ -34,22 +34,22 @@ def api_root(request, format=None):
     })
 
 
-class BuildingListView(generics.ListAPIView):
+class SpaceListView(generics.ListAPIView):
     """
-    List all buildings (read-only).
+    List all spaces (read-only).
 
     """
-    queryset = Building.objects.all()
-    serializer_class = BuildingSerializer
+    queryset = Space.objects.all()
+    serializer_class = SpaceSerializer
 
 
-class BuildingView(generics.RetrieveAPIView):
+class SpaceView(generics.RetrieveAPIView):
     """
-    Retrieve a building.
+    Retrieve a space.
 
     """
-    queryset = Building.objects.all()
-    serializer_class = BuildingSerializer
+    queryset = Space.objects.all()
+    serializer_class = SpaceSerializer
     lookup_field = 'codename'
 
 
@@ -60,7 +60,7 @@ class NoticeListView(generics.ListAPIView):
     Notices list represent a board.
     Boards can be filtered for:
     
-    - A Building
+    - A Space
         - refined by Member's starred notices
         - refined by Member's network notices
         - refined by Member's company notices
@@ -79,21 +79,21 @@ class NoticeListView(generics.ListAPIView):
         """
         queryset = Notice.objects.none()
 
-        # Building Notices
-        if self.request.QUERY_PARAMS.has_key('building'):
-            building = self.request.QUERY_PARAMS.get('building', None)
-            if not building:
+        # Space Notices
+        if self.request.QUERY_PARAMS.has_key('space'):
+            space = self.request.QUERY_PARAMS.get('space', None)
+            if not space:
                 return queryset
             try:
-                building = Building.objects.get(codename=building)
-            except Building.DoesNotExist:
+                space = Space.objects.get(codename=space)
+            except Space.DoesNotExist:
                 return queryset
             else:
-                queryset = building.notices.filter(is_reply=False)
+                queryset = space.notices.filter(is_reply=False)
                 # exclude notices posted by a BANNED company
-                # we only exclude the Companies which are banned in this particular Building
+                # we only exclude the Companies which are banned in this particular Space
                 banned = [bp['organization__id'] for bp \
-                         in building.building_profile.filter(status=CompanyProfile.BANNED).values('organization__id')]
+                         in space.space_profile.filter(status=CompanyProfile.BANNED).values('organization__id')]
                 if banned:
                     queryset = queryset.exclude(sender__profile__company__pk__in=banned)
                 # handle filters
@@ -136,11 +136,11 @@ class NoticeListView(generics.ListAPIView):
                 for member in members:
                     queryset = queryset | Notice.objects.filter(sender=member, is_reply=False, is_official=True)
                 # exclude notices posted by a BANNED company
-                # we only exclude Notices sent in the Building where the Company is banned
-                banned = [cp['building__id'] for cp \
-                         in organization.company_profile.filter(status=CompanyProfile.BANNED).values('building__id')]
+                # we only exclude Notices sent in the Space where the Company is banned
+                banned = [cp['space__id'] for cp \
+                         in organization.company_profile.filter(status=CompanyProfile.BANNED).values('space__id')]
                 if banned:
-                    queryset = queryset.exclude(building__pk__in=banned)
+                    queryset = queryset.exclude(space__pk__in=banned)
 
         # Member Notices
         elif self.request.QUERY_PARAMS.has_key('member'):
@@ -154,14 +154,14 @@ class NoticeListView(generics.ListAPIView):
             else:
                 queryset = Notice.objects.filter(sender=profile.user, is_reply=False).order_by('-updated')
                 # exclude notices posted by a BANNED company
-                # we only exclude Notices sent in the User's Active Building,
+                # we only exclude Notices sent in the User's Active Space,
                 # where the Company is banned
-                company_profile = CompanyProfile.objects.get(building=profile.building, organization=profile.company)
+                company_profile = CompanyProfile.objects.get(space=profile.space, organization=profile.company)
                 if company_profile.status == CompanyProfile.BANNED:
                     queryset = Notice.objects.none()
 
-        # By default, we return Notices for the User's Active Building
-        queryset = queryset.filter(building=self.request.user.get_profile().building)
+        # By default, we return Notices for the User's Active Space
+        queryset = queryset.filter(space=self.request.user.get_profile().space)
         # exclude notices posted by a BANNED user
         queryset = queryset.exclude(sender__profile__status=UserProfile.BANNED)
         # order all results by latest updated
@@ -181,18 +181,18 @@ class NoticeListView(generics.ListAPIView):
             # Add notice types
             data['types'] = []
             profile = request.user.get_profile()
-            if 'Building Manager' in profile.roles:
-                # Building Managers are allowed to specify which type of Notice to post
+            if 'Space Manager' in profile.roles:
+                # Space Managers are allowed to specify which type of Notice to post
                 data['types'] = [{'value': key, 'label': value} for key, value in Notice.TYPES]
             # Retrieve the full list of Notices the logged-in user can see
             # i.e.: sent in the user's active uilding
-            queryset = Notice.objects.filter(building=profile.building, is_reply=False).order_by('-created')
+            queryset = Notice.objects.filter(space=profile.space, is_reply=False).order_by('-created')
             # exclude BANNED senders
             queryset = queryset.exclude(sender__profile__status=UserProfile.BANNED)
             # exclude notices posted by a BANNED company
-            # we only exclude Notices sent in the User's Active Building,
+            # we only exclude Notices sent in the User's Active Space,
             # where the Company is banned
-            company_profile = CompanyProfile.objects.get(building=profile.building, organization=profile.company)
+            company_profile = CompanyProfile.objects.get(space=profile.space, organization=profile.company)
             if company_profile.status == CompanyProfile.BANNED:
                 queryset = Notice.objects.none()
 
@@ -227,15 +227,15 @@ class NoticePostView(APIView):
                             status=400,
                             exception=True)
 
-        # check building(s) is(are) attached to Notices.
-        if not request.DATA.has_key('buildings') or not request.DATA['buildings']:
-            return Response({'detail': "Building(s) required."},
+        # check space(s) is(are) attached to Notices.
+        if not request.DATA.has_key('spaces') or not request.DATA['spaces']:
+            return Response({'detail': "Space(s) required."},
                             status=400,
                             exception=True)
 
-        buildings = Building.objects.filter(codename__in=request.DATA['buildings'])
-        if not buildings:
-            return Response({'detail': "No Building(s) found."},
+        spaces = Space.objects.filter(codename__in=request.DATA['spaces'])
+        if not spaces:
+            return Response({'detail': "No Space(s) found."},
                             status=400,
                             exception=True)
 
@@ -252,8 +252,8 @@ class NoticePostView(APIView):
         if request.DATA.has_key('nid'):
             try:
                 reply_to = Notice.objects.get(pk=int(request.DATA['nid']))
-                # override building list when replying is case they are different
-                buildings = reply_to.building_set.all()
+                # override space list when replying is case they are different
+                spaces = reply_to.space_set.all()
             except Notice.DoesNotExists:
                 reply_to = None
         else:
@@ -273,9 +273,9 @@ class NoticePostView(APIView):
                                        is_reply = True if reply_to else False,
                                        reply_to=reply_to)
 
-        # assign Buildings after the Notice is created
-        for building in buildings:
-            building.notices.add(notice)
+        # assign Spaces after the Notice is created
+        for space in spaces:
+            space.notices.add(notice)
 
         # touch the reply_to recipient notice to update its timestamp
         if reply_to:
@@ -319,7 +319,7 @@ class OrganizationListView(generics.ListAPIView):
         Filter query according to the query parameters.
         Can filter, and order:
 
-        - by building (codename)
+        - by space (codename)
         - by name
         - by floor
         - by department
@@ -327,9 +327,9 @@ class OrganizationListView(generics.ListAPIView):
         """
         queryset = self.queryset
         
-        # Building filter
-        if self.request.QUERY_PARAMS.has_key('building'):
-            queryset = queryset.filter(company_profile__building__codename=self.request.QUERY_PARAMS['building'])
+        # Space filter
+        if self.request.QUERY_PARAMS.has_key('space'):
+            queryset = queryset.filter(company_profile__space__codename=self.request.QUERY_PARAMS['space'])
 
         # Name filter
         if self.request.QUERY_PARAMS.has_key('name'):
@@ -403,4 +403,4 @@ class SupplierListView(generics.ListAPIView):
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('buildings__codename',)
+    search_fields = ('spaces__codename',)

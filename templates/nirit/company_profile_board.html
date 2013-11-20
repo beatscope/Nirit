@@ -16,7 +16,7 @@
 {% else %}
 <style type="text/css">
     #content .company-profile .heading {
-        background-image: url({{ STATIC_URL }}images/default_company_{{ company.building.codename }}.jpg);
+        background-image: url({{ STATIC_URL }}images/default_company_{{ company.space.codename }}.jpg);
         background-position: center center;
         background-repeat: no-repeat;
     }
@@ -70,7 +70,7 @@
                 </h2>
                 <ul class="company-info">
                     <li>Joined {{ company.organization.created|date:"jS" }} of {{ company.organization.created|date:"F, Y" }}</li>
-                    <li>{{ company.floor_tag }} Floor, {{ company.building.name }}</li>
+                    <li>{{ company.floor_tag }} Floor, {{ company.space.name }}</li>
                 </ul>
                 <a href=""
                     class="networked-switch{% if company.organization in user.get_profile.networked.all %} active{% endif %}"
@@ -137,7 +137,7 @@
         new NIRIT.Board({
             'data': {{ data|safe }},
             'notices': {{ notices|safe }},
-            'buildings': ['{{ company.building.codename }}'], // Can only post to active building
+            'spaces': ['{{ company.space.codename }}'], // Can only post to active space
             'token': '{{ user.get_profile.token }}',
             'account': {
                 'username': '{{ user.get_profile.codename }}',

@@ -17,10 +17,10 @@
     <div id="main">
         <h1>
             <span>{{ supplier.name }}</span>
-            {% if user.get_profile.building %}
+            {% if user.get_profile.space %}
                 <ul>
                     <li class="first">
-                        <a href="/amenities/{{ user.get_profile.building.link }}{% if back %}{{ back }}{% endif %}">Back to Amenities</a>
+                        <a href="/amenities/{{ user.get_profile.space.link }}{% if back %}{{ back }}{% endif %}">Back to Amenities</a>
                     </li>
                 </ul>
             {% endif %}
@@ -116,7 +116,7 @@
         new NIRIT.Board({
             'data': {{ data|safe }},
             'notices': {{ notices|safe }},
-            'buildings': ['{{ building.codename }}'], // Can only post to current building
+            'spaces': ['{{ space.codename }}'], // Can only post to current space
             'token': '{{ user.get_profile.token }}',
             'account': {
                 'username': '{{ user.get_profile.username }}',

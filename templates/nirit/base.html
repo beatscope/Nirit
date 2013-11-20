@@ -36,7 +36,7 @@
                 <div id="logo"><a href="/"><img src="{{ STATIC_URL}}/images/nirit-logo.png" witdh="108" height="43" alt="Nirit" /></a></div>
                 <div id="user-corner">
                     {% if user.is_authenticated %}
-                    <h3><a href="/board/{{ user.get_profile.building.link }}">{{ user.get_profile.building.name }}</a></h3>
+                    <h3><a href="/board/{{ user.get_profile.space.link }}">{{ user.get_profile.space.name }}</a></h3>
                     {% endif %}
                     <div class="today">{% now "jS F Y" %}</div>
                     {% if user.is_authenticated %}

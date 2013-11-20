@@ -80,7 +80,7 @@ class OrganizationForm(forms.ModelForm):
 class CompanyForm(OrganizationForm):
     floor = forms.IntegerField(label='Floor')
     directions = forms.CharField(label='Detailed Directions', widget=forms.Textarea, required=False, help_text="\
-                 Detailed desription on how to find your office within the building.\
+                 Detailed desription on how to find your office within the space.\
                  e.g.: turn right coming out of the lift, opposite the kitchen.")
 
     def save(self, commit=True):
@@ -208,12 +208,12 @@ class SignUpForm(forms.Form):
                 # The User is the Owner of a Company
                 # User will be able to create a Business Profile when he confirms his email address
                 user.groups.add(Group.objects.get(name='Owner'))
-                # Assign the token building to the User
+                # Assign the token space to the User
                 t = OToken.objects.get(key=self.cleaned_data['auth_code'])
                 t.user = user
                 t.save() # we assign the user to the token as well to keep a record of who redeemed it
                 profile = user.get_profile()
-                profile.building = t.building
+                profile.space = t.space
                 profile.status = UserProfile.VERIFIED # activate user
                 profile.save()
         return user

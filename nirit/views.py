@@ -18,7 +18,7 @@ from django.template import RequestContext, loader
 from django.utils.encoding import force_unicode
 from django.utils.html import strip_tags, linebreaks
 from django.conf import settings
-from nirit.models import Page, Building, Notice, Organization, \
+from nirit.models import Page, Space, Notice, Organization, \
                          OToken, UserProfile, CompanyProfile, Supplier
 from nirit.manager import ModelManager
 from nirit.forms import CompanyForm, MemberForm, UserForm, SignUpForm
@@ -42,11 +42,10 @@ def landing(request):
             form = AuthenticationForm()
         context['form'] = form
     else:
-        # Redirect authenticated user to their primary building's Notice Board
-        destination = 'board/{}'.format(request.user.get_profile().building.link)
+        # Redirect authenticated user to their primary space's Notice Board
+        destination = 'board/{}'.format(request.user.get_profile().space.link)
         return HttpResponseRedirect(destination)
 
-    #context['buildings'] = Building.objects.all()
     t = loader.get_template('nirit/index.html')
     c = RequestContext(request, context)
     return HttpResponse(t.render(c))
@@ -157,9 +156,9 @@ def sign_up_activate(request):
                         floor = data['floor']
                         directions = data['directions']
 
-                        # Create a Company Profile on this building
+                        # Create a Company Profile on this space
                         CompanyProfile.objects.create(organization=company,
-                                                      building=t.building,
+                                                      space=t.space,
                                                       floor=floor,
                                                       directions=directions)
 
@@ -183,14 +182,14 @@ def sign_up_activate(request):
                         data = {
                             'subject': u'{} has just joined Nirit'.format(company.name),
                             'body': force_unicode(company.description),
-                            'buildings': [t.building.codename],
+                            'spaces': [t.space.codename],
                             'type': '{}'.format(Notice.INTRO),
                             'official': 'on'
                         }
                         url = "{}/notices/post".format(settings.API_HOST)
                         r = requests.post(url, verify=False, headers=headers, data=json.dumps(data))
 
-                        # Notify Building Managers and Admins
+                        # Notify Space Managers and Admins
                         subject = 'A new Company has just joined Nirit'
                         data = {
                             'name': company.name,
@@ -199,7 +198,7 @@ def sign_up_activate(request):
                         text_content = Message().get('email_new_company_text', data)
                         html_content = Message().get('email_new_company_html', data)
                         mail_admins(subject, text_content, html_message=html_content)
-                        t.building.mail_managers(subject, text_content, html_content)
+                        t.space.mail_managers(subject, text_content, html_content)
 
                         # Finally, redirect to company page
                         destination = '/company/{}/{}'.format(company.slug, company.codename)
@@ -265,11 +264,11 @@ def user_profile(request, codename=None):
     }
 
     # Add companies approval
-    #   - for Building Managers
+    #   - for Space Managers
     #   - only on member's own page
     if profile.user == request.user:
-        if profile.building and 'Building Manager' in profile.roles:
-            context['companies_awaiting'] = profile.building.get_pending_companies()
+        if profile.space and 'Space Manager' in profile.roles:
+            context['companies_awaiting'] = profile.space.get_pending_companies()
 
     t = loader.get_template('nirit/user_profile.html')
     c = RequestContext(request, context)
@@ -420,23 +419,23 @@ def set_preference(request, setting, value):
 @ensure_csrf_cookie
 def board(request, codename=None):
     context = {}
-    if not request.user.get_profile().building:
+    if not request.user.get_profile().space:
         raise PermissionDenied
     if not codename:
-        url = '/board/{}/{}'.format(request.user.get_profile().building.slug, request.user.get_profile().building.codename)
+        url = '/board/{}/{}'.format(request.user.get_profile().space.slug, request.user.get_profile().space.codename)
         return redirect(url)
 
-    building = get_object_or_404(Building, codename=codename)
+    space = get_object_or_404(Space, codename=codename)
 
-    # Check the user is a member of this building
-    if request.user not in building.members:
+    # Check the user is a member of this space
+    if request.user not in space.members:
         raise PermissionDenied
 
     # Check the user is active
     if not request.user.get_profile().status == UserProfile.VERIFIED:
         raise PermissionDenied
 
-    context['building'] = building
+    context['space'] = space
 
     # Make an OPTIONS request to retrieve the full list of Notices for this user 
     cookies = {
@@ -458,7 +457,7 @@ def board(request, codename=None):
         context['types_escaped'] = {}
         context['count'] = 0
     
-    # Load Building's first Notices
+    # Load Space's first Notices
     headers = {
         'referer': settings.API_HOST,
         'content-type': 'application/json',
@@ -466,7 +465,7 @@ def board(request, codename=None):
         'authorization': 'Token {}'.format(request.user.get_profile().token)
     }
     params = {
-        'building': building.codename
+        'space': space.codename
     }
     if request.GET.has_key('filter'):
         # when filters are provided, we also pass in the member to the API query
@@ -480,7 +479,7 @@ def board(request, codename=None):
 
     # Add statistics
     context['stats'] = {
-        'organizations': building.building_profile.exclude(status=CompanyProfile.BANNED).count()
+        'organizations': space.space_profile.exclude(status=CompanyProfile.BANNED).count()
     }
     try:
         notice_count = json.loads(response.text)['count']
@@ -496,23 +495,23 @@ def board(request, codename=None):
 @login_required
 def directory(request, codename=None):
     context = {}
-    if not request.user.get_profile().building:
+    if not request.user.get_profile().space:
         raise PermissionDenied
     if not codename:
-        url = '/directory/{}/{}'.format(request.user.get_profile().building.slug, request.user.get_profile().building.codename)
+        url = '/directory/{}/{}'.format(request.user.get_profile().space.slug, request.user.get_profile().space.codename)
         return redirect(url)
 
-    building = get_object_or_404(Building, codename=codename)
+    space = get_object_or_404(Space, codename=codename)
 
-    # Check the user is a member of this building
-    if request.user not in building.members:
+    # Check the user is a member of this space
+    if request.user not in space.members:
         raise PermissionDenied
 
     # Check the user is active
     if not request.user.get_profile().status == UserProfile.VERIFIED:
         raise PermissionDenied
 
-    context['building'] = building
+    context['space'] = space
     context['tabs'] = [
         {'name': 'floor','label': 'By Floor', 'href': '?by=floor'},
         {'name': 'department', 'label': 'By Department', 'href': '?by=department'},
@@ -534,7 +533,7 @@ def directory(request, codename=None):
     }
 
     # Fetch companies using Nirit API
-    url = "{}/buildings/{}".format(settings.API_HOST, building.codename)
+    url = "{}/spaces/{}".format(settings.API_HOST, space.codename)
     response = requests.get(url, verify=False, headers=headers)
     data = json.loads(response.text)
 
@@ -583,23 +582,23 @@ def directory(request, codename=None):
 @login_required
 def amenities(request, codename=None):
     context = {}
-    if not request.user.get_profile().building:
+    if not request.user.get_profile().space:
         raise PermissionDenied
     if not codename:
-        url = '/amenities/{}/{}'.format(request.user.get_profile().building.slug, request.user.get_profile().building.codename)
+        url = '/amenities/{}/{}'.format(request.user.get_profile().space.slug, request.user.get_profile().space.codename)
         return redirect(url)
 
-    building = get_object_or_404(Building, codename=codename)
+    space = get_object_or_404(Space, codename=codename)
 
-    # Check the user is a member of this building
-    if request.user not in building.members:
+    # Check the user is a member of this space
+    if request.user not in space.members:
         raise PermissionDenied
 
     # Check the user is active
     if not request.user.get_profile().status == UserProfile.VERIFIED:
         raise PermissionDenied
 
-    context['building'] = building
+    context['space'] = space
     context['tabs'] = [
         {'name': 'distance','label': 'By Distance', 'href': '?by=distance'},
         {'name': 'type', 'label': 'By Type', 'href': '?by=type'},
@@ -624,7 +623,7 @@ def amenities(request, codename=None):
     # Fetch suppliers using Nirit API
     url = "{}/suppliers/".format(settings.API_HOST)
     params = {
-        'search': building.codename
+        'search': space.codename
     }
     response = requests.get(url, verify=False, headers=headers, params=params)
     data = json.loads(response.text)
@@ -642,8 +641,8 @@ def amenities(request, codename=None):
             geocode = [float(c) for c in supplier['geocode'].split(',')]
             distance = utils.get_distance(geocode[0],
                                           geocode[1],
-                                          building.geocode.latitude,
-                                          building.geocode.longitude)
+                                          space.geocode.latitude,
+                                          space.geocode.longitude)
             # we use miles
             if distance[1] <= 1:
                 supplier['distance'] = '{} mile'.format(round(distance[1], 1))
@@ -709,23 +708,23 @@ def supplier(request, slug):
 
     if request.user.is_authenticated():
         # Authenticated user see the supplier board
-        # which is the building board, filtered for @mention
+        # which is the space board, filtered for @mention
         try:
-            building = request.user.get_profile().building
-            if not building:
+            space = request.user.get_profile().space
+            if not space:
                 raise Exception
         except:
             pass
 
-        # Check the user is a member of this building
-        if request.user not in building.members:
+        # Check the user is a member of this space
+        if request.user not in space.members:
             raise PermissionDenied
 
         # Check the user is active
         if not request.user.get_profile().status == UserProfile.VERIFIED:
             raise PermissionDenied
 
-        context['building'] = building
+        context['space'] = space
 
         # The supplier @mention is the first part of the slug
         mention = supplier.slug.split('/')[0]
@@ -745,7 +744,7 @@ def supplier(request, slug):
             logger.error(e)
             context['notices'] = '{}'
 
-        # Load Building's first Notices
+        # Load Space's first Notices
         headers = {
             'referer': settings.API_HOST,
             'content-type': 'application/json',
@@ -753,7 +752,7 @@ def supplier(request, slug):
             'authorization': 'Token {}'.format(request.user.get_profile().token)
         }
         params = {
-            'building': building.codename,
+            'space': space.codename,
             'member': request.user.get_profile().codename,
             'filter': 'mention',
             'mention': mention
@@ -783,8 +782,8 @@ def company_set_status(request, codename, action):
     if not request.user.get_profile().status == UserProfile.VERIFIED:
         raise PermissionDenied
 
-    # Check the user is a Building Manager
-    if not 'Building Manager' in request.user.get_profile().roles:
+    # Check the user is a Space Manager
+    if not 'Space Manager' in request.user.get_profile().roles:
         raise PermissionDenied
 
     # Check action
@@ -796,7 +795,7 @@ def company_set_status(request, codename, action):
 
     try:
         company = Organization.objects.get(codename=codename)
-        company_profile = CompanyProfile.objects.get(building=request.user.get_profile().building,\
+        company_profile = CompanyProfile.objects.get(space=request.user.get_profile().space,\
                                                      organization=company)
         if action == 'activate':
             company_profile.status = CompanyProfile.VERIFIED
@@ -823,7 +822,7 @@ def company_set_status(request, codename, action):
 @login_required
 def company(request, codename=None):
     """
-    A company can be viewed by all of the Building's members.
+    A company can be viewed by all of the Space's members.
     The 'Edit' button will be made available to company editors only.
 
     """
@@ -837,13 +836,13 @@ def company(request, codename=None):
     context = {}
     organization = get_object_or_404(Organization, codename=codename)
     
-    # Load the Company Profile for the user's Active Building
-    building = request.user.get_profile().building
-    company = CompanyProfile.objects.get(building=building, organization=organization)
+    # Load the Company Profile for the user's Active Space
+    space = request.user.get_profile().space
+    company = CompanyProfile.objects.get(space=space, organization=organization)
     context['company'] = company
 
-    # check the user is a member of the building this organization belongs to
-    if not request.user in building.members:
+    # check the user is a member of the space this organization belongs to
+    if not request.user in space.members:
         raise PermissionDenied
 
     # add whether the user is a company editor to the context
@@ -902,14 +901,14 @@ def company_staff(request, codename):
     organization = get_object_or_404(Organization, codename=codename)
     context = {}
     
-    # Load the Company Profile for the user's Active Building
-    building = request.user.get_profile().building
-    company = CompanyProfile.objects.get(building=building, organization=organization)
+    # Load the Company Profile for the user's Active Space
+    space = request.user.get_profile().space
+    company = CompanyProfile.objects.get(space=space, organization=organization)
     context['company'] = company
     context['staff'] = organization.members.all()
     
-    # check the user is a member of the building this organization belongs to
-    if not request.user in building.members:
+    # check the user is a member of the space this organization belongs to
+    if not request.user in space.members:
         raise PermissionDenied
 
     # Authentication is Token-based
@@ -958,14 +957,14 @@ def company_board(request, codename):
     organization = get_object_or_404(Organization, codename=codename)
     context = {}
 
-    # Load the Company Profile for the user's Active Building
-    building = request.user.get_profile().building
-    company = CompanyProfile.objects.get(building=building, organization=organization)
+    # Load the Company Profile for the user's Active Space
+    space = request.user.get_profile().space
+    company = CompanyProfile.objects.get(space=space, organization=organization)
     context['company'] = company
     context['staff'] = organization.members.all()
 
-    # check the user is a member of the building this organization belongs to
-    if not request.user in building.members:
+    # check the user is a member of the space this organization belongs to
+    if not request.user in space.members:
         raise PermissionDenied
 
     # Authentication is Token-based
@@ -1035,7 +1034,7 @@ def company_edit(request, codename):
 
     # user is allowed to edit the company
     # add the Organization form
-    profile = CompanyProfile.objects.get(building=request.user.get_profile().building, organization=organization)
+    profile = CompanyProfile.objects.get(space=request.user.get_profile().space, organization=organization)
     initial = {
         'floor': profile.floor,
         'directions': profile.directions

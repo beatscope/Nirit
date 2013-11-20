@@ -19,13 +19,13 @@ if __name__ == "__main__":
     choices = [
         'create-user',  # Create user, generating random password
         'create-token', # Create Authorization Tokens to create companies (can create more than 1 in bulk)
-        'list-tokens',  # Lists all Tokens for a Building
+        'list-tokens',  # Lists all Tokens for a Space
         'set',          # Set user preference
         'lookup-email', # Lookup email TLD against Users Table
     ]
     parser = argparse.ArgumentParser(description="Nirit Command-Line Tool")
     parser.add_argument('command', type=str, help='command to execute', choices=choices)
-    parser.add_argument('-b', '--building', type=str, help='Building Name ID')
+    parser.add_argument('-b', '--space', type=str, help='Space Name ID')
     parser.add_argument('-o', '--organization', type=str, help='Organization Name or ID')
     parser.add_argument('-u', '--user', type=str, help='User Email')
     parser.add_argument('-n', '--notice', type=str, help='Notice ID')
@@ -45,22 +45,22 @@ if __name__ == "__main__":
 
     elif args.command == 'create-token':
         # Create Authorization Token
-        if args.building is None:
-            # A token is associated with a building
-            print '> [{}] {}'.format(400, "Building required.")
+        if args.space is None:
+            # A token is associated with a space
+            print '> [{}] {}'.format(400, "Space required.")
             parser.print_help()
         else:
-            res = manager.create_token(args.building, args.count)
+            res = manager.create_token(args.space, args.count)
             print '> [{}]'.format(res['status'])
             print '\n'.join([str(r) for r in res['response']])
 
     elif args.command == 'list-tokens':
-        if args.building is None:
-            # A token is associated with a building
-            print '> [{}] {}'.format(400, "Building required.")
+        if args.space is None:
+            # A token is associated with a space
+            print '> [{}] {}'.format(400, "Space required.")
             parser.print_help()
         else:
-            res = manager.list_tokens(args.building)
+            res = manager.list_tokens(args.space)
             print '> [{}]'.format(res['status'])
             print '\n'.join([str(r) for r in res['response']])
 
@@ -69,8 +69,8 @@ if __name__ == "__main__":
         if args.user is None:
             print '> [{}] {}'.format(400, "Username/email required.")
         else:
-            if args.building is not None:
-                res = manager.set_preference(user=args.user, preference='active-building', value=args.building)
+            if args.space is not None:
+                res = manager.set_preference(user=args.user, preference='active-space', value=args.space)
                 print '> [{}] {}'.format(res['status'], res['response'])
             elif args.organization is not None:
                 res = manager.set_preference(user=args.user, preference='network', value=args.organization)

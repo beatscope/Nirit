@@ -94,15 +94,15 @@ class Notice(models.Model):
     def get_replies(self):
         replies = Notice.objects.filter(reply_to=self)\
                                 .exclude(sender__profile__status=UserProfile.BANNED)
-        # Exclude post sent by Companies BANNED in the Notice's Building
+        # Exclude post sent by Companies BANNED in the Notice's Space
         exclude = []
         for reply in replies:
-            # the reply has to be in the same building as the original Notice
-            buildings = self.building_set.all()
-            # check the status of the reply company is each building
-            for building in buildings:
-                building_profile = CompanyProfile.objects.get(building=building, organization=reply.sender.profile.company)
-                if building_profile.status == CompanyProfile.BANNED:
+            # the reply has to be in the same space as the original Notice
+            spaces = self.space_set.all()
+            # check the status of the reply company is each space
+            for space in spaces:
+                space_profile = CompanyProfile.objects.get(space=space, organization=reply.sender.profile.company)
+                if space_profile.status == CompanyProfile.BANNED:
                     exclude.append(reply.id)
         if exclude:
             replies = replies.exclude(pk__in=exclude)
@@ -173,7 +173,7 @@ class Organization(models.Model):
     def members(self):
         return User.objects\
                .filter(profile__company=self)\
-               .filter(groups__name__in=['Owner','Rep','Staff','Building Manager'])\
+               .filter(groups__name__in=['Owner','Rep','Staff','Manager'])\
                .exclude(profile__status=UserProfile.BANNED)\
                .distinct()
 
@@ -247,7 +247,7 @@ class Organization(models.Model):
             msg.send()
 
 
-class Building(models.Model):
+class Space(models.Model):
     name = models.CharField(max_length=200, unique=True)
     codename = models.CharField(max_length=64, unique=True, null=True, blank=True)
     postcode = models.CharField("Postcode", max_length=8, help_text='Please include the gap (space) between the outward and inward codes')
@@ -260,19 +260,19 @@ class Building(models.Model):
         # generate codename from name
         if self.id is None:
             self.codename = hashlib.sha256(self.name).hexdigest()
-        super(Building, self).save(*args, **kwargs)
+        super(Space, self).save(*args, **kwargs)
         # create the permission
         if self.id is None:
-            content_type = ContentType.objects.get(app_label='nirit', model='building')
-            permission_name = 'Can access building "{}"'.format(self.name)
-            permission_codename = 'can_access_building_{}'.format(self.codename)
+            content_type = ContentType.objects.get(app_label='nirit', model='space')
+            permission_name = 'Can access space "{}"'.format(self.name)
+            permission_codename = 'can_access_space_{}'.format(self.codename)
             permission = Permission.objects.create(codename=permission_codename, name=permission_name, content_type=content_type)
 
     def delete(self, *args, **kwargs):
         # delete the permission before deleting the object
-        permission = Permission.objects.get(codename='can_access_building_{}'.format(self.codename))
+        permission = Permission.objects.get(codename='can_access_space_{}'.format(self.codename))
         permission.delete()
-        super(Building, self).delete(*args, **kwargs)
+        super(Space, self).delete(*args, **kwargs)
 
     @property
     def slug(self):
@@ -301,17 +301,17 @@ class Building(models.Model):
     @property
     def members(self):
         """
-        Return all members througout all the Organizations of the Building.
-        Building Managers are considered members of their Buildings.
+        Return all members througout all the Organizations of the Space.
+        Managers are considered members of their Spaces.
 
         """
-        profiles = self.building_profile.filter(building=self)\
+        profiles = self.space_profile.filter(space=self)\
                                         .exclude(status=CompanyProfile.BANNED)
         ids = []
         for profile in profiles:
             ids.extend([m['id'] for m in profile.organization.members.values('id')])
         members = User.objects.filter(pk__in=ids)\
-                              .filter(groups__name__in=['Owner','Rep','Staff','Building Manager'])\
+                              .filter(groups__name__in=['Owner','Rep','Staff','Manager'])\
                               .exclude(profile__status=UserProfile.BANNED)\
                               .distinct()\
                               .order_by('first_name', 'last_name', 'username')
@@ -320,16 +320,16 @@ class Building(models.Model):
     @property
     def managers(self):
         """
-        Return all Building Managers througout all the Organizations of the Building.
+        Return all Managers througout all the Organizations of the Space.
 
         """
-        profiles = self.building_profile.filter(building=self)\
+        profiles = self.space_profile.filter(space=self)\
                                         .exclude(status=CompanyProfile.BANNED)
         ids = []
         for profile in profiles:
             ids.extend([m['id'] for m in profile.organization.members.values('id')])
         managers = User.objects.filter(pk__in=ids)\
-                               .filter(groups__name='Building Manager')\
+                               .filter(groups__name='Manager')\
                                .exclude(profile__status=UserProfile.BANNED)\
                                .distinct()\
                                .order_by('first_name', 'last_name', 'username')
@@ -337,14 +337,14 @@ class Building(models.Model):
 
     def get_pending_companies(self):
         # Return pending companies
-        pending_profiles = self.building_profile.filter(status=CompanyProfile.PENDING)
+        pending_profiles = self.space_profile.filter(status=CompanyProfile.PENDING)
         return Organization.objects.filter(pk__in=[p.organization.id for p in pending_profiles])
 
     def get_notices(self):
         notices = self.notices.filter(is_reply=False)\
                               .exclude(sender__profile__status=UserProfile.BANNED)
         banned = [bp['organization__id'] for bp \
-                 in self.building_profile.filter(status=CompanyProfile.BANNED).values('organization__id')]
+                 in self.space_profile.filter(status=CompanyProfile.BANNED).values('organization__id')]
         if banned:
             notices = notices.exclude(sender__profile__company__pk__in=banned)
         return notices
@@ -369,15 +369,15 @@ class CompanyProfile(models.Model):
         (BANNED, 'Banned'),
     )
     organization = models.ForeignKey(Organization, related_name='company_profile')
-    building = models.ForeignKey(Building, null=True, blank=True, related_name='building_profile')
+    space = models.ForeignKey(Space, null=True, blank=True, related_name='space_profile')
     floor = models.IntegerField("Floor", null=True, blank=True)
     status = models.IntegerField("Verification status", choices=STATUS_CHOICES, default=PENDING)
     directions = models.TextField("Detailed Directions", null=True, blank=True)
 
     def __unicode__(self):
-        if self.building:
-            return u'{} at {}'.format(self.organization.name, self.building.name)
-        return u'{} [No Building Assigned]'.format(self.organization.name)
+        if self.space:
+            return u'{} at {}'.format(self.organization.name, self.space.name)
+        return u'{} [No Space Assigned]'.format(self.organization.name)
 
     @property
     def floor_tag(self):
@@ -407,7 +407,7 @@ class OToken(models.Model):
 
     """
     key = models.CharField(max_length=14, primary_key=True)
-    building = models.ForeignKey(Building)
+    space = models.ForeignKey(Space)
     user = models.ForeignKey(User, null=True, blank=True)
     redeemed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
@@ -451,7 +451,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, related_name='profile')
     codename = models.CharField(max_length=255, unique=True, null=True, blank=True)
     company = models.ForeignKey(Organization, null=True, blank=True, related_name='company', on_delete=models.SET_NULL)
-    building = models.ForeignKey(Building, null=True, blank=True, help_text="Primary building", on_delete=models.SET_NULL)
+    space = models.ForeignKey(Space, null=True, blank=True, help_text="Primary space", on_delete=models.SET_NULL)
     starred = models.ManyToManyField(Notice, null=True, blank=True)
     networked = models.ManyToManyField(Organization, null=True, blank=True, related_name='networked')
     thumbnail = models.ImageField(upload_to='./member/%Y/%m/%d', null=True, blank=True, \
@@ -477,12 +477,12 @@ class UserProfile(models.Model):
         return [str(g.name) for g in roles]
 
     @property
-    def buildings(self):
-        buildings = []
+    def spaces(self):
+        spaces = []
         if self.company:
             profiles = CompanyProfile.objects.filter(organization=self.company)
-            buildings = [profile.building for profile in profiles]
-        return buildings
+            spaces = [profile.space for profile in profiles]
+        return spaces
 
     @property
     def token(self):
@@ -579,7 +579,7 @@ class Supplier(models.Model):
     type = models.IntegerField(choices=SUPPLIER_TYPES, default=0)
     image = models.ImageField(upload_to='./supplier/%Y/%m/%d', null=True, blank=True, \
                               help_text="PNG, JPEG, or GIF; max size 2 MB. Image must be 626 x 192 pixels or larger.")
-    buildings = models.ManyToManyField(Building, null=True, blank=True)
+    spaces = models.ManyToManyField(Space, null=True, blank=True)
 
     @property
     def postcode(self):

@@ -1,7 +1,7 @@
 {% extends "nirit/base.html" %}
 {% load static %}
 
-{% block title %}Nirit | {{ building.name }} Notice Board{% endblock %}
+{% block title %}Nirit | {{ space.name }} Notice Board{% endblock %}
 
 {% block extrahead %}<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>
 <script type="text/javascript" src="{% static "js/nirit.board.js" %}"></script>{% endblock %}
@@ -16,19 +16,19 @@
                 <li class="first">
                     <a id="latest_count"
                         {% if not filter %} class="active" {% endif %}
-                       href="/board/{{ building.link }}">Latest <span class="invisible"></span></a>
+                       href="/board/{{ space.link }}">Latest <span class="invisible"></span></a>
                 </li>
                 <li>
                     <a {% if filter and filter == 'starred' %}class="active" {% endif %}
-                       href="/board/{{ building.link }}?filter=starred">Starred</a>
+                       href="/board/{{ space.link }}?filter=starred">Starred</a>
                 </li>
                 <li>
                     <a {% if filter and filter == 'network' %}class="active" {% endif %}
-                       href="/board/{{ building.link }}?filter=network">Network</a>
+                       href="/board/{{ space.link }}?filter=network">Network</a>
                 </li>
                 <li class="last">
                     <a {% if filter and filter == 'company' %}class="active" {% endif %}
-                       href="/board/{{ building.link }}?filter=company">Company</a>
+                       href="/board/{{ space.link }}?filter=company">Company</a>
                 </li>
                 <li class="right">
                     <a id="new_card" class="button create new-card" href="">Post New Notice <span></span></a>
@@ -92,7 +92,7 @@
         new NIRIT.Board({
             'data': {{ data|safe }},
             'notices': {{ notices|safe }},
-            'buildings': ['{{ building.codename }}'], // Can only post to current building
+            'spaces': ['{{ space.codename }}'], // Can only post to current space
             'token': '{{ user.get_profile.token }}',
             'account': {
                 'username': '{{ user.get_profile.username }}',
@@ -104,8 +104,8 @@
                 'starred': {{ user.get_profile.get_starred|safe }}
             },
             'filter': {
-                'type': 'building',
-                'value': '{{ building.codename }}'
+                'type': 'space',
+                'value': '{{ space.codename }}'
             }
         });
     });
