@@ -15,8 +15,12 @@ pages_regex = r'^(?P<page>{})$'.format('|'.join([p['slug'] for p in Page.objects
 
 urlpatterns = patterns('',
 
-    # Pages
-    url(r'^$', 'nirit.views.landing'),
+    # Public
+    url(r'^$', 'nirit.views_public.landing'),
+    url(r'^sitemap.xml', 'nirit.views_public.sitemap'),
+    url(pages_regex, 'nirit.views_public.page'),
+    url(r'^supplier/(?P<slug>.+)$', 'nirit.views_public.supplier'),
+
     url(r'^board/[\w-]*/(?P<codename>\w+)', 'nirit.views.board', name='board'),
     url(r'^board/$', 'nirit.views.board'),
     url(r'^directory/[\w-]*/(?P<codename>\w+)', 'nirit.views.directory'),
@@ -24,15 +28,13 @@ urlpatterns = patterns('',
     url(r'^amenities/[\w-]*/(?P<codename>\w+)', 'nirit.views.amenities'),
     url(r'^amenities/$', 'nirit.views.amenities'),
 
-    url(r'^supplier/(?P<slug>.+)$', 'nirit.views.supplier'),
-    url(r'^sitemap.xml', 'nirit.views.sitemap'),
+    # Sign-up
+    url(r'^member/sign-up$', 'nirit.views_signup.sign_up'),
+    url(r'^member/sign-up/complete$', 'nirit.views_signup.complete'),
+    url(r'^member/sign-up/activation-required$', 'nirit.views_signup.activation_required'),
+    url(r'^member/sign-up/activate$', 'nirit.views_signup.activate'),
 
-    # Member pages
-    url(r'^member/sign-up$', 'nirit.views.sign_up'),
-    url(r'^member/sign-up/complete$', 'nirit.views.sign_up_complete'),
-    url(r'^member/sign-up/activation-required$', 'nirit.views.sign_up_activation_required'),
-    url(r'^member/sign-up/activate$', 'nirit.views.sign_up_activate'),
-
+    # Member
     url(r'^member/password/reset/$', 'django.contrib.auth.views.password_reset',
         {
             'from_email': settings.EMAIL_FROM,
@@ -50,31 +52,27 @@ urlpatterns = patterns('',
         {
             'post_change_redirect': '/'
         }),
-
-    url(r'^member/set-preference/(?P<setting>\w+)/(?P<value>\w+)$', 'nirit.views.set_preference'),
-    url(r'^member/account/edit$', 'nirit.views.user_profile_edit'),
-    url(r'^member/account$', 'nirit.views.user_profile'),
-    url(r'^member/(?P<codename>.+)$', 'nirit.views.user_profile'),
-    url(r'^member/$', 'nirit.views.user_profile'),
+    url(r'^member/set-preference/(?P<setting>\w+)/(?P<value>\w+)$', 'nirit.views_member.set_preference'),
+    url(r'^member/account/edit$', 'nirit.views_member.edit_profile'),
+    url(r'^member/account$', 'nirit.views_member.profile'),
+    url(r'^member/(?P<codename>.+)$', 'nirit.views_member.profile'),
+    url(r'^member/$', 'nirit.views_member.profile'),
     url(r'^logout', 'django.contrib.auth.views.logout_then_login'),
 
-    # Company Pages
-    url(r'^company/[\w-]*/(?P<codename>\w+)/board$', 'nirit.views.company_board'),
-    url(r'^company/[\w-]*/(?P<codename>\w+)/edit$', 'nirit.views.company_edit'),
-    url(r'^company/[\w-]*/(?P<codename>\w+)/staff$', 'nirit.views.company_staff'),
-    url(r'^company/[\w-]*/(?P<codename>\w+)$', 'nirit.views.company'),
-    url(r'^company$', 'nirit.views.company'),
-
-    # Pages
-    url(pages_regex, 'nirit.views.page'),
+    # Company
+    url(r'^company/[\w-]*/(?P<codename>\w+)/board$', 'nirit.views_company.board'),
+    url(r'^company/[\w-]*/(?P<codename>\w+)/edit$', 'nirit.views_company.edit_profile'),
+    url(r'^company/[\w-]*/(?P<codename>\w+)/staff$', 'nirit.views_company.staff'),
+    url(r'^company/[\w-]*/(?P<codename>\w+)$', 'nirit.views_company.profile'),
+    url(r'^company$', 'nirit.views_company.profile'),
 
     # AJAX Interfaces
     url(r'^upload$', login_required(FileUploader())),
-    url(r'^contact/company/(?P<codename>\w+)$', 'nirit.views.contact_company'),
-    url(r'^contact/member/(?P<codename>.+)$', 'nirit.views.contact_member'),
-    url(r'^invite/members/(?P<codename>\w+)$', 'nirit.views.invite_members'),
-    url(r'^approval/company/(?P<codename>\w+)/(?P<action>\w+)$', 'nirit.views.company_set_status'),
-    url(r'^approval/member/(?P<codename>.+)/(?P<action>\w+)$', 'nirit.views.user_set_status'),
+    url(r'^contact/member/(?P<codename>.+)$', 'nirit.views_member.contact'),
+    url(r'^approval/member/(?P<codename>.+)/(?P<action>\w+)$', 'nirit.views_member.set_status'),
+    url(r'^contact/company/(?P<codename>\w+)$', 'nirit.views_company.contact'),
+    url(r'^invite/members/(?P<codename>\w+)$', 'nirit.views_company.invite_staff'),
+    url(r'^approval/company/(?P<codename>\w+)/(?P<action>\w+)$', 'nirit.views_company.set_status'),
 
     # Admin
     url(r'^grappelli/', include('grappelli.urls')),

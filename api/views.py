@@ -181,8 +181,8 @@ class NoticeListView(generics.ListAPIView):
             # Add notice types
             data['types'] = []
             profile = request.user.get_profile()
-            if 'Space Manager' in profile.roles:
-                # Space Managers are allowed to specify which type of Notice to post
+            if 'Manager' in profile.roles:
+                # Managers are allowed to specify which type of Notice to post
                 data['types'] = [{'value': key, 'label': value} for key, value in Notice.TYPES]
             # Retrieve the full list of Notices the logged-in user can see
             # i.e.: sent in the user's active uilding

@@ -58,7 +58,7 @@ def lookup_email(email):
                 return None
         # If this point is reached, the domain is private
         users = User.objects.filter(email__endswith=tld)\
-                            .filter(groups__name__in=['Space Manager', 'Owner', 'Rep', 'Staff'])
+                            .filter(groups__name__in=['Manager', 'Owner', 'Rep', 'Staff'])
         # Users with the same domain are supposed to belong to the same company
         if users:
             try:
