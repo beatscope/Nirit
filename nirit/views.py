@@ -451,7 +451,6 @@ def board(request, codename=None):
         context['types_escaped'] = d['types']
         context['count'] = int(d['results']['all'])
     except Exception as e:
-        logger.error(e)
         context['notices'] = '{}'
         context['types'] = '{}'
         context['types_escaped'] = {}
@@ -695,7 +694,33 @@ def amenities(request, codename=None):
 
 
 def supplier(request, slug):
-    supplier = get_object_or_404(Supplier, slug=slug)
+    try:
+        supplier = Supplier.objects.get(slug=slug)
+    except Supplier.DoesNotExist:
+        # when the slug does does not match, we attempt to find the closest match
+        candidates = Supplier.objects.filter(slug__startswith=slug).values('id', 'location')
+        if not candidates:
+            raise Http404
+        for candidate in candidates:
+            # calculate distances
+            if not candidate['location']:
+                candidate['distance'] = 99999999999
+            else:
+                geocode = [float(c) for c in candidate['location'].split(',')]
+                distance = utils.get_distance(geocode[0],
+                                              geocode[1],
+                                              request.user.get_profile().space.geocode.latitude,
+                                              request.user.get_profile().space.geocode.longitude)
+                candidate['distance'] = distance[1]
+        candidates = sorted(candidates, key=operator.itemgetter('distance'))
+        try:
+            supplier = Supplier.objects.get(pk=candidates[0]['id'])
+            url = '/supplier/{}'.format(supplier.slug)
+            return redirect(url)
+        except Exception as e:
+            logger.error('Supplier slug detection failed. {}'.format(e))
+            raise Http404
+
     back = None
     if request.GET.has_key('by'):
         back = '?by={}'.format(request.GET['by'])
@@ -741,7 +766,6 @@ def supplier(request, slug):
             d = json.loads(r.text)
             context['notices'] = json.dumps(d['results']['notices'])
         except Exception as e:
-            logger.error(e)
             context['notices'] = '{}'
 
         # Load Space's first Notices

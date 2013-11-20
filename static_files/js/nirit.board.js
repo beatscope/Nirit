@@ -265,6 +265,9 @@ NIRIT.Board.prototype.add_notice = function (html, target, before) {
  * Theme a card object into an HTML string
  */
 NIRIT.Board.prototype.apply_template = function (card, template) {
+    // @mention pattern
+    var pattern = new RegExp(/@([-_\w]+)/g);
+
     try {
         // Sender's display name
         var sender = card.sender.full_name;
@@ -316,11 +319,13 @@ NIRIT.Board.prototype.apply_template = function (card, template) {
 
     // Subject is not shown on replies
     if (typeof(template) === 'undefined') {
+        card.subject = card.subject.replace(pattern, '<a href="/supplier/$1">$1</a>');
         card_tag += '<div class="subject">' + card.subject + '</div>';
     }
 
     // The body is initially truncated to 255 characters
     var body = card.hasOwnProperty('body') ? card.body : false;
+    body = body.replace(pattern, '<a href="/supplier/$1">@$1</a>');
     if (body) {
         // Only truncate body on cards, not on reply cards
         if (typeof(template) === 'undefined') {
@@ -328,7 +333,7 @@ NIRIT.Board.prototype.apply_template = function (card, template) {
             if (truncated) {
                 card_tag += '<div class="body truncated">';
                 card_tag += '<div class="hidden full-body">' + body + '</div>';
-                card_tag += '<div class="truncated-body">' + body.substr(0, 255) + '...</div>';
+                card_tag += '<div class="truncated-body"><p>' + $(body).text().substr(0, 255) + '...</p></div>';
                 card_tag += '</div>';
             } else {
                 card_tag += '<div class="body">' + body + '</div>';
