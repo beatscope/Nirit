@@ -449,7 +449,7 @@ class UserProfile(models.Model):
     )
 
     user = models.OneToOneField(User, related_name='profile')
-    codename = models.CharField(max_length=64, unique=True, editable=False)
+    codename = models.CharField(max_length=255, unique=True, null=True, blank=True)
     company = models.ForeignKey(Organization, null=True, blank=True, related_name='company', on_delete=models.SET_NULL)
     building = models.ForeignKey(Building, null=True, blank=True, help_text="Primary building", on_delete=models.SET_NULL)
     starred = models.ManyToManyField(Notice, null=True, blank=True)
@@ -519,11 +519,13 @@ class UserProfile(models.Model):
     def generate_hash(self):
         # Generate member codename based on his full name
         if not self.codename:
-            # Slug format: hyphenise(fullname)/random(1-999)/(1+count(fullname)/random(1-999)*(1+count(fullname))
-            initials = ''.join(['{}.'.format(n[0]) for n in [self.user.first_name, self.user.last_name] if n])
-            hyphenized = re.sub(r'\s\s*', '-', initials.lower())
-            count = UserProfile.objects.filter(codename__contains=hyphenized).count()
-            slug = '{}/{}/{}/{}'.format(hyphenized, random.randint(1, 999), count+1, (count+1) * random.randint(1, 999))
+            # Slug format: initials(fullname)/random(1-999)/count(fullname)/random(1-999)*count(fullname)
+            groups = self.user.first_name.split()
+            groups.extend(self.user.last_name.split())
+            initials = ''.join(['{}.'.format(n[0]) for n in groups if n and re.search(r'[^-_0-9a-zA-Z]', n) is None])
+            initials = initials.lower()
+            count = UserProfile.objects.filter(codename__contains=initials).count()
+            slug = '{}/{}/{}/{}'.format(initials, random.randint(1, 999), count, count * random.randint(1, 999))
             self.codename = slug
             self.save()
 
@@ -542,6 +544,9 @@ class UserProfile(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         profile = UserProfile.objects.create(user=instance)
+    else:
+        profile = instance.get_profile()
+        profile.generate_hash()
 
 def create_auth_token(sender, instance, created, **kwargs):
     if created:
@@ -605,15 +610,17 @@ class Supplier(models.Model):
     def generate_slug(self):
         # Generate supplier slug
         if not self.slug:
-            # Slug format: hyphenise(name)/random(1-999)/(1+count(name)/random(1-999)*(1+count(name))
+            # Slug format: hyphenise(name)/random(1-999)/count(name)/random(1-999)*(count(name))
             hyphenized = re.sub(r'\s\s*', '-', self.name.lower())
-            count = Supplier.objects.filter(name=self.name).count()
-            slug = '{}/{}/{}/{}'.format(hyphenized, random.randint(1, 999), count+1, (count+1) * random.randint(1, 999))
+            hyphenized = re.sub(r'[^-_0-9a-z]', '', hyphenized)
+            hyphenized = re.sub(r'--+', '-', hyphenized)
+            count = Supplier.objects.filter(name=self.name).distinct().count()
+            slug = '{}/{}/{}/{}'.format(hyphenized, random.randint(1, 999), count, count * random.randint(1, 999))
             self.slug = slug
             self.save()
 
 def create_supplier_slug(sender, instance, created, **kwargs):
-    if created:
+    if not instance.slug:
         instance.generate_slug()
 
 def generate_supplier_location(sender, instance, created, **kwargs):
