@@ -1211,7 +1211,7 @@ nav#sub-links {
         #results .supplier-item:hover .supplier-icon.supplier-restaurant { background-position: -90px -30px; }
         #results .supplier-item .supplier-icon.supplier-takeaway { background-position: -120px 0; }
         #results .supplier-item:hover .supplier-icon.supplier-takeaway { background-position: -120px -30px; }
-        #results .supplier-item .supplier-icon.supplier-post-office { background-position: -1500px 0; }
+        #results .supplier-item .supplier-icon.supplier-post-office { background-position: -150px 0; }
         #results .supplier-item:hover .supplier-icon.supplier-post-office { background-position: -150px -30px; }
         #results .supplier-item .supplier-icon.supplier-club { background-position: -180px 0; }
         #results .supplier-item:hover .supplier-icon.supplier-club { background-position: -180px -30px; }
