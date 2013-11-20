@@ -319,7 +319,7 @@ NIRIT.Board.prototype.apply_template = function (card, template) {
 
     // Subject is not shown on replies
     if (typeof(template) === 'undefined') {
-        card.subject = card.subject.replace(pattern, '<a href="/supplier/$1">$1</a>');
+        card.subject = card.subject.replace(pattern, '<a href="/supplier/$1">@$1</a>');
         card_tag += '<div class="subject">' + card.subject + '</div>';
     }
 
