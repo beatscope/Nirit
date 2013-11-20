@@ -8,7 +8,8 @@ import logging
 from django.conf import settings
 from rest_framework import serializers
 from django.contrib.auth.models import User, Group
-from nirit.models import Building, Organization, CompanyProfile, Notice, Expertise
+from nirit.models import Building, Organization, Supplier, \
+                         CompanyProfile, Notice, Expertise
 
 logger = logging.getLogger('api.serializers')
 
@@ -134,3 +135,24 @@ class ExpertiseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Expertise
+
+
+class SupplierBuildingSerializer(serializers.ModelSerializer):
+    name = serializers.Field(source='name')
+    slug = serializers.SlugField(source='link')
+
+    class Meta:
+        model = Building
+        lookup_field = 'codename'
+        fields = ('name', 'codename', 'slug')
+
+
+class SupplierSerializer(serializers.ModelSerializer):
+    postcode = serializers.RelatedField(source='postcode')
+    geocode = serializers.RelatedField(source='location')
+    type = serializers.RelatedField(source='get_type_display')
+    buildings = SupplierBuildingSerializer(many=True)
+
+    class Meta:
+        model = Supplier
+        fields = ('name', 'slug', 'address', 'postcode', 'geocode', 'type', 'buildings')

@@ -18,11 +18,12 @@ from django.template import RequestContext, loader
 from django.utils.encoding import force_unicode
 from django.utils.html import strip_tags, linebreaks
 from django.conf import settings
-from nirit.models import Page, Building, Notice, Organization, OToken, UserProfile, CompanyProfile
+from nirit.models import Page, Building, Notice, Organization, \
+                         OToken, UserProfile, CompanyProfile, Supplier
 from nirit.manager import ModelManager
 from nirit.forms import CompanyForm, MemberForm, UserForm, SignUpForm
 from nirit.fixtures import Message
-from nirit.utils import lookup_email
+from nirit import utils
 
 logger = logging.getLogger('nirit.views')
 
@@ -580,6 +581,203 @@ def directory(request, codename=None):
 
 
 @login_required
+def amenities(request, codename=None):
+    context = {}
+    if not request.user.get_profile().building:
+        raise PermissionDenied
+    if not codename:
+        url = '/amenities/{}/{}'.format(request.user.get_profile().building.slug, request.user.get_profile().building.codename)
+        return redirect(url)
+
+    building = get_object_or_404(Building, codename=codename)
+
+    # Check the user is a member of this building
+    if request.user not in building.members:
+        raise PermissionDenied
+
+    # Check the user is active
+    if not request.user.get_profile().status == UserProfile.VERIFIED:
+        raise PermissionDenied
+
+    context['building'] = building
+    context['tabs'] = [
+        {'name': 'distance','label': 'By Distance', 'href': '?by=distance'},
+        {'name': 'type', 'label': 'By Type', 'href': '?by=type'},
+        {'name': 'name', 'label': 'Alphabetical', 'href': '?by=name'},
+        {'name': 'map', 'label': 'Map', 'href': '?by=map'}
+    ]
+    if request.GET.has_key('by'):
+        group = request.GET['by']
+    else:
+        # 'distance' is the default tab
+        group = 'distance'
+    context['group'] = group
+    
+    # Authentication is Token-based
+    headers = {
+        'referer': settings.API_HOST,
+        'content-type': 'application/json',
+        # use the logged-in user authorization token
+        'authorization': 'Token {}'.format(request.user.get_profile().token)
+    }
+
+    # Fetch suppliers using Nirit API
+    url = "{}/suppliers/".format(settings.API_HOST)
+    params = {
+        'search': building.codename
+    }
+    response = requests.get(url, verify=False, headers=headers, params=params)
+    data = json.loads(response.text)
+
+    # Computed data
+    for supplier in data:
+        # determine supplier icon
+        supplier['icon'] = re.sub(r'\s\s*', '-', supplier['type'].lower())
+        # calculate distances
+        if not supplier['geocode'][0] and not supplier['geocode'][1]:
+            supplier['distance'] = 'N/A'
+            supplier['distance-key'] = 99999999999
+        else:
+            # coming from the API, the geocode is a coma-separated string
+            geocode = [float(c) for c in supplier['geocode'].split(',')]
+            distance = utils.get_distance(geocode[0],
+                                          geocode[1],
+                                          building.geocode.latitude,
+                                          building.geocode.longitude)
+            # we use miles
+            if distance[1] <= 1:
+                supplier['distance'] = '{} mile'.format(round(distance[1], 1))
+            else:
+                supplier['distance'] = '{} miles'.format(round(distance[1], 1))
+            supplier['distance-key'] = distance[1]
+
+    # Sort results
+    key = group if group not in ('map',) else 'distance'
+    amenities = sorted(data, key=operator.itemgetter(key))
+
+    # group results by label
+    groups = []
+    index = -1
+    previous_value = None
+    for result in amenities:
+        # use the first letter as the alphabetical group
+        # use just the one group for distance/map
+        # otherwise, the label is the group
+        if group == 'name':
+            label = result[group][:1]
+        elif group == 'distance':
+            label = 'Distance'
+        elif group == 'map':
+            label = 'Map'
+        else:
+            label = result[group]
+        # group
+        if label != previous_value:
+            _group = {
+                'label': label,
+                'results': [
+                    result
+                ]
+            }
+            groups.append(_group)
+            index += 1
+            previous_value = label
+        else:
+            groups[index]['results'].append(result)
+
+    context['count'] = len(amenities)
+    context['amenities'] = groups
+    context['amenities_js'] = json.dumps(groups)
+    context['BING_MAPS_KEY'] = settings.BING_MAPS_KEY
+
+    t = loader.get_template('nirit/amenities.html')
+    c = RequestContext(request, context)
+    return HttpResponse(t.render(c))
+
+
+def supplier(request, slug):
+    supplier = get_object_or_404(Supplier, slug=slug)
+    back = None
+    if request.GET.has_key('by'):
+        back = '?by={}'.format(request.GET['by'])
+
+    context = {
+        'supplier': supplier,
+        'back': back,
+        'BING_MAPS_KEY': settings.BING_MAPS_KEY
+    }
+
+    if request.user.is_authenticated():
+        # Authenticated user see the supplier board
+        # which is the building board, filtered for @mention
+        try:
+            building = request.user.get_profile().building
+            if not building:
+                raise Exception
+        except:
+            pass
+
+        # Check the user is a member of this building
+        if request.user not in building.members:
+            raise PermissionDenied
+
+        # Check the user is active
+        if not request.user.get_profile().status == UserProfile.VERIFIED:
+            raise PermissionDenied
+
+        context['building'] = building
+
+        # The supplier @mention is the first part of the slug
+        mention = supplier.slug.split('/')[0]
+        context['mention'] = mention
+
+        # Make an OPTIONS request to retrieve the full list of Notices for this user
+        cookies = {
+            'csrftoken': request.COOKIES['csrftoken'],
+            'sessionid': request.COOKIES['sessionid']
+        }
+        url = "https://{}/api/notices".format(request.META['HTTP_HOST'])
+        r = requests.options(url, verify=False, cookies=cookies)
+        try:
+            d = json.loads(r.text)
+            context['notices'] = json.dumps(d['results']['notices'])
+        except Exception as e:
+            logger.error(e)
+            context['notices'] = '{}'
+
+        # Load Building's first Notices
+        headers = {
+            'referer': settings.API_HOST,
+            'content-type': 'application/json',
+            # use the logged-in user authorization token
+            'authorization': 'Token {}'.format(request.user.get_profile().token)
+        }
+        params = {
+            'building': building.codename,
+            'member': request.user.get_profile().codename,
+            'filter': 'mention',
+            'mention': mention
+        }
+        url = "{}/notices".format(settings.API_HOST)
+        response = requests.get(url, verify=False, headers=headers, params=params)
+        context['data'] = response.text
+
+    t = loader.get_template('nirit/supplier.html')
+    c = RequestContext(request, context)
+    return HttpResponse(t.render(c))
+
+
+def sitemap(request):
+    suppliers = Supplier.objects.all()
+    t = loader.get_template('sitemap.xml')
+    c = RequestContext(request, {
+        'host': settings.HOST,
+        'suppliers': suppliers,
+    })
+    return HttpResponse(t.render(c), mimetype="text/xml")
+
+
+@login_required
 def company_set_status(request, codename, action):
     # Check the user is active
     if not request.user.get_profile().status == UserProfile.VERIFIED:
@@ -963,7 +1161,7 @@ def invite_members(request, codename):
                 except:
                     # skip invalid email addresses
                     continue
-                match = lookup_email(recipient)
+                match = utils.lookup_email(recipient)
                 if not match or match != company:
                     # skip non-company emails,
                     # or emails from a different company

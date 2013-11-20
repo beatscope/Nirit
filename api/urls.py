@@ -4,7 +4,8 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from api.views import BuildingListView, BuildingView, \
                       NoticeListView, NoticeView, NoticePostView, \
                       OrganizationListView, OrganizationView, \
-                      ExpertiseListView, ExpertiseView, ExpertiseCreateView
+                      ExpertiseListView, ExpertiseView, ExpertiseCreateView, \
+                      SupplierListView
 
 urlpatterns = patterns('',
 
@@ -19,6 +20,7 @@ urlpatterns = patterns('',
     url(r'^expertise/add$', ExpertiseCreateView.as_view(), name='expertise-add'),
     url(r'^expertise/$', ExpertiseListView.as_view(), name='expertise-list'),
     url(r'^expertise/(?P<pk>[0-9]+)/$', ExpertiseView.as_view(), name='expertise-detail'),
+    url(r'^suppliers/$', SupplierListView.as_view(), name='suppliers-list'),
 
     # include login URLs for the browseable API.
     url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),

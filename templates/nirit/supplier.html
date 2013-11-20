@@ -1,0 +1,139 @@
+{% extends "nirit/base.html" %}
+{% load static %}
+
+{% block title %}Nirit | {{ supplier.name }}{% endblock %}
+
+{% block extrahead %}
+<script type="text/javascript" src="https://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0&s=1&mkt=en-GB"></script>
+{% if user.is_authenticated %}
+<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>
+<script type="text/javascript" src="{% static "js/nirit.board.js" %}"></script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="content supplier">
+
+    <div id="main">
+        <h1>
+            <span>{{ supplier.name }}</span>
+            {% if user.get_profile.building %}
+                <ul>
+                    <li class="first">
+                        <a href="/amenities/{{ user.get_profile.building.link }}{% if back %}{{ back }}{% endif %}">Back to Amenities</a>
+                    </li>
+                </ul>
+            {% endif %}
+        </h1>
+        <div><strong>{{ supplier.get_type_display }}</strong></div>
+        {% if supplier.image %}
+            <div class="heading">
+                <img src="{{ supplier.image.url }}" width="646" height="192" alt="{{ supplier.name }}" />
+            </div>
+        {% endif %}
+        <div class="box filled padded">
+            <div class="supplier-description">
+                {{ supplier.description|linebreaks }}
+            </div>
+        </div>
+
+        {% if user.is_authenticated %}
+        <div id="cards">
+            <h3>
+                <span>Active Comments</span>
+                <ul>
+                    <li class="right">
+                        <a id="new_card" class="button create new-card" href="">Write Comment <span></span></a>
+                    </li>
+                </ul>
+            </h3>
+            <div class="card-add hidden">
+                <p class="box-title">New Comment <span class="close"></span></p>
+                <input id="add_card_subject" class="subject" type="text" value="" placeholder="Subject" />
+                <textarea id="add_card_body" class="add elastic" rows="2" cols="70"></textarea>
+                <button id="add_card" class="button add">Post</button>
+            </div>
+            <div class="cards">
+                <div id="stream"></div>
+                <a id="plus" class="button plus hidden" href=""><span>More</span></a>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <div id="sidebar">
+        <div class="box">
+            <div id="map"></div>
+        </div>
+        <div class="box padded">
+            <p><em>{{ supplier.address }}</em></p>
+        </div>
+        {% if user.is_authenticated %}
+        <div class="box">
+            <div class="ad-slot">
+                {% include "adverts/mpu.html" %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extrajs %}{{ block.super }}
+<script type="text/javascript">
+    $(document).ready(function () {
+        NIRIT.SupplierMap = function () {
+            this.key = '{{ BING_MAPS_KEY }}';
+            this.map = null;
+        };
+
+        NIRIT.SupplierMap.prototype.getMap = function () {
+            var self = this;
+
+            // Initialize the map
+            var code = '{{ supplier.location }}'.split(',');
+            var loc = new Microsoft.Maps.Location(parseFloat(code[0]), parseFloat(code[1]));
+            this.map = new Microsoft.Maps.Map(document.getElementById("map"), {
+                credentials: this.key,
+                mapTypeId: Microsoft.Maps.MapTypeId.road,
+                center: loc,
+                zoom: 16
+            });
+
+            // Add pushpin
+            this.map.entities.push(new Microsoft.Maps.Pushpin(loc, {
+                icon: '{{ STATIC_URL }}images/map-marker.png',
+                width: 54,
+                height: 34
+            }));
+        };
+
+        new NIRIT.SupplierMap().getMap();
+
+        {% if user.is_authenticated %}
+        new NIRIT.Board({
+            'data': {{ data|safe }},
+            'notices': {{ notices|safe }},
+            'buildings': ['{{ building.codename }}'], // Can only post to current building
+            'token': '{{ user.get_profile.token }}',
+            'account': {
+                'username': '{{ user.get_profile.username }}',
+                'company': {
+                    'name': '{{ user.get_profile.company.name }}',
+                    'codename': '{{ user.get_profile.company.codename }}'
+                },
+                'roles': {{ user.get_profile.roles|safe }},
+                'starred': {{ user.get_profile.get_starred|safe }}
+            },
+            'filter': {
+                'type': 'supplier',
+                'value': '{{ mention }}'
+            }
+        });
+        {% endif %}
+
+    });
+</script>
+{% endblock %}

@@ -2,6 +2,7 @@
 import logging
 import re
 from django.http import Http404
+from django.db.models import Q
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import permissions
@@ -10,12 +11,14 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.views import APIView
-from nirit.models import Building, Notice, Expertise, Organization, CompanyProfile, UserProfile
+from nirit.models import Building, Notice, Expertise, Supplier, \
+                         Organization, CompanyProfile, UserProfile
 from api.serializers import BuildingSerializer, \
                             UserSerializer, \
                             NoticeSerializer, \
                             OrganizationSerializer, \
-                            ExpertiseSerializer
+                            ExpertiseSerializer, \
+                            SupplierSerializer
 
 logger = logging.getLogger('api.views')
 
@@ -26,7 +29,8 @@ def api_root(request, format=None):
         'buildings': reverse('buildings-list', request=request, format=format),
         'notices': reverse('notices-list', request=request, format=format),
         'organizations': reverse('organizations-list', request=request, format=format),
-        'expertise': reverse('expertise-list', request=request, format=format)
+        'expertise': reverse('expertise-list', request=request, format=format),
+        'suppliers': reverse('suppliers-list', request=request, format=format),
     })
 
 
@@ -110,6 +114,11 @@ class NoticeListView(generics.ListAPIView):
                         elif self.request.QUERY_PARAMS['filter'] == 'company':
                             company = profile.company.id
                             queryset = queryset.filter(sender__profile__company__pk=company)
+                        elif self.request.QUERY_PARAMS['filter'] == 'mention':
+                            if self.request.QUERY_PARAMS.has_key('mention') and self.request.QUERY_PARAMS['mention']:
+                                mention = self.request.QUERY_PARAMS['mention']
+                                q = Q(subject__contains='@{}'.format(mention)) | Q(body__contains='@{}'.format(mention))
+                                queryset = queryset.filter(q)
 
         # Company Notices
         elif self.request.QUERY_PARAMS.has_key('company'):
@@ -358,7 +367,7 @@ class OrganizationView(generics.RetrieveUpdateAPIView):
 
 class ExpertiseListView(generics.ListAPIView):
     """
-    List all expertises, or create a new expertise.
+    List all expertise.
 
     """
     queryset = Expertise.objects.all()
@@ -384,3 +393,14 @@ class ExpertiseView(generics.RetrieveUpdateDestroyAPIView):
     """
     queryset = Expertise.objects.all()
     serializer_class = ExpertiseSerializer
+
+
+class SupplierListView(generics.ListAPIView):
+    """
+    List all suppliers.
+
+    """
+    queryset = Supplier.objects.all()
+    serializer_class = SupplierSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('buildings__codename',)

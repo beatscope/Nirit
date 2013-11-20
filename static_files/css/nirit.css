@@ -478,6 +478,10 @@ ul.errorlist li {
         color:#000;
         font-weight:bold;
     }
+    #content h1 li a:hover {
+        color:#000;
+        text-decoration:underline;
+    }
     #content h1 a.button {
         color:#fff;
         font-size:0.6em;
@@ -485,6 +489,45 @@ ul.errorlist li {
     }
     #content h1 a.button.create {
         padding-right:42px;
+    }
+    #content h1 a.button:hover {
+        color:#fff;
+        text-decoration:none;
+    }
+
+#content h3 {}
+    #content h3 ul {
+        display:inline;
+        padding-left:15px;
+    }
+    #content h3 li {
+        display:inline;
+        margin:0;
+        padding:0;
+    }
+    #content h3 li:after {
+        content:".";
+        font-size:0.8em;
+        position:relative;
+        top:-3px;
+    }
+    #content h3 li.last:after,
+    #content h3 li:last-child:after {
+        content:"";
+    }
+    #content h3 a.button {
+        color:#fff;
+        font-size:0.9em;
+        margin:0;
+        margin-top:-10px;
+        margin-right:-10px;
+    }
+    #content h3 a.button.create {
+        padding-right:42px;
+    }
+    #content h3 a.button:hover {
+        color:#fff;
+        text-decoration:none;
     }
 
 
@@ -921,7 +964,9 @@ nav#sub-links {
     }
     #cards a.plus.loading {
         color:#C0202F;
-        background:#fff url(../images/ajax-loader.gif) no-repeat 10px center;
+        background-image: url(../images/ajax-loader.gif);
+        background-repeat: no-repeat;
+        background-position: 10px center;
     }
 
 /** New/Reply Forms & All Replies Lists **/
@@ -1029,6 +1074,9 @@ nav#sub-links {
     content: "";
     display:table;
 }
+#content .board h1 {
+    margin-top:10px;
+}
 
 
 /** DIRECTORY **/
@@ -1040,6 +1088,9 @@ nav#sub-links {
     clear:both;
     content: "";
     display:table;
+}
+#content .directory h1 {
+    margin-top:10px;
 }
 #content .directory #results,
 #content .directory #sidebar-narrow {
@@ -1057,7 +1108,6 @@ nav#sub-links {
 }
 
 #results #stream {}
-#results a#plus { display:none }
 
 #results .counter {
     margin-top:-10px;
@@ -1109,6 +1159,137 @@ nav#sub-links {
         font-weight:bold;
     }
     #results .company-item .company-info .company-expertise { color:#666; }
+
+
+/** AMENITIES **/
+#content .amenities {
+    width:100%;
+    margin:10px 0;
+}
+#content .amenities:after {
+    clear:both;
+    content: "";
+    display:table;
+}
+#content .amenities h1 {
+    margin-top:10px;
+}
+#content .amenities #results,
+#content .amenities #sidebar-narrow {
+    float:left;
+    position:relative;
+}
+#content .amenities #results {
+    width:804px;
+    margin-right:10px;
+}
+
+#content .amenities #sidebar-narrow {
+    width:160px;
+    height:600px;
+}
+
+#results .supplier-item {
+    position:relative;
+    padding:15px 30px 0;
+}
+#results .supplier-item:last-child {
+    border:none;
+    margin-bottom:10px;
+}
+    #results .supplier-item .supplier-icon {
+        width:30px;
+        height:30px;
+        position:absolute;
+        background:url(../images/supplier-icons-30x30.jpg) 0 0 no-repeat;
+    }
+        #results .supplier-item .supplier-icon.supplier-bar { background-position: -30px 0; }
+        #results .supplier-item:hover .supplier-icon.supplier-bar { background-position: -30px -30px; }
+        #results .supplier-item .supplier-icon.supplier-coffee-shop { background-position: -60px 0; }
+        #results .supplier-item:hover .supplier-icon.supplier-coffee-shop { background-position: -60px -30px; }
+        #results .supplier-item .supplier-icon.supplier-restaurant { background-position: -90px 0; }
+        #results .supplier-item:hover .supplier-icon.supplier-restaurant { background-position: -90px -30px; }
+        #results .supplier-item .supplier-icon.supplier-takeaway { background-position: -120px 0; }
+        #results .supplier-item:hover .supplier-icon.supplier-takeaway { background-position: -120px -30px; }
+        #results .supplier-item .supplier-icon.supplier-post-office { background-position: -1500px 0; }
+        #results .supplier-item:hover .supplier-icon.supplier-post-office { background-position: -150px -30px; }
+        #results .supplier-item .supplier-icon.supplier-club { background-position: -180px 0; }
+        #results .supplier-item:hover .supplier-icon.supplier-club { background-position: -180px -30px; }
+        #results .supplier-item .supplier-icon.supplier-pub { background-position: -210px 0; }
+        #results .supplier-item:hover .supplier-icon.supplier-pub { background-position: -210px -30px; }
+        #results .supplier-item .supplier-icon.supplier-shopping { background-position: -240px 0; }
+        #results .supplier-item:hover .supplier-icon.supplier-shopping { background-position: -240px -30px; }
+        #results .supplier-item .supplier-icon.supplier-stationary { background-position: -270px 0; }
+        #results .supplier-item:hover .supplier-icon.supplier-stationary { background-position: -270px -30px; }
+        #results .supplier-item .supplier-icon.supplier-dry-cleaning { background-position: -300px 0; }
+        #results .supplier-item:hover .supplier-icon.supplier-dry-cleaning { background-position: -300px -30px; }
+        #results .supplier-item .supplier-icon.supplier-gym { background-position: -330px 0; }
+        #results .supplier-item:hover .supplier-icon.supplier-gym { background-position: -330px -30px; }
+        #results .supplier-item .supplier-icon.supplier-street-food { background-position: -360px 0; }
+        #results .supplier-item:hover .supplier-icon.supplier-street-food { background-position: -360px -30px; }
+    
+    #results .supplier-item .supplier-info {
+        margin-left:58px;
+        padding-bottom:15px;
+        border-bottom:solid 1px #DDD;
+    }
+    #results .supplier-item:last-child .supplier-info {
+        border:none;
+    }
+    #results .supplier-item .supplier-info .supplier-name,
+    #results .supplier-item .supplier-info .supplier-type {
+        font-weight:bold;
+    }
+    #results .supplier-item .supplier-info .supplier-address {
+        color:#666;
+        font-style:italic;
+    }
+    #results .company-item .company-info .company-expertise { color:#666; }
+
+#content .amenities #map {
+    position:relative;
+    margin-top:15px;
+    height:480px;
+    border: dashed 1px #DDD;
+}
+
+
+/** SUPPLIER **/
+#content .supplier {}
+#content .supplier:after {
+    clear:both;
+    content: "";
+    display:table;
+}
+#content .supplier h1 {
+    margin-top:10px;
+}
+#content .supplier h1:after {
+    clear:both;
+    content: "";
+    display:table;
+}
+#content .supplier .heading {
+    margin-top:10px;
+}
+#content .supplier h3 {
+    font-size:1.2em;
+    padding:10px;
+    margin-bottom:10px;
+    color:#666;
+    text-align:center;
+    background:#F2F2F3;
+    border-bottom:solid 1px #B6B9BA;
+}
+#content .supplier .supplier-description {
+    padding-right:20px;
+}
+#content .supplier #map {
+    position:relative;
+    height:250px;
+    margin:10px;
+    border: dashed 1px #DDD;
+}
 
 
 /** ACCOUNT **/

@@ -1,0 +1,196 @@
+{% extends "nirit/base.html" %}
+{% load static %}
+
+{% block title %}Nirit | {{ building.name }} Amenities{% endblock %}
+
+{% block extrahead %}
+{% if group == 'map' %}
+<script type="text/javascript" src="https://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0&s=1&mkt=en-GB"></script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="content amenities">
+
+    <div id="results">
+        <h1>
+            <span>Local Amenities / <a href="/directory/{{ building.link }}">Directory</a></span>
+            {% if tabs %}<ul>
+                {% for tab in tabs %}<li>
+                    {% if group and tab.name == group %}
+                    <span class="active">{{ tab.label }}</span>
+                    {% else %}
+                    <a href="{{ tab.href }}">{{ tab.label }}</a>
+                    {% endif %}
+                </li>{% endfor %}
+            </ul>{% endif %}
+        </h1>
+        <div id="stream">
+            <div class="counter"><span>{{ count }}</span> local supplier{{ count|pluralize:"s" }} listed.</div>
+            {% if group != 'map' %}
+                {% for listing in amenities %}
+                    <div class="card">
+                        <h3>{{ listing.label }}</h3>
+                        {% for supplier in listing.results %}
+                            <div class="supplier-item">
+                                <div class="supplier-icon supplier-{{ supplier.icon }}"></div>
+                                <div class="supplier-info">
+                                    <div class="supplier-name">
+                                        <a href="/supplier/{{ supplier.slug }}?by={{ group }}">{{ supplier.name }}</a>
+                                    </div>
+                                    <div class="supplier-type">{{ supplier.type }}</div>
+                                    <div class="supplier-address">{{ supplier.address }}</div>
+                                    <div class="supplier-distance">{{ supplier.distance }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="card">
+                    <h3>{{ group|capfirst }}</h3>
+                    <div id="map"></div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="sidebar-narrow" class="filled">
+        <div class="ad-slot-wide-skyscraper">
+            {% include "adverts/wide_skyscraper.html" %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extrajs %}{{ block.super }}
+{% if group == 'map' %}
+<script type="text/javascript">
+    $(document).ready(function () {
+        NIRIT.SupplierMap = function () {
+            this.key = '{{ BING_MAPS_KEY }}';
+            this.map = null;
+            this.locations = [];
+
+            // Group locations at the same postcode
+            var locations = {{ amenities_js|safe }}[0].results;
+            var geocode = null;
+            var index = -1;
+            for (var l in locations) {
+                if (!geocode || geocode != locations[l].geocode) {
+                    index++;
+                    this.locations.push({
+                        'geocode': locations[l].geocode,
+                        'title': locations[l].name,
+                        'description': locations[l].type + ' (' +  locations[l].distance + ')',
+                        'link': locations[l].slug
+                    });
+                } else {
+                    this.locations[index]['title'] += '<br/>' + locations[l].name;
+                    this.locations[index]['description'] = '';
+                    this.locations[index]['link'] = null;
+                }
+                geocode = locations[l].geocode;
+            }
+            this.pushpins = new Microsoft.Maps.EntityCollection();
+            this.pushboxes = new Microsoft.Maps.EntityCollection();
+        };
+
+        NIRIT.SupplierMap.prototype.getMap = function () {
+            var self = this;
+
+            // Initialize the map
+            var center = '{{ building.geocode }}'.split(',');
+            this.map = new Microsoft.Maps.Map(document.getElementById("map"), {
+                credentials: this.key,
+                mapTypeId: Microsoft.Maps.MapTypeId.road,
+                center: new Microsoft.Maps.Location(parseFloat(center[0]), parseFloat(center[1])),
+                zoom: 17
+            });
+
+            // Add pushpins
+            var code = null;
+            var loc = null;
+            var pin = null;
+            var pinInfobox = null;
+            var pinInfoboxOptions = null;
+
+            for (var pp in this.locations) {
+
+                // Create pushpin
+                code = this.locations[pp].geocode.split(',');
+                loc = new Microsoft.Maps.Location(parseFloat(code[0]), parseFloat(code[1]));
+                pin = new Microsoft.Maps.Pushpin(loc, {
+                    icon: '{{ STATIC_URL }}images/map-marker.png',
+                    width: 54,
+                    height: 34
+                })
+
+                // Create the infobox for the pushpin
+                pinInfoboxOptions = {
+                    pushpin: pin,
+                    title: this.locations[pp].title,
+                    description: this.locations[pp].description,
+                    htmlContent: '',
+                    visible: false,
+                    height: 85,
+                    titleAction: this.locations[pp].title,
+                    offset: new Microsoft.Maps.Point(15,-54)
+                }
+                if (this.locations[pp].link) {
+                    pinInfoboxOptions['showPointer'] = true;
+                    pinInfoboxOptions['titleClickHandler'] = function () { return false; };
+                }
+                pinInfobox = new Microsoft.Maps.Infobox(pin.getLocation(), pinInfoboxOptions);
+                if (this.locations[pp].link) {
+                    Microsoft.Maps.Events.addHandler(pinInfobox, 'click', function (e) {
+                        self.goToUrl(e);
+                    });
+                }
+
+                // Add handler for the pushpin mouse event.
+                Microsoft.Maps.Events.addHandler(pin, 'mouseover', function (e) {
+                    self.displayInfobox(e);
+                });
+
+                // Hide the infobox when the map is moved.
+                Microsoft.Maps.Events.addHandler(this.map, 'viewchange', function (e) {
+                    self.hideInfoboxes();
+                });
+
+                this.pushpins.push(pin);
+                this.pushboxes.push(pinInfobox);
+            }
+
+            this.map.entities.push(this.pushpins);
+            this.map.entities.push(this.pushboxes);
+        };
+        
+        NIRIT.SupplierMap.prototype.displayInfobox = function (e) {
+            this.hideInfoboxes();
+            var ind = this.pushpins.indexOf(e.target);
+            var box = this.pushboxes.get(ind);
+            box.setOptions({ visible:true });
+        };
+
+        NIRIT.SupplierMap.prototype.hideInfoboxes = function () {
+            var box = null;
+            for (var i=0; i<this.pushboxes.getLength(); i++) {
+                box = this.pushboxes.get(i);
+                box.setOptions({ visible:false });
+            }
+        };
+
+        NIRIT.SupplierMap.prototype.goToUrl = function (e) {
+            var pp = e.target.getPushpin();
+            var ind = this.pushpins.indexOf(pp);
+            var supplier = this.locations[ind];
+            location = '/supplier/'+supplier.link+'?by=map';
+        };
+
+        new NIRIT.SupplierMap().getMap();
+    });
+</script>
+{% endif %}
+{% endblock %}

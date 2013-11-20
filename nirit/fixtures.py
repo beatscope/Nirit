@@ -191,3 +191,20 @@ DEPARTMENTS = (
 (145, 'Wireless'),
 (146, 'Writing & Editing'),
 )
+
+""" Full list of Supplier Types. """
+SUPPLIER_TYPES = (
+(0, 'Miscellaneous'),
+(1, 'Bar'),
+(2, 'Coffee Shop'),
+(3, 'Restaurant'),
+(4, 'Takeaway'),
+(5, 'Post Office'),
+(6, 'Club'),
+(7, 'Pub'),
+(8, 'Shopping'),
+(9, 'Stationary'),
+(10, 'Dry Cleaning'),
+(11, 'Gym'),
+(12, 'Street Food'),
+)

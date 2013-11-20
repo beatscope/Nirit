@@ -232,6 +232,7 @@ function trim (str) {
 if (typeof(NIRIT) === 'undefined') {
     var NIRIT = {};
 }
+if (!window.NIRIT) { window.NIRIT=NIRIT; }
 
 
 /**

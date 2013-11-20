@@ -39,12 +39,12 @@
         </div>
 
         <h1>
+            <span>
+                <a href="/company/{{ company.organization.link }}">{{ company.organization.name }}</a>
+            </span>
             <ul>
                 <li class="first">
-                    <a href="/company/{{ company.organization.link }}">{{ company.organization.name }}</a>
-                </li>
-                <li>
-                    <a href="/company/{{ company.organization.link }}/board" class="active">Notice Board</a>
+                    <span class="active">Notice Board</span>
                 </li>
                 <li class="last">
                     <a href="/company/{{ company.organization.link }}/staff">Members of Staff</a>

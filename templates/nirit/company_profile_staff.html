@@ -37,15 +37,15 @@
         </div>
 
         <h1>
+            <span>
+                <a href="/company/{{ company.organization.link }}">{{ company.organization.name }}</a>
+            </span>
             <ul>
                 <li class="first">
-                    <a href="/company/{{ company.organization.link }}">{{ company.organization.name }}</a>
-                </li>
-                <li>
                     <a href="/company/{{ company.organization.link }}/board">Notice Board</a>
                 </li>
                 <li class="last">
-                    <a href="/company/{{ company.organization.link }}/staff" class="active">Members of Staff</a>
+                    <span class="active">Members of Staff</span>
                 </li>
                 {% if user.get_profile.company != company.organization %}
                     <li class="right">

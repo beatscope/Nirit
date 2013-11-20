@@ -17,10 +17,20 @@ from django.utils.encoding import force_unicode
 from django.utils.timesince import timesince
 from django.conf import settings
 from rest_framework.authtoken.models import Token
-from nirit.fixtures import DEPARTMENTS
+from nirit.fixtures import DEPARTMENTS, SUPPLIER_TYPES
+from nirit import utils
 from markitup.fields import MarkupField
 
 logger = logging.getLogger('nirit.models')
+
+
+class Geocode(models.Model):
+    code = models.CharField(max_length=125)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    def __unicode__(self):
+        return '{},{}'.format(self.latitude, self.longitude)
 
 
 class Expertise(models.Model):
@@ -240,6 +250,7 @@ class Organization(models.Model):
 class Building(models.Model):
     name = models.CharField(max_length=200, unique=True)
     codename = models.CharField(max_length=64, unique=True, null=True, blank=True)
+    postcode = models.CharField("Postcode", max_length=8, help_text='Please include the gap (space) between the outward and inward codes')
     notices = models.ManyToManyField(Notice, null=True, blank=True)
 
     def __unicode__(self):
@@ -270,6 +281,22 @@ class Building(models.Model):
     @property
     def link(self):
         return '{}/{}'.format(self.slug, self.codename)
+
+    @property
+    def geocode(self):
+        try:
+            geocode = Geocode.objects.get(code=self.postcode)
+        except Geocode.DoesNotExist:
+            # If the geocode for this postcode has not yet been stored,
+            # fetch it
+            try:
+                point = utils.get_postcode_point(self.postcode)
+            except:
+                # The function raises an Exception when the postcode does not exist
+                # we store the resulst as (0, 0) to avoid fetching the API every time
+                point = (0.0, 0.0)
+            geocode = Geocode.objects.create(code=self.postcode, latitude=point[0], longitude=point[1])
+        return geocode
 
     @property
     def members(self):
@@ -500,7 +527,6 @@ class UserProfile(models.Model):
             self.codename = slug
             self.save()
 
-
     def get_starred(self):
         # Convert logged-in user starred notices into list of IDs
         return [int(n.id) for n in self.starred.all()]
@@ -533,3 +559,66 @@ class Page(models.Model):
 
     def __unicode__(self):
         return self.title
+
+
+class Supplier(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    slug = models.CharField(max_length=255, null=True, blank=True)
+    address = models.CharField(max_length=255,
+                               help_text='Please include the postcode')
+    geocode = models.ForeignKey(Geocode, null=True, blank=True)
+    location = models.CharField(max_length=255, null=True, blank=True,
+                                help_text="Change the location to ovverride the Geocode")
+    type = models.IntegerField(choices=SUPPLIER_TYPES, default=0)
+    image = models.ImageField(upload_to='./supplier/%Y/%m/%d', null=True, blank=True, \
+                              help_text="PNG, JPEG, or GIF; max size 2 MB. Image must be 626 x 192 pixels or larger.")
+    buildings = models.ManyToManyField(Building, null=True, blank=True)
+
+    @property
+    def postcode(self):
+        if not self.address:
+            return None
+        postcode = utils.Extractor(self.address).extract_postcode()
+        if not postcode:
+            return None
+        return postcode
+
+    def generate_geocode(self):
+        try:
+            postcode = self.postcode if self.postcode else 'N/A'
+            geocode = Geocode.objects.get(code=postcode)
+        except Geocode.DoesNotExist:
+            # If the geocode for this postcode has not yet been stored,
+            # fetch it
+            try:
+                point = utils.get_postcode_point(postcode)
+            except Exception as e:
+                # The function raises an Exception when the postcode does not exist
+                # we store the resulst as (0, 0) to avoid fetching the API every time
+                point = (0.0, 0.0)
+            geocode = Geocode.objects.create(code=postcode, latitude=point[0], longitude=point[1])
+        self.geocode = geocode
+        self.location = '{},{}'.format(geocode.latitude, geocode.longitude)
+        self.save()
+
+    def generate_slug(self):
+        # Generate supplier slug
+        if not self.slug:
+            # Slug format: hyphenise(name)/random(1-999)/(1+count(name)/random(1-999)*(1+count(name))
+            hyphenized = re.sub(r'\s\s*', '-', self.name.lower())
+            count = Supplier.objects.filter(name=self.name).count()
+            slug = '{}/{}/{}/{}'.format(hyphenized, random.randint(1, 999), count+1, (count+1) * random.randint(1, 999))
+            self.slug = slug
+            self.save()
+
+def create_supplier_slug(sender, instance, created, **kwargs):
+    if created:
+        instance.generate_slug()
+
+def generate_supplier_location(sender, instance, created, **kwargs):
+    if not instance.location:
+        instance.generate_geocode()
+
+post_save.connect(create_supplier_slug, sender=Supplier)
+post_save.connect(generate_supplier_location, sender=Supplier)

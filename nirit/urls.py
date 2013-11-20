@@ -21,6 +21,11 @@ urlpatterns = patterns('',
     url(r'^board/$', 'nirit.views.board'),
     url(r'^directory/[\w-]*/(?P<codename>\w+)', 'nirit.views.directory'),
     url(r'^directory/$', 'nirit.views.directory'),
+    url(r'^amenities/[\w-]*/(?P<codename>\w+)', 'nirit.views.amenities'),
+    url(r'^amenities/$', 'nirit.views.amenities'),
+
+    url(r'^supplier/(?P<slug>.+)$', 'nirit.views.supplier'),
+    url(r'^sitemap.xml', 'nirit.views.sitemap'),
 
     # Member pages
     url(r'^member/sign-up$', 'nirit.views.sign_up'),

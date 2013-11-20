@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from nirit.models import Building, Organization, Notice, Expertise, \
-                         UserProfile, CompanyProfile, Page, OToken
+                         UserProfile, CompanyProfile, Page, OToken, Supplier
 
 class BackOffice(admin.sites.AdminSite):
     pass
@@ -41,6 +41,7 @@ class UserAdmin(UserAdmin):
             return ''
 
 class BuildingAdmin(admin.ModelAdmin):
+    list_display = ('name', 'postcode')
 
     def get_actions(self, request):
         actions = super(BuildingAdmin, self).get_actions(request)
@@ -67,6 +68,23 @@ class NoticeAdmin(admin.ModelAdmin):
 class PageAdmin(admin.ModelAdmin):
     list_display = ('title', 'slug', 'status')
 
+class SupplierAdmin(admin.ModelAdmin):
+    list_display = ('name', 'type', 'address', 'postcode', 'location', 'locations')
+    list_filter = ('buildings',)
+
+    def postcode(self, obj):
+        if obj.postcode:
+            return obj.postcode
+        else:
+            return '-'
+
+    def locations(self, obj):
+        if obj.buildings.count():
+            return ', '.join([str(b) for b in obj.buildings.all()])
+        else:
+            return '-'
+    locations.short_description = 'Buildings'
+
 
 site = BackOffice()
 site.register(User, UserAdmin)
@@ -76,3 +94,4 @@ site.register(Organization, OrganizationAdmin)
 site.register(Notice, NoticeAdmin)
 site.register(Expertise)
 site.register(Page, PageAdmin)
+site.register(Supplier, SupplierAdmin)

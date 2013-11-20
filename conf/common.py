@@ -30,6 +30,9 @@ AUTHENTICATION_BACKENDS = (
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
+### BING API
+BING_MAPS_KEY = 'AvIlTymmy8SEybafL07tGQJtGfMkrCe5C5kAAu3PGv-xWqePuzlludqipnjs03EP'
+
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.

@@ -77,6 +77,9 @@ NIRIT.Board = function (settings) {
             // start listening for updates
             this.listen();
             break;
+        case 'supplier':
+            this.mention = settings['filter']['value'];
+            break;
     }
 
 };
@@ -507,6 +510,10 @@ NIRIT.Board.prototype.set_listeners = function () {
     });
     $('#add_card').unbind('click').bind('click', function () {
         var subject = $('#add_card_subject').val();
+        // do we have to add a @mention
+        if (self.hasOwnProperty('mention')) {
+            subject += ' @' + self.mention;
+        }
         var body = $('#add_card_body').val();
         // we assume a user is a member of only 1 org
         var is_official = $('#add_is_official').is(':checked') ? 'on' : '';
