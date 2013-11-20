@@ -3,23 +3,7 @@
 {% block title %}Nirit | Company Profile | {{ company.organization.name }}{% endblock %}
 
 {% block extrahead %}
-{% if company.organization.image %}
-<style type="text/css">
-    #content .company-profile .heading { 
-        background-image: url({{ MEDIA_URL }}{{ company.organization.image }});
-        background-position: center center;
-        background-repeat: no-repeat;
-    }
-</style>
-{% else %}
-<style type="text/css">
-    #content .company-profile .heading {
-        background-image: url({{ STATIC_URL }}images/default_company_{{ company.space.codename }}.jpg);
-        background-position: center center;
-        background-repeat: no-repeat;
-    }
-</style>
-{% endif %}
+<script type="text/javascript" src="https://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0&s=1&mkt=en-GB"></script>
 {% endblock %}
 
 {% block content %}
@@ -59,6 +43,7 @@
         </h1>
 
         <div class="heading">
+            <div id="company-map"></div>
             <div class="company-card">
                 <h2>
                     {% if company.organization.get_logo %}
@@ -241,6 +226,49 @@
 {% block extrajs %}{{ block.super }}
 <script type="text/javascript">
     $(document).ready(function () {
+
+        NIRIT.SupplierMap = function () {
+            this.key = '{{ BING_MAPS_KEY }}';
+            this.map = null;
+        };
+
+        NIRIT.SupplierMap.prototype.getMap = function () {
+            var self = this;
+
+            // Initialize the map
+            var code = '{{ company.space.geocode }}'.split(',');
+            var loc = new Microsoft.Maps.Location(parseFloat(code[0]), parseFloat(code[1]));
+            var center = new Microsoft.Maps.Location(parseFloat(code[0]), parseFloat(code[1])-0.003);
+            this.map = new Microsoft.Maps.Map(document.getElementById("company-map"), {
+                credentials: this.key,
+                mapTypeId: Microsoft.Maps.MapTypeId.road,
+                center: center,
+                zoom: 16,
+                disableBirdseye: true,
+                disableKeyboardInput: true,
+                disableMouseInput: true,
+                disablePanning: true,
+                disableTouchInput: true,
+                disableUserInput: true,
+                disableZooming: true,
+                enableClickableLogo: false,
+                enableSearchLogo: false,
+                showDashboard: false,
+                showMapTypeSelector: false,
+                showScalebar: false
+            });
+
+            // Add pushpin
+            this.map.entities.push(new Microsoft.Maps.Pushpin(loc, {
+                icon: '{{ STATIC_URL }}images/map-marker.png',
+                width: 54,
+                height: 34
+            }));
+        };
+
+        new NIRIT.SupplierMap().getMap();
+
+
         $('.networked-switch').click(function () {
             var self = $(this);
             NIRIT.utils.set_member_preference('network', '{{ company.organization.codename }}', function (data) {

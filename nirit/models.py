@@ -128,8 +128,6 @@ class Organization(models.Model):
     description = models.TextField("Company Description", null=True)
     created = models.DateField(auto_now_add=True)
     
-    image = models.ImageField(upload_to='./company/%Y/%m/%d', null=True, blank=True, \
-                              help_text="PNG, JPEG, or GIF; max size 2 MB. Image must be 626 x 192 pixels or larger.")
     logo = models.ImageField(upload_to='./company/%Y/%m/%d', null=True, blank=True, \
                              help_text="PNG, JPEG, or GIF; max size 2 MB. Image must be 180 x 90 pixels or larger.")
     square_logo = models.ImageField(upload_to='./company/%Y/%m/%d', null=True, blank=True, \
@@ -192,12 +190,6 @@ class Organization(models.Model):
     @property
     def link(self):
         return '{}/{}'.format(self.slug, self.codename)
-
-    def get_image(self):
-        try:
-            return self.image.url
-        except ValueError:
-            return ''
 
     def get_logo(self):
         try:

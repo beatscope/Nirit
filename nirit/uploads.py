@@ -173,7 +173,7 @@ class FileUploader(object):
                 return HttpResponseBadRequest("AJAX request not valid")
             else:
                 # is the field one of the fields allowed?
-                if field not in ('image','logo','square_logo','thumbnail'):
+                if field not in ('logo','square_logo','thumbnail'):
                     return HttpResponseBadRequest("AJAX request not valid")
 
             if request.is_ajax():

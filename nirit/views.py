@@ -865,6 +865,8 @@ def company(request, codename=None):
     company = CompanyProfile.objects.get(space=space, organization=organization)
     context['company'] = company
 
+    context['BING_MAPS_KEY'] = settings.BING_MAPS_KEY
+
     # check the user is a member of the space this organization belongs to
     if not request.user in space.members:
         raise PermissionDenied
@@ -930,6 +932,8 @@ def company_staff(request, codename):
     company = CompanyProfile.objects.get(space=space, organization=organization)
     context['company'] = company
     context['staff'] = organization.members.all()
+
+    context['BING_MAPS_KEY'] = settings.BING_MAPS_KEY
     
     # check the user is a member of the space this organization belongs to
     if not request.user in space.members:
@@ -986,6 +990,8 @@ def company_board(request, codename):
     company = CompanyProfile.objects.get(space=space, organization=organization)
     context['company'] = company
     context['staff'] = organization.members.all()
+
+    context['BING_MAPS_KEY'] = settings.BING_MAPS_KEY
 
     # check the user is a member of the space this organization belongs to
     if not request.user in space.members:

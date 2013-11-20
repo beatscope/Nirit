@@ -1382,6 +1382,11 @@ nav#sub-links {
     content: "";
     display:table;
 }
+#content .company-profile #company-map {
+    position:relative;
+    height:191px;
+    border: dashed 1px #DDD;
+}
 #content .company-profile h1 {
     margin:10px;
 }

@@ -89,7 +89,6 @@ class OrganizationSerializer(serializers.ModelSerializer):
     department = serializers.Field(source='get_department_display')
     expertise = serializers.RelatedField(many=True)
     members = ShortUserSerializer(many=True, read_only=True)
-    image = serializers.Field(source='get_image')
     square_logo = serializers.Field(source='get_square_logo')
     logo = serializers.Field(source='get_logo')
     spaces = CompanyProfileSerializer(source='company_profile', many=True)
@@ -98,7 +97,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
         model = Organization
         lookup_field = 'codename'
         fields = ('name', 'codename', 'slug', \
-                  'department', 'expertise', 'image', 'square_logo', 'logo', \
+                  'department', 'expertise', 'square_logo', 'logo', \
                   'members', 'spaces')
 
 
