@@ -458,7 +458,8 @@ class UserProfile(models.Model):
                                   help_text="PNG, JPEG, or GIF; max size 2 MB. Image must be 60 x 60 pixels or larger.")
     job_title = models.CharField(max_length=64, null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
-    status = models.IntegerField("Verification Status", choices=STATUS_CHOICES, default=PENDING, editable=False)
+    status = models.IntegerField("Verification Status", choices=STATUS_CHOICES, default=PENDING, \
+                                 null=True, blank=True)
 
     def __unicode__(self):
         return self.name
