@@ -322,6 +322,9 @@ nav#top-links:after {
         nav#top-links ul li a.directory span { background-position:-85px 0; }
         nav#top-links ul li a.directory:hover span,
         nav#top-links ul li a.directory.active span { background-position:-85px -16px; }
+        nav#top-links ul li a.amenities span { background-position:-170px 0; }
+        nav#top-links ul li a.amenities:hover span,
+        nav#top-links ul li a.amenities.active span { background-position:-170px -16px; }
         nav#top-links ul li a.company span { background-position:-102px 0; }
         nav#top-links ul li a.company:hover span,
         nav#top-links ul li a.company.active span { background-position:-102px -16px; }

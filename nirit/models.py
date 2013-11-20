@@ -124,7 +124,7 @@ class Organization(models.Model):
     )
         
     name = models.CharField("Company Name", max_length=200, unique=True)
-    codename = models.CharField(max_length=64, unique=True, null=True, blank=True)
+    codename = models.CharField(max_length=64, null=True, blank=True)
     description = models.TextField("Company Description", null=True)
     created = models.DateField(auto_now_add=True)
     

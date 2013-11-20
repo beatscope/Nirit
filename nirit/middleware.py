@@ -66,6 +66,11 @@ def request(request):
                 'name': 'directory',
                 'href': '/directory/{}'.format(request.user.get_profile().building.link)
             })
+            meta['menu'].append({
+                'link': 'Amenities',
+                'name': 'amenities',
+                'href': '/amenities/{}'.format(request.user.get_profile().building.link)
+            })
 
         # Add user's company
         if request.user.get_profile().company:
