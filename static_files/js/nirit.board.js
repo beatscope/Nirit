@@ -266,7 +266,7 @@ NIRIT.Board.prototype.add_notice = function (html, target, before) {
  */
 NIRIT.Board.prototype.apply_template = function (card, template) {
     // @mention pattern
-    var pattern = new RegExp(/@([-_\w]+)/g);
+    var pattern = new RegExp(/\B@([-_\w]+)/g);
 
     try {
         // Sender's display name
