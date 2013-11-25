@@ -12,6 +12,7 @@ from django.template import RequestContext, loader
 from django.conf import settings
 from nirit.models import Page, UserProfile, Supplier
 from nirit.fixtures import Message
+from nirit.forms import SupplierForm
 from nirit import utils
 
 logger = logging.getLogger('nirit.public')
@@ -97,6 +98,11 @@ def supplier(request, slug):
         'back': back,
         'BING_MAPS_KEY': settings.BING_MAPS_KEY
     }
+
+    # add whether the user is a Space Manager,
+    # i.e. whether he is allowed to request for new Amenities/Suppliers
+    context['is_user_editor'] = True if 'Manager' in [g['name'] for g in request.user.groups.all().values('name')] else False
+    context['form'] = SupplierForm(instance=supplier)
 
     if request.user.is_authenticated():
         # Authenticated user see the supplier board

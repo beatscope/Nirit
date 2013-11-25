@@ -26,6 +26,10 @@ blockquote {
     margin:10px;
     background:#E5ECF3;
 }
+textarea {
+    font-family:Arial,sans-serif;
+    font-size:1em;
+}
 .hidden { display:none; }
 .invisible { visibility:hidden; }
 .padded { padding:10px; }
@@ -1662,11 +1666,18 @@ nav#sub-links {
         background-position:-136px -16px;
     }
 
-/* Contact Form (Company & Member) */
-#content .contact-success {
+/* AJAX Forms */
+#content .contact-success,
+#content .ajax-success {
     margin:10px;
 }
-#content .contact-form {
+    #content .contact-success p,
+    #content .ajax-success p {
+        padding:.4em 0;
+        line-height:1em;
+    }
+#content .contact-form,
+#content .ajax-form {
     position:relative;
     background:#B6B9BA;
     margin:0 10px;
@@ -1674,12 +1685,17 @@ nav#sub-links {
     padding-left:20px;
     z-index:10;
 }
-#content .contact-form .box-title { 
+    #content .ajax-form p {
+        padding:.5em 0;
+    }
+#content .contact-form .box-title,
+#content .ajax-form .box-title { 
     padding-top:0;
     font-weight:bold;
     position:relative;
 }
-    #content .contact-form .box-title span.close {
+    #content .contact-form .box-title span.close,
+    #content .ajax-form .box-title span.close {
         position:absolute;
         left:-18px;
         width:17px;
@@ -1690,7 +1706,20 @@ nav#sub-links {
         background-position:-136px -16px;
     }
 
-#content .contact-form textarea {
+#content .ajax-form label {
+    display:block;
+    font-weight:bold;
+    padding-bottom:0.2em;
+}
+#content .ajax-form input[type="text"] {
+    width:98%;
+    padding:3px 1%;
+    border:none;
+    background:#F2F2F3;
+}
+
+#content .contact-form textarea,
+#content .ajax-form textarea {
     width:98%;
     padding:3px 1%;
     height:50px;
@@ -1698,9 +1727,30 @@ nav#sub-links {
     resize:none;
     background:#F2F2F3;
 }
-#content .contact-form button {
+#content .contact-form button,
+#content .ajax-form button {
     display:block;
     margin:10px 0 0 auto;
+}
+#content .ajax-form select {
+    display:block;
+    padding:5px;
+    width:120px;
+    cursor:pointer;
+    background:#3d8f3d;
+    border:none;
+    color:#fff;
+}
+#content .ajax-form option {
+    padding:0 5px;
+    color:#000;
+    background:#fff;
+}
+#content .ajax-form span.helptext {
+    display:block;
+    color:#2E7FA1;
+    font-style:italic;
+    text-shadow:0 1px 0 #999;
 }
 
 

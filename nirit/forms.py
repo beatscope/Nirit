@@ -12,7 +12,7 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.models import get_current_site
-from nirit.models import Organization, OToken, UserProfile
+from nirit.models import Organization, OToken, UserProfile, Supplier
 from nirit.utils import validate_year, lookup_email
 from nirit.widgets import ImageWidget
 from nirit.fixtures import Message
@@ -258,4 +258,33 @@ class MemberForm(forms.ModelForm):
         model = UserProfile
         widgets = {
             'thumbnail': ImageWidget(),
+        }
+
+
+class SupplierForm(forms.ModelForm):
+    class Meta:
+        model = Supplier
+        fields = ('name', 'description', 'address', 'type')
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'data-entity': "name",
+                'placeholder': "Supplier or amenity name"
+            }),
+            'description': forms.Textarea(attrs={
+                'data-entity': 'description',
+                'class': 'elastic no-limit',
+                'rows': "2",
+                'cols': "70",
+                'placeholder': "Optional description of the supplier or amenity"
+            }),
+            'address': forms.Textarea(attrs={
+                'data-entity': "address",
+                'class': "elastic no-limit",
+                'rows': "2",
+                'cols': "70",
+                'placeholder': 'Full address for this supplier or amenity'
+            }),
+            'type': forms.Select(attrs={
+                'data-entity': "type"
+            })
         }

@@ -27,6 +27,8 @@ urlpatterns = patterns('',
     url(r'^directory/$', 'nirit.views.directory'),
     url(r'^amenities/[\w-]*/(?P<codename>\w+)', 'nirit.views.amenities'),
     url(r'^amenities/$', 'nirit.views.amenities'),
+    url(r'^amenities/request$', 'nirit.views.amenities_request'),
+    url(r'^amenities/request-edit$', 'nirit.views.amenities_request', {'edit': True}),
 
     # Sign-up
     url(r'^member/sign-up$', 'nirit.views_signup.sign_up'),

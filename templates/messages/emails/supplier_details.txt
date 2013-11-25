@@ -1,0 +1,7 @@
+{{ member }} at {{ space }} has sent an supplier/amenity request.\n\n
+Supplier Name: {{ name }}\n\n
+Supplier Description: {{ description }}\n\n
+Supplier Address: {{ address }}\n\n
+Supplier Type: {{ type }}\n\n
+{% if link != 'N/A' %}Visit {{ name }}'s Profile: {{ link }}\n\n{% endif %}
+The team @ Nirit

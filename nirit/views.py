@@ -8,10 +8,13 @@ from django.core.exceptions import PermissionDenied
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponse
+from django.core.mail import mail_admins
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.template import RequestContext, loader
 from django.conf import settings
 from nirit.models import Space, UserProfile, CompanyProfile
+from nirit.forms import SupplierForm
+from nirit.fixtures import Message
 from nirit import utils
 
 logger = logging.getLogger('nirit.views')
@@ -200,6 +203,12 @@ def amenities(request, codename=None):
         raise PermissionDenied
 
     context['space'] = space
+
+    # add whether the user is a Space Manager,
+    # i.e. whether he is allowed to request for new Amenities/Suppliers
+    context['is_user_editor'] = True if 'Manager' in [g['name'] for g in request.user.groups.all().values('name')] else False
+    context['form'] = SupplierForm()
+
     context['tabs'] = [
         {'name': 'distance','label': 'By Distance', 'href': '?by=distance'},
         {'name': 'type', 'label': 'By Type', 'href': '?by=type'},
@@ -293,3 +302,39 @@ def amenities(request, codename=None):
     t = loader.get_template('nirit/amenities.html')
     c = RequestContext(request, context)
     return HttpResponse(t.render(c))
+
+
+@login_required
+def amenities_request(request, edit=False):
+    if request.method == 'GET':
+        return HttpResponseBadRequest(json.dumps({
+            'status': '400',
+            'reason': 'Method Not Allowed.'
+        }), mimetype="application/json")
+
+    data = {
+        'name': request.POST['name'] if request.POST.has_key('name') else 'N/A',
+        'description': request.POST['description'] if request.POST.has_key('description') else 'N/A',
+        'address': request.POST['address'] if request.POST.has_key('address') else 'N/A',
+        'type': request.POST['type'] if request.POST.has_key('type') else 'N/A',
+        'link': '{}/supplier/{}'.format(settings.HOST, request.POST['url']) if request.POST.has_key('url') else 'N/A',
+    }
+
+    # add member details
+    data['member'] = request.user.get_profile().name
+    data['space'] = request.user.get_profile().space.name
+
+    if edit:
+        subject = 'A member has requested Supplier/Amenity amends'
+    else:
+        subject = 'A member has requested a new Supplier/Amenity'
+    text_content = Message().get('email_supplier_details_text', data)
+    html_content = Message().get('email_supplier_details_html', data)
+    mail_admins(subject, text_content, html_message=html_content)
+
+    response = HttpResponse(json.dumps({
+        'status': '200',
+        'data': data
+    }), mimetype="application/json")
+    response['Content-Type'] = 'application/json; charset=utf-8'
+    return response

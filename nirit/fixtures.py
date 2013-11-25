@@ -29,6 +29,8 @@ class Message(object):
         'email_invite_members_html': 'emails/invite_members.html',              # Invite Members (html)
         'email_member_contact_text': 'emails/member_contact.txt',               # Contact Member (text)
         'email_member_contact_html': 'emails/member_contact.html',              # Contact Member (html)
+        'email_supplier_details_text': 'emails/supplier_details.txt',           # Supplier Request - New/Edit (text)
+        'email_supplier_details_html': 'emails/supplier_details.html',          # Supplier Request - New/Edit (html)
 
     }
 

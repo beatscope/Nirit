@@ -15,6 +15,17 @@
 <div class="content supplier">
 
     <div id="main">
+
+        <div class="ajax-form hidden">
+            <p class="box-title">Request Supplier/Amenity Amends <span class="close"></span></p>
+            {{ form.as_p }}
+            <button data-entity="button" class="button" href="/amenities/request-edit">Submit</button>
+        </div>
+        <div class="ajax-success label big hidden">
+            <p>Your request to amend <strong>{{ supplier.name }}</strong> has been sent.</p>
+            <p>All requests are reviewed by the Team. Please allow 24h for your request to be processed.</p>
+        </div>
+
         <h1>
             <span>{{ supplier.name }}</span>
             {% if user.get_profile.space %}
@@ -22,6 +33,11 @@
                     <li class="first">
                         <a href="/amenities/{{ user.get_profile.space.link }}{% if back %}{{ back }}{% endif %}">Back to Amenities</a>
                     </li>
+                    {% if is_user_editor %}
+                    <li class="right">
+                        <a class="button" id="amenity_request">Amend Amenity</a>
+                    </li>
+                    {% endif %}
                 </ul>
             {% endif %}
         </h1>
@@ -84,6 +100,58 @@
 {% block extrajs %}{{ block.super }}
 <script type="text/javascript">
     $(document).ready(function () {
+
+        // Request Form
+        $('#amenity_request').bind('click', function () {
+            if ($('.ajax-form').is(':visible')) {
+                $('.ajax-form').slideUp(250);
+            } else {
+                $('.ajax-form').slideDown(250, function () {
+                    $('[data-entity="name"]').focus();
+                });
+            }
+            return false;
+        });
+        $('.ajax-form').find('span.close').bind('click', function () {
+            $('.ajax-form').slideUp(250);
+        });
+        $('[data-entity="button"]').bind('click', function () {
+            var url = $(this).attr('href');
+            var errors = [];
+            var field = null;
+            var name = $('[data-entity="name"]').val();
+            var description = $('[data-entity="description"]').val();
+            var address = $('[data-entity="address"]').val();
+            var type = $('[data-entity="type"]').find('[selected="selected"]').text();
+            if (name.length <= 0) {
+                field = $('[data-entity="name"]');
+                errors.push('Supplier/amenity name is required.');
+            }
+            if (address.length <= 0) {
+                if (!field) {
+                    field = $('[data-entity="address"]');
+                }
+                errors.push('Supplier/amenity address is required.');
+            }
+            if (errors.length <= 0) {
+                $.post(url, {
+                    'name': trim(name),
+                    'description': trim(description),
+                    'address': trim(address),
+                    'type': type,
+                    'url': '{{ supplier.slug }}'
+                }, function (response) {
+                    $('.ajax-form').slideUp(250);
+                    $('.ajax-success').slideDown(250);
+                });
+            } else {
+                alert(errors.join('\n'));
+                if (field) {
+                    field.focus();
+                }
+            }
+        });
+
         NIRIT.SupplierMap = function () {
             this.key = '{{ BING_MAPS_KEY }}';
             this.map = null;
