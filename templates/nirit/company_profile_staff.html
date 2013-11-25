@@ -104,7 +104,7 @@
                                 </div>
                             {% endif %}
                             {% if member.get_profile.bio %}
-                                <p class="bio">{{ member.get_profile.bio }}</p>
+                                <p class="bio">{{ member.get_profile.bio|linebreaks }}</p>
                             {% endif %}
                         </div>
                     </div>
