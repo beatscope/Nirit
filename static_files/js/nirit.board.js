@@ -325,9 +325,10 @@ NIRIT.Board.prototype.apply_template = function (card, template) {
 
     // The body is initially truncated to 255 characters
     var body = card.hasOwnProperty('body') ? card.body : false;
-    body = body.replace(pattern, '<a href="/supplier/$1">@$1</a>');
     if (body) {
-        // Only truncate body on cards, not on reply cards
+        // extract @mentions
+        body = body.replace(pattern, '<a href="/supplier/$1">@$1</a>');
+        // only truncate body on cards, not on reply cards
         if (typeof(template) === 'undefined') {
             var truncated = (body.length > 255) ? true : false;
             if (truncated) {
