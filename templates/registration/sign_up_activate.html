@@ -88,6 +88,20 @@
                             <div class="description">{{ form.founded.help_text }}</div>
                         {% endif %}
                     </div>
+                    {% if space.use_building %}
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.building.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.building }}
+                        {{ form.building.errors }}
+                        {% if form.building.help_text %}
+                            <div class="description">{{ form.building.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if space.use_floor %}
                     <div class="form-field">
                         <h3>
                             <label>{{ form.floor.label }}</label>
@@ -99,6 +113,7 @@
                             <div class="description">{{ form.floor.help_text }}</div>
                         {% endif %}
                     </div>
+                    {% endif %}
                     <input class="button" type="submit" value="Create Business Profile" />
                 </div>
             </form>

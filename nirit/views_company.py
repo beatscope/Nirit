@@ -82,6 +82,7 @@ def profile(request, codename=None):
     
     # Load the Company Profile for the user's Active Space
     space = request.user.get_profile().space
+    context['space'] = space
     company = CompanyProfile.objects.get(space=space, organization=organization)
     context['company'] = company
 
@@ -149,6 +150,7 @@ def staff(request, codename):
     
     # Load the Company Profile for the user's Active Space
     space = request.user.get_profile().space
+    context['space'] = space
     company = CompanyProfile.objects.get(space=space, organization=organization)
     context['company'] = company
     context['staff'] = organization.members.all()
@@ -207,6 +209,7 @@ def board(request, codename):
 
     # Load the Company Profile for the user's Active Space
     space = request.user.get_profile().space
+    context['space'] = space
     company = CompanyProfile.objects.get(space=space, organization=organization)
     context['company'] = company
     context['staff'] = organization.members.all()
@@ -282,10 +285,15 @@ def edit_profile(request, codename):
     if not organization.is_editor(request.user):
         raise PermissionDenied
 
+    # active space
+    space = request.user.get_profile().space
+    context['space'] = space
+
     # user is allowed to edit the company
     # add the Organization form
-    profile = CompanyProfile.objects.get(space=request.user.get_profile().space, organization=organization)
+    profile = CompanyProfile.objects.get(space=space, organization=organization)
     initial = {
+        'building': profile.building,
         'floor': profile.floor,
         'directions': profile.directions
     } # initial company profile data, used is both bound and unbound forms
@@ -305,10 +313,6 @@ def edit_profile(request, codename):
             # if a new file was uploaded, we use this one;
             # otherwise, when a logo is already assigned to the field,
             # we re-assign the existing value. Without doing this, the value would be cleared
-            if request.POST.has_key('image') and request.POST['image']:
-                form.instance.image = request.POST['image'].split(settings.MEDIA_URL)[1]
-            elif form.instance.image:
-                form.instance.image = form.cleaned_data['image']
             if request.POST.has_key('logo') and request.POST['logo']:
                 form.instance.logo = request.POST['logo'].split(settings.MEDIA_URL)[1]
             elif form.instance.logo:
@@ -319,6 +323,7 @@ def edit_profile(request, codename):
                 form.instance.square_logo = form.cleaned_data['square_logo']
             form.instance.save()
             # save profile data
+            profile.building = form.cleaned_data['building']
             profile.floor = form.cleaned_data['floor']
             profile.directions = form.cleaned_data['directions']
             profile.save()

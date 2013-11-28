@@ -99,6 +99,7 @@ def activate(request):
                 auth_login(request, user)
 
                 context['status'] = 'ACTIVATED'
+                context['space'] = t.space
 
                 # This is the one-time chance for the user to create a company
                 # The Company creation form is a slimmed-down versio of the Company Edit form
@@ -108,12 +109,14 @@ def activate(request):
                     if form.is_valid():
                         data = form.save()
                         company = data['organization']
-                        floor = data['floor']
+                        building = data['building'] if data.has_key('building') else None
+                        floor = data['floor'] if data.has_key('floor') else None
                         directions = data['directions']
 
                         # Create a Company Profile on this space
                         CompanyProfile.objects.create(organization=company,
                                                       space=t.space,
+                                                      building=building,
                                                       floor=floor,
                                                       directions=directions)
 

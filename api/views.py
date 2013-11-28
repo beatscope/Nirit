@@ -345,6 +345,10 @@ class OrganizationListView(generics.ListAPIView):
         if self.request.QUERY_PARAMS.has_key('floor'):
             queryset = queryset.filter(company_profile__floor__exact=self.request.QUERY_PARAMS['floor'])
 
+        # Building filter
+        if self.request.QUERY_PARAMS.has_key('building'):
+            queryset = queryset.filter(company_profile__building__exact=self.request.QUERY_PARAMS['building'])
+
         # Ordering
         if self.request.QUERY_PARAMS.has_key('order-by'):
             order_by = self.request.QUERY_PARAMS['order-by']
@@ -352,6 +356,8 @@ class OrganizationListView(generics.ListAPIView):
                 queryset = queryset.order_by(order_by)
             elif order_by == 'floor':
                 queryset = queryset.order_by('company_profile__floor')
+            elif order_by == 'building':
+                queryset = queryset.order_by('company_profile__building')
         return queryset
 
 

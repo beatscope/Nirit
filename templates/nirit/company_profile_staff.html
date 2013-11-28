@@ -53,7 +53,17 @@
                 </h2>
                 <ul class="company-info">
                     <li>Joined {{ company.organization.created|date:"jS" }} of {{ company.organization.created|date:"F, Y" }}</li>
-                    <li>{{ company.floor_tag }} Floor, {{ company.space.name }}</li>
+                    {% if space.use_floor and company.floor %}
+                        {% if space.use_building and company.building %}
+                        <li>{{ company.floor_tag }} Floor, {{ company.building }}, {{ space.name }}</li>
+                        {% else %}
+                        <li>{{ company.building }}, {{ space.name }}</li>
+                        {% endif %}
+                    {% elif space.use_building and company.building %}
+                    <li>{{ company.building }}, {{ space.name }}</li>
+                    {% else %}
+                    <li>{{ space.name }}</li>
+                    {% endif %}
                 </ul>
                 <a href=""
                     class="networked-switch{% if company.organization in user.get_profile.networked.all %} active{% endif %}"
@@ -166,7 +176,7 @@
             var self = this;
 
             // Initialize the map
-            var code = '{{ company.space.geocode }}'.split(',');
+            var code = '{{ space.geocode }}'.split(',');
             var loc = new Microsoft.Maps.Location(parseFloat(code[0]), parseFloat(code[1]));
             var center = new Microsoft.Maps.Location(parseFloat(code[0]), parseFloat(code[1])-0.003);
             this.map = new Microsoft.Maps.Map(document.getElementById("company-map"), {

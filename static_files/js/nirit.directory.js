@@ -71,40 +71,8 @@ NIRIT.Directory.prototype.apply_template = function (object, template) {
     var html = '';
     switch (template) {
 
-        case 'floor-group':
-            html += '<div class="card">';
-            html += '<h3>' + object['label'] + '</h3>';
-            for (var c in object['cards']) {
-                var card = this.apply_template(object['cards'][c], 'company');
-                html += card;
-                card = null;
-            }
-            html += '</div>';
-            break;
-
-        case 'department-group':
-            html += '<div class="card">';
-            html += '<h3>' + object['label'] + '</h3>';
-            for (var c in object['cards']) {
-                var card = this.apply_template(object['cards'][c], 'company');
-                html += card;
-                card = null;
-            }
-            html += '</div>';
-            break;
-
-        case 'name-group':
-            html += '<div class="card">';
-            html += '<h3>' + object['label'] + '</h3>';
-            for (var c in object['cards']) {
-                var card = this.apply_template(object['cards'][c], 'company');
-                html += card;
-                card = null;
-            }
-            html += '</div>';
-            break;
-
         case 'company':
+            var building = ( object.hasOwnProperty('building') && typeof(object.building) !== 'undefined' ) ? object.building : null;
             var floor = ( object.hasOwnProperty('floor_tag') && typeof(object.floor_tag) !== 'undefined' ) ? object.floor_tag : null;
             var square_logo =  NIRIT.STATIC_URL  + 'images/nirit-icon-32x32-grey.png';
             if (object.square_logo) {
@@ -114,7 +82,10 @@ NIRIT.Directory.prototype.apply_template = function (object, template) {
             html += '<img src="' + square_logo + '" alt="" width="32" height="32" />';
             html += '<div class="company-info">';
             html += '<div class="company-name"><a href="/company/' + object.slug + '" title="' + object.name + '">' + object.name + '</a></div>';
-            if (floor && this.group != 'floor') {
+            if (building && building != 'N/A' && this.group != 'building') {
+                html += '<div class="company-building">' + building + '</div>';
+            }
+            if (floor && floor != 'N/A' && this.group != 'floor') {
                 html += '<div class="company-floor">' + floor + ' Floor</div>';
             }
             if (this.group != 'department') {
@@ -122,6 +93,17 @@ NIRIT.Directory.prototype.apply_template = function (object, template) {
             }
             html += '<div class="company-expertise">' + object.expertise.join(', ') + '</div>';
             html += '</div>';
+            html += '</div>';
+            break;
+
+        default:
+            html += '<div class="card">';
+            html += '<h3>' + object['label'] + '</h3>';
+            for (var c in object['cards']) {
+                var card = this.apply_template(object['cards'][c], 'company');
+                html += card;
+                card = null;
+            }
             html += '</div>';
             break;
 

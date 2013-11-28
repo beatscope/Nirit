@@ -117,15 +117,19 @@ def directory(request, codename=None):
 
     context['space'] = space
     context['tabs'] = [
-        {'name': 'floor','label': 'By Floor', 'href': '?by=floor'},
-        {'name': 'department', 'label': 'By Department', 'href': '?by=department'},
-        {'name': 'name', 'label': 'Alphabetical', 'href': '?by=name'}
+        {'name': 'name', 'label': 'Alphabetical', 'href': '?by=name'},
+        {'name': 'department', 'label': 'By Department', 'href': '?by=department'}
     ]
+    if space.use_building:
+        context['tabs'].append({'name': 'building','label': 'By Building', 'href': '?by=building'})
+    if space.use_floor:
+        context['tabs'].append({'name': 'floor','label': 'By Floor', 'href': '?by=floor'})
+
     if request.GET.has_key('by'):
         group = request.GET['by']
     else:
-        # 'floor' is the default tab
-        group = 'floor'
+        # alphabetical ('name') is the default tab
+        group = 'name'
     context['group'] = group
 
     # Authentication is Token-based
@@ -158,6 +162,9 @@ def directory(request, codename=None):
             label = result['floor_tag']
         else:
             label = result[group]
+        if not label:
+            # this occurs when no company has any value for this particular group
+            label = 'N/A'
         # group
         if label != previous_value:
             _group = {

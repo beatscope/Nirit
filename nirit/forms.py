@@ -78,7 +78,8 @@ class OrganizationForm(forms.ModelForm):
         return year
 
 class CompanyForm(OrganizationForm):
-    floor = forms.IntegerField(label='Floor')
+    building = forms.CharField(label='Building', required=False)
+    floor = forms.IntegerField(label='Floor', required=False)
     directions = forms.CharField(label='Detailed Directions', widget=forms.Textarea, required=False, help_text="\
                  Detailed desription on how to find your office within the space.\
                  e.g.: turn right coming out of the lift, opposite the kitchen.")
@@ -89,6 +90,7 @@ class CompanyForm(OrganizationForm):
         # as well as the organization object
         return {
             'organization': organization,
+            'building': self.cleaned_data['building'],
             'floor': self.cleaned_data['floor'],
             'directions': self.cleaned_data['directions'],
         }

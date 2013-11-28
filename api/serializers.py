@@ -55,12 +55,11 @@ class CompanyProfileSerializer(serializers.ModelSerializer):
     codename = serializers.Field(source='space.codename')
     slug = serializers.Field(source='space.link')
     status = serializers.Field(source='get_status')
-    floor = serializers.RelatedField()
     floor_tag = serializers.RelatedField()
 
     class Meta:
         model = CompanyProfile
-        fields = ('name', 'codename', 'slug', 'status', 'floor', 'floor_tag')
+        fields = ('name', 'codename', 'slug', 'status', 'building', 'floor', 'floor_tag')
 
 
 class SpaceProfileSerializer(serializers.ModelSerializer):
@@ -74,13 +73,12 @@ class SpaceProfileSerializer(serializers.ModelSerializer):
     expertise = serializers.RelatedField(source='organization.expertise', many=True)
     slug = serializers.Field(source='organization.link')
     status = serializers.Field(source='get_status')
-    floor = serializers.RelatedField()
     floor_tag = serializers.RelatedField()
     square_logo = serializers.Field(source='organization.get_square_logo')
 
     class Meta:
         model = CompanyProfile
-        fields = ('name', 'codename', 'department', 'expertise', 'slug', 'status', 'floor', 'floor_tag', 'square_logo')
+        fields = ('name', 'codename', 'department', 'expertise', 'slug', 'status', 'building', 'floor', 'floor_tag', 'square_logo')
 
 
 class OrganizationSerializer(serializers.ModelSerializer):

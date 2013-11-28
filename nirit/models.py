@@ -9,8 +9,7 @@ import uuid
 from django.db import models
 from django.db.models.signals import post_save
 from django.core.mail import EmailMultiAlternatives
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth.models import Permission, User
+from django.contrib.auth.models import User
 from django.utils.crypto import pbkdf2, get_random_string
 from django.utils.html import strip_tags, linebreaks
 from django.utils.encoding import force_unicode
@@ -154,18 +153,6 @@ class Organization(models.Model):
         else:
             created = False
         super(Organization, self).save(*args, **kwargs)
-        # create the permission when creating
-        if created:
-            content_type = ContentType.objects.get(app_label='nirit', model='organization')
-            permission_name = 'Can access organization "{}"'.format(self.name)
-            permission_codename = 'can_access_organization_{}'.format(self.codename)
-            permission = Permission.objects.create(codename=permission_codename, name=permission_name, content_type=content_type)
-
-    def delete(self, *args, **kwargs):
-        # delete the permission before deleting the object
-        permission = Permission.objects.get(codename='can_access_organization_{}'.format(self.codename))
-        permission.delete()
-        super(Organization, self).delete(*args, **kwargs)
 
     @property
     def members(self):
@@ -242,8 +229,14 @@ class Organization(models.Model):
 class Space(models.Model):
     name = models.CharField(max_length=200, unique=True)
     codename = models.CharField(max_length=64, unique=True, null=True, blank=True)
-    postcode = models.CharField("Postcode", max_length=8, help_text='Please include the gap (space) between the outward and inward codes')
+    postcode = models.CharField("Postcode", max_length=8,
+                                help_text='Please include the gap (space) between the outward and inward codes')
     notices = models.ManyToManyField(Notice, null=True, blank=True)
+
+    use_building = models.BooleanField("Use 'Building' field", default=True,
+                                       help_text="Whether to display the 'Building' field on Company Profiles.")
+    use_floor = models.BooleanField("Use 'Floor' field", default=True,
+                                    help_text="Whether to display the 'Floor' field on Company Profiles.")
 
     def __unicode__(self):
         return self.name
@@ -253,18 +246,6 @@ class Space(models.Model):
         if self.id is None:
             self.codename = hashlib.sha256(self.name).hexdigest()
         super(Space, self).save(*args, **kwargs)
-        # create the permission
-        if self.id is None:
-            content_type = ContentType.objects.get(app_label='nirit', model='space')
-            permission_name = 'Can access space "{}"'.format(self.name)
-            permission_codename = 'can_access_space_{}'.format(self.codename)
-            permission = Permission.objects.create(codename=permission_codename, name=permission_name, content_type=content_type)
-
-    def delete(self, *args, **kwargs):
-        # delete the permission before deleting the object
-        permission = Permission.objects.get(codename='can_access_space_{}'.format(self.codename))
-        permission.delete()
-        super(Space, self).delete(*args, **kwargs)
 
     @property
     def slug(self):
@@ -360,10 +341,13 @@ class CompanyProfile(models.Model):
         (VERIFIED, 'Verified'),
         (BANNED, 'Banned'),
     )
+
     organization = models.ForeignKey(Organization, related_name='company_profile')
     space = models.ForeignKey(Space, null=True, blank=True, related_name='space_profile')
-    floor = models.IntegerField("Floor", null=True, blank=True)
     status = models.IntegerField("Verification status", choices=STATUS_CHOICES, default=PENDING)
+
+    floor = models.IntegerField(null=True, blank=True)
+    building = models.CharField(max_length=255, null=True, blank=True)
     directions = models.TextField("Detailed Directions", null=True, blank=True)
 
     def __unicode__(self):
@@ -373,6 +357,8 @@ class CompanyProfile(models.Model):
 
     @property
     def floor_tag(self):
+        if self.floor is None:
+            return 'N/A'
         tag = 'th'
         if self.floor < 0:
             return 'Basement'

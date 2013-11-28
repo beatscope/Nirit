@@ -80,11 +80,20 @@
                     {{ form.founded }}
                     {{ form.founded.errors }}
                 </div>
+                {% if space.use_floor %} 
                 <div class="fieldWrapper">
-                    <h3><span class="required">*</span>{{ form.floor.label_tag }}</h3>
+                    <h3>{{ form.floor.label_tag }}</h3>
                     {{ form.floor }}
                     {{ form.floor.errors }}
                 </div>
+                {% endif %}
+                {% if space.use_building %}
+                <div class="fieldWrapper">
+                    <h3>{{ form.building.label_tag }}</h3>
+                    {{ form.building }}
+                    {{ form.building.errors }}
+                </div>
+                {% endif %}
             </div>
             <div class="box padded">
                 <div class="fieldWrapper">
@@ -120,6 +129,7 @@
         </div>
 
         <div class="hidden">
+            {{ form.errors }}
             {{ form.name }}
             {{ form.codename }}
         </div>
