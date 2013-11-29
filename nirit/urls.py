@@ -35,6 +35,7 @@ urlpatterns = patterns('',
     url(r'^member/sign-up/complete$', 'nirit.views_signup.complete'),
     url(r'^member/sign-up/activation-required$', 'nirit.views_signup.activation_required'),
     url(r'^member/sign-up/activate$', 'nirit.views_signup.activate'),
+    url(r'^member/sign-up/join$', 'nirit.views_signup.join'),
 
     # Member
     url(r'^member/password/reset/$', 'django.contrib.auth.views.password_reset',
@@ -74,6 +75,7 @@ urlpatterns = patterns('',
     url(r'^approval/member/(?P<codename>.+)/(?P<action>\w+)$', 'nirit.views_member.set_status'),
     url(r'^contact/company/(?P<codename>\w+)$', 'nirit.views_company.contact'),
     url(r'^invite/members/(?P<codename>\w+)$', 'nirit.views_company.invite_staff'),
+    url(r'^invite/company/(?P<codename>\w+)$', 'nirit.views_company.invite_company'),
     url(r'^approval/company/(?P<codename>\w+)/(?P<action>\w+)$', 'nirit.views_company.set_status'),
 
     # Admin

@@ -71,8 +71,10 @@ def profile(request, codename=None):
     # Add companies approval
     #   - for Managers
     #   - only on member's own page
+    context['is_manager'] = False
     if profile.user == request.user:
         if profile.space and 'Manager' in profile.roles:
+            context['is_manager'] = True
             context['companies_awaiting'] = profile.space.get_pending_companies()
 
     t = loader.get_template('nirit/user_profile.html')

@@ -110,6 +110,7 @@ class SignUpForm(forms.Form):
                          +" data-uv-mode=\"support\" data-uv-primary-color=\"#ced9e4\" data-uv-link-color=\"#2e7fa1\">this form</a>, "\
                          +"and we\'ll generate a new <strong>Authorization Code</strong> for you.</p>")
     agreed = forms.BooleanField()
+    join = forms.BooleanField(required=False)
 
     def check_username(self, count=0):
         if not self.cleaned_data.has_key("first_name") or not self.cleaned_data.has_key("last_name"):
@@ -153,7 +154,14 @@ class SignUpForm(forms.Form):
         cleaned_data = super(SignUpForm, self).clean()
         # Generate username
         cleaned_data['username'] = self.check_username()
+
         cleaned_data['company'] = None
+        
+        if cleaned_data.has_key('join') and cleaned_data['join']:
+            # The form was submitted from the Join Space form,
+            # so skip the company lookup
+            return cleaned_data
+
         # Check if an Authorization Code was provided
         if cleaned_data.has_key('auth_code') and cleaned_data['auth_code']:
             # Check the validity of the code
@@ -210,12 +218,17 @@ class SignUpForm(forms.Form):
                 # The User is the Owner of a Company
                 # User will be able to create a Business Profile when he confirms his email address
                 user.groups.add(Group.objects.get(name='Owner'))
-                # Assign the token space to the User
-                t = OToken.objects.get(key=self.cleaned_data['auth_code'])
-                t.user = user
-                t.save() # we assign the user to the token as well to keep a record of who redeemed it
                 profile = user.get_profile()
-                profile.space = t.space
+                if self.cleaned_data.has_key('join') and self.cleaned_data['join']:
+                    # The form was submitted from the Join Space form
+                    # the space will be set by the view
+                    pass
+                else:
+                    # Assign the token space to the User
+                    t = OToken.objects.get(key=self.cleaned_data['auth_code'])
+                    t.user = user
+                    t.save() # we assign the user to the token as well to keep a record of who redeemed it
+                    profile.space = t.space
                 profile.status = UserProfile.VERIFIED # activate user
                 profile.save()
         return user

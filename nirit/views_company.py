@@ -12,7 +12,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadReque
 from django.template import RequestContext, loader
 from django.utils.html import strip_tags, linebreaks
 from django.conf import settings
-from nirit.models import Organization, UserProfile, CompanyProfile
+from nirit.models import Organization, UserProfile, CompanyProfile, OToken
 from nirit.forms import CompanyForm
 from nirit.fixtures import Message
 from nirit import utils
@@ -443,6 +443,63 @@ def invite_staff(request, codename):
 
     response = HttpResponse(json.dumps({
         'status': '200',
+    }), mimetype="application/json")
+    response['Content-Type'] = 'application/json; charset=utf-8'
+    return response
+
+
+@login_required
+def invite_company(request, codename):
+    """
+    Invite Company to join Space.
+    Available through AJAX. POST only allowed.
+
+    """
+    if request.method == 'GET':
+        return HttpResponseBadRequest(json.dumps({
+            'status': '400',
+            'reason': 'Method Not Allowed.'
+        }), mimetype="application/json")
+
+    # Check the user is active
+    if not request.user.get_profile().status == UserProfile.VERIFIED:
+        raise PermissionDenied
+
+    # Check email address is valid
+    try:
+        email = request.POST['email']
+        validate_email(email)
+    except Exception:
+        return HttpResponseBadRequest(json.dumps({
+            'status': '400',
+            'reason': 'Enter a valid email address.'
+        }), mimetype="application/json")
+
+    # Create a token for the space,
+    # and assign it the email address
+    token = OToken()
+    token.space = request.user.get_profile().space
+    token.email = email
+    token.save()
+
+    onwer_profile = request.user.get_profile()
+    subject = 'You are invited to join Nirit'
+    c = {
+        'name': onwer_profile.name,
+        'company': onwer_profile.company.name,
+        'link': '{}/member/sign-up/join?token={}'.format(settings.HOST, token.key),
+    }
+    text_content = Message().get('email_invite_company_text', c)
+    html_content = Message().get('email_invite_company_html', c)
+    from_email = settings.EMAIL_FROM
+    msg = EmailMultiAlternatives(subject, text_content, from_email, [email])
+    if html_content:
+        msg.attach_alternative(html_content, "text/html")
+    msg.send()
+
+    response = HttpResponse(json.dumps({
+        'status': '200',
+        'token': token.key
     }), mimetype="application/json")
     response['Content-Type'] = 'application/json; charset=utf-8'
     return response

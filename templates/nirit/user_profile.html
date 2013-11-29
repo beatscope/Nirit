@@ -69,8 +69,13 @@
     </div>
 
     <div id="sidebar">
-        {% if companies_awaiting %}
+        {% comment %}
+        Only Managers can approve/decline new Companies requests,
+        and invite Companies to their Spaces.
+        {% endcomment %}
+        {% if is_manager %}
         <div class="box padded">
+            {% if companies_awaiting %}
             <h3>Companies Awaiting Approval</h3>
             <ul class="approval-list company">
                 {% for company in companies_awaiting %}
@@ -80,6 +85,23 @@
                 </li>
                 {% endfor %}
             </ul>
+
+            {% endif %}
+            {% comment %}
+            Invite Company to the Space, using email address
+            {% endcomment %}
+            <a class="button invite" data-entity="invite" href="#">Invite your tenants <span></span></a>
+            <div class="invite-box hidden" data-entity="invite">
+                <p class="help"><strong>Invite your tenants to join {{ member.space }} 
+                    using his or her company email address.</strong></p>
+                <p class="help">You can only invite one company at a time.</p>
+                <input type="text" class="text" value="" />
+                <div class="errors"></div>
+                <button class="button">Submit</button>
+            </div>
+            <div class="invite-box hidden" data-entity="invite-success">
+                <p class="help"><strong>The invite has been sent.</strong></p>
+            </div>
         </div>
         {% endif %}
 
@@ -128,6 +150,7 @@
 {% block extrajs %}{{ block.super }}
 <script type="text/javascript">
     $(document).ready(function () {
+
         new NIRIT.Board({
             'data': {{ data|safe }},
             'notices': {{ notices|safe }},
@@ -176,46 +199,93 @@
             }
         });
 
-        {% if staff_awaiting or companies_awaiting %}
-        // Handle Companies approval
-        NIRIT.Approval = function () {
-            this.init();
-        };
-        
-        NIRIT.Approval.prototype.init = function () {
-            var self = this;
-            $('.approval-list').find('.company').each(function () {
-                var entity = $(this);
-                entity.find('a').bind('click', function () {
-                    // URL format: "/approval/company/codename/activate|ban
-                    var url = '/approval/' + entity.attr('class');
-                    url += '/' + entity.attr('rel');
-                    url += '/' + $(this).attr('class');
-                    $.get(url, function () {
-                        // Remove the entity from the screen on success
-                        self.remove(entity);
+        {% if is_manager %}
+            {% if companies_awaiting %}
+
+            // Handle Companies approval
+            NIRIT.Approval = function () {
+                this.init();
+            };
+            
+            NIRIT.Approval.prototype.init = function () {
+                var self = this;
+                $('.approval-list').find('.company').each(function () {
+                    var entity = $(this);
+                    entity.find('a').bind('click', function () {
+                        // URL format: "/approval/company/codename/activate|ban
+                        var url = '/approval/' + entity.attr('class');
+                        url += '/' + entity.attr('rel');
+                        url += '/' + $(this).attr('class');
+                        $.get(url, function () {
+                            // Remove the entity from the screen on success
+                            self.remove(entity);
+                        });
+                        return false;
                     });
-                    return false;
                 });
-            });
-        };
+            };
 
-        NIRIT.Approval.prototype.remove = function (entity) {
-            var self = this;
-            var entity_type = entity.attr('class');
-            entity.slideUp(function () {
-                entity.remove();
-                self.refresh(entity_type);
-            });
-        };
+            NIRIT.Approval.prototype.remove = function (entity) {
+                var self = this;
+                var entity_type = entity.attr('class');
+                entity.slideUp(function () {
+                    entity.remove();
+                    self.refresh(entity_type);
+                });
+            };
 
-        NIRIT.Approval.prototype.refresh = function (entity_type) {
-            if ($('.approval-list.'+entity_type).find('.'+entity_type).length <= 0) {
-                $('.approval-list.'+entity_type).hide().append('<li>No pending requests remaining.</li>').slideDown();
+            NIRIT.Approval.prototype.refresh = function (entity_type) {
+                if ($('.approval-list.'+entity_type).find('.'+entity_type).length <= 0) {
+                    $('.approval-list.'+entity_type).hide().append('<li>No pending requests remaining.</li>').slideDown();
+                }
+            };
+
+            new NIRIT.Approval();
+
+            {% endif %}
+
+        // Invite Form
+        $('a[data-entity="invite"]').bind('click', function () {
+            var box = $('div[data-entity="invite"]');
+            if (box.is(':visible')) {
+                box.slideUp(250);
+            } else {
+                box.find('.text').val('');
+                box.slideDown(250, function () {
+                    box.find('.text').focus();
+                    if (!box.data('bound')) {
+                        box.data('bound', true);
+                        box.find('.button').bind('click', function () {
+                            var button = $(this);
+                            var email = box.find('.text').val();
+                            if (email.length > 0 && !box.data('submitting')) {
+                                box.data('submitting', true);
+                                box.find('.text').attr('disabled', 'disabled');
+                                button.addClass('loading');
+                                box.find('.errors').empty();
+                                $.post('/invite/company/{{ member.space.codename }}', {
+                                    'email': trim(email)
+                                }, function (response) {
+                                    box.data('submitting', false);
+                                    box.find('.text').attr('disabled', null);
+                                    button.removeClass('loading');
+                                    box.slideUp(250);
+                                    $('div[data-entity="invite-success"]').slideDown(250);
+                                }).fail(function (e) {
+                                    box.data('submitting', false);
+                                    box.find('.text').attr('disabled', null);
+                                    button.removeClass('loading');
+                                    var r = JSON.parse(e.responseText)
+                                    box.find('.errors').text(r.reason);
+                                });
+                            }
+                        });
+                    }
+                });
             }
-        };
+            return false;
+        });
 
-        new NIRIT.Approval();
         {% endif %}
     });
 </script>

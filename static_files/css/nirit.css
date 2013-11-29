@@ -403,7 +403,8 @@ nav#top-links:after {
     background:#E5ECF3;
 }
 
-ul.errorlist {
+ul.errorlist,
+.errors {
     position:relative;
     color:#e33c2f;
     font-weight:bold;
@@ -758,6 +759,9 @@ nav#sub-links {
     #signup-card form .fields {
         padding-right:20px;
     }
+    #signup-card form .fields h2 {
+        margin-top:2em;
+    }
     #signup-card form .fields,
     #signup-card form .text { margin:0 20px; }
     #signup-card form .fields .form-field {
@@ -1070,6 +1074,40 @@ nav#sub-links {
     color:#000;
     background:#fff;
 }
+
+/** Invite Boxes **/
+#content .invite-box {
+    position:relative;
+}
+    #content .invite-box textarea,
+    #content .invite-box input[type="text"] {
+        width:292px;
+        padding:2px;
+        border:1px solid #F2F2F3;
+        resize:none;
+    }
+    #content .invite-box .help {
+        padding:.5em 10px;
+        font-style:italic;
+        color:#666;
+    }
+    #content .invite-box .errors {
+        position:absolute;
+        bottom:8px;
+        left:10px;
+    }
+    #content .invite-box .button {
+        margin:10px 0 0 auto;
+    }
+    #content .invite-box .button.loading,
+    #content .invite-box .button.loading:hover,
+    #content .invite-box .button.loading:focus {
+        width:40px;
+        background:#C0202F url(../images/ajax-loader.gif) no-repeat 10px center;
+        border:none;
+        text-indent:-99999px;
+        z-index:999;
+    }
 
 
 /** NOTICE BOARD **/
@@ -1566,31 +1604,6 @@ nav#sub-links {
     color:#fff;
     text-decoration:none;
 }
-#content .company-profile .invite-box {}
-    #content .company-profile .invite-box textarea {
-        width:292px;
-        padding:2px;
-        border:1px solid #F2F2F3;
-        resize:none;
-    }
-    #content .company-profile .invite-box .help {
-        padding:.5em 10px;
-        font-style:italic;
-        color:#666;
-    }
-    #content .company-profile .invite-box .button {
-        margin:10px 0 0 auto;
-    }
-    #content .company-profile .invite-box .button.loading,
-    #content .company-profile .invite-box .button.loading:hover,
-    #content .company-profile .invite-box .button.loading:focus {
-        width:40px;
-        background:#FFF url(../images/ajax-loader.gif) no-repeat 10px center;
-        border:none;
-        text-indent:-99999px;
-        z-index:999;
-    }
-
 #content .company-profile p.is-network {
     position:relative;
     padding:0 60px;

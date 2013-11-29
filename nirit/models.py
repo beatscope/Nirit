@@ -387,6 +387,7 @@ class OToken(models.Model):
     key = models.CharField(max_length=14, primary_key=True)
     space = models.ForeignKey(Space)
     user = models.ForeignKey(User, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
     redeemed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
 

@@ -9,6 +9,7 @@ class Message(object):
 
         ### Sign-up Messages ###
         'welcome': 'welcome.html',                                              # Welcome message on Sign-up page
+        'welcome/join': 'welcome_join.html',                                    # Welcome message on Join Space page
         'email_failed': 'email_failed.html',                                    # Email domain match failed message on Sign-up page
         'invalid_token': 'invalid_token.html',                                  # Invalid Token message on Sign-up page
 
@@ -27,6 +28,8 @@ class Message(object):
         'email_company_contact_html': 'emails/company_contact.html',            # Contact Company (html)
         'email_invite_members_text': 'emails/invite_members.txt',               # Invite Members (text)
         'email_invite_members_html': 'emails/invite_members.html',              # Invite Members (html)
+        'email_invite_company_text': 'emails/invite_company.txt',               # Invite Company (text)
+        'email_invite_company_html': 'emails/invite_company.html',              # Invite Company (html)
         'email_member_contact_text': 'emails/member_contact.txt',               # Contact Member (text)
         'email_member_contact_html': 'emails/member_contact.html',              # Contact Member (html)
         'email_supplier_details_text': 'emails/supplier_details.txt',           # Supplier Request - New/Edit (text)

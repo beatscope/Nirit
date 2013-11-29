@@ -1,0 +1,199 @@
+{% extends "nirit/base.html" %}
+
+{% load i18n static %}
+
+{% block title %}Sign Up to Nirit{% endblock %}
+
+{% block content %}
+<div class="content sign-up edit">
+    <div id="signup-card">
+        {% if status == 'FAILED' %}
+            <div class="text">
+                <h1>Sign-Up Failed</h1>
+                <div class="description">
+                    <p>The token is invalid.</p>
+                </div>
+            </div>
+        {% elif status == 'REDEEMED' %}
+            <div class="text">
+                <h1>Sign-Up Failed</h1>
+                <div class="description">
+                    <p>This token is no longer valid. Each token can only be used once.</p>
+                </div>
+            </div>
+        {% elif status == 'ACTIVATED' %}
+            <form action="" method="post" enctype="multipart/form-data">{% csrf_token %}
+                <div class="text">
+                    <h1>Welcome to {{ space }}</h1>
+                    <div class="description">
+                        <p>Please fill in this form to sign-up to Nirit,
+                        and create a Business Profile for your company.</p>
+                    </div>
+                </div>
+
+                <div class="fields">
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.first_name.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.first_name }}
+                        {{ form.first_name.errors }}
+                        {% if form.first_name.help_text %}
+                            <p class="description">{{ form.first_name.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.last_name.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.last_name }}
+                        {{ form.last_name.errors }}
+                        {% if form.last_name.help_text %}
+                            <p class="description">{{ form.last_name.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.email.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.email }}
+                        {{ form.email.errors }}
+                        {% if form.email.help_text %}
+                            <p class="description">{{ form.email.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ form.password.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ form.password }}
+                        {{ form.password.errors }}
+                        {% if form.password.help_text %}
+                            <p class="description">{{ form.password.help_text }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="fields">
+                     <h2>Your Company Profile</h2>
+                     <div class="form-field">
+                        <h3>
+                            <label>{{ company_form.name.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ company_form.name }}
+                        {{ company_form.name.errors }}
+                        {% if company_form.name.help_text %}
+                            <div class="description">{{ company_form.name.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ company_form.description.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ company_form.description }}
+                        {{ company_form.description.errors }}
+                        {% if company_form.description.help_text %}
+                            <div class="description">{{ company_form.description.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ company_form.department.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ company_form.department }}
+                        {{ company_form.department.errors }}
+                        {% if company_form.department.help_text %}
+                            <div class="description">{{ company_form.department.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ company_form.size.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ company_form.size }}
+                        {{ company_form.size.errors }}
+                        {% if company_form.size.help_text %}
+                            <div class="description">{{ company_form.size.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ company_form.founded.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ company_form.founded }}
+                        {{ company_form.founded.errors }}
+                        {% if company_form.founded.help_text %}
+                            <div class="description">{{ company_form.founded.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    {% if space.use_building %}
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ company_form.building.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ company_form.building }}
+                        {{ company_form.building.errors }}
+                        {% if company_form.building.help_text %}
+                            <div class="description">{{ company_form.building.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if space.use_floor %}
+                    <div class="form-field">
+                        <h3>
+                            <label>{{ company_form.floor.label }}</label>
+                            <span class="required">*</span>
+                        </h3>
+                        {{ company_form.floor }}
+                        {{ company_form.floor.errors }}
+                        {% if company_form.floor.help_text %}
+                            <div class="description">{{ company_form.floor.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="hidden">{{ form.join }}</div>
+                    <div class="form-field">
+                        {{ form.agreed }} <span class="required">*</span>
+                        <label>I agree to the <a href="/terms-of-use" target="_blank">Terms of Use</a> and <a href="/privacy-policy" target="_blank">Privacy Policy</a></label>
+                        {{ form.agreed.errors }}
+                    </div>
+                    <input class="button" type="submit" value="Join {{ space }}" />
+                </div>
+            </form>
+            <div class="explanation">
+                <div class="text">
+                    {% if not company_form.errors and not company_form.non_field_errors %}
+                        {{ explanation }}
+                    {% endif %}
+                    {% if form.errors and not form.non_field_errors or company_form.errors and not company_form.non_field_errors %}
+                        <h3>There are errors in the information you provided</h3>
+                        <p>Please correct them and submit this form again.
+                        Contact us using
+                        <a href="javascript:void(0)" data-uv-lightbox="classic_widget" data-uv-mode="support" data-uv-primary-color="#ced9e4" data-uv-link-color="#2e7fa1">this form</a>
+                        if you have any issues.</p>
+                    {% endif %}
+                    {% if company_form.non_field_errors %}
+                        <div class="errorList">
+                        {% for paragraph in company_form.non_field_errors %}
+                            {{ paragraph|safe }}
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
