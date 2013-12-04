@@ -1,0 +1,2 @@
+{{ email }} has registered an interest through the home page widget.
+The team @ Nirit

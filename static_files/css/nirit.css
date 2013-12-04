@@ -5,6 +5,30 @@
  * @author      Michael Giuliano <michael@beatscope.co.uk>
  * @copyright   2013 Beatscope Limited | http://www.beatscope.co.uk/
  */
+
+/**
+Colours
+    Black               393939
+    Nirit Red           C0202F
+    Gradient            104D65
+    Links/Hover         236A87/348FB5
+    Label               2E7FA1
+
+Icon Colours
+    Grey (Normal)       D1D3D4
+    Light Grey          F2F2F3
+    Dark Grey (Hover)   B6B9BA
+
+Cards
+    Text                17566F
+    Notice (Blue)       2E7FA1
+    Official (Green)    2BB673
+    Alert (Red)         BF1E2D
+
+Side Bar
+    Background          E5ECF3
+*/
+
 * {
     margin:0;
     padding:0;
@@ -147,28 +171,6 @@ a.button {
     }
 
 
-/**
-Colours
-    Black               393939
-    Nirit Red           C0202F
-    Gradient            104D65
-    Links/Hover         236A87/348FB5
-    Label               2E7FA1
-
-Icon Colours
-    Grey (Normal)       D1D3D4
-    Light Grey          F2F2F3
-    Dark Grey (Hover)   B6B9BA
-
-Cards
-    Text                17566F
-    Notice (Blue)       2E7FA1
-    Official (Green)    2BB673
-    Alert (Red)         BF1E2D
-
-Side Bar
-    Background          E5ECF3
-*/
 .wrapper {
     position:relative;
     width:100%;
@@ -336,7 +338,6 @@ nav#top-links:after {
 #footer {
     position:relative;
     color:#B6B9BA;
-    margin-top:10px;
     text-align:right;
     background-color:#363636;
     background-image:url(../images/footer-bg.png);
@@ -353,9 +354,11 @@ nav#top-links:after {
     }
     #footer ul li {
         text-align:left;
+        margin-left:0;
     }
     #footer ul li.inline {
         display:inline;
+        margin-left:10px;
     }
     #footer ul li.twitter {
         position:relative;
@@ -380,6 +383,9 @@ nav#top-links:after {
         border-top:solid 1px #393939;
     }
 
+#content {
+    margin-bottom:10px;
+}
 .content {
     width:100%;
     color:#393939;
@@ -673,7 +679,7 @@ nav#sub-links {
 #content .index {
     position:relative;
     padding:10px 0;
-    height:500px;
+    height:320px;
 }
 #content .index:after {
     clear:both;
@@ -683,31 +689,25 @@ nav#sub-links {
 #content .index .sign-up-info {
     position:relative;
     width:547px;
-    padding-top:140px;
+    padding-top:50px;
     padding-left:45px;
     float:left;
 }
     #content .index .sign-up-info .nirit,
     #content .index .sign-up-info .nirit a { 
+        font-family:Calibri;
         color:#fff;
-        font-size:40px;
+        font-size:52px;
         font-weight:bold;
+        font-style:italic;
         text-decoration:none;
         text-shadow:0 1px 0 #666;
     }
-    #content .index .sign-up-info .nirit img {
-        display:block;
-        width:35px;
-        height:40px;
-        position:absolute;
-        top:142px;
-        left:0;
-    }
     #content .index .sign-up-info h2 {
         color:#fff;
-        font-size:32px;
+        font-size:28px;
         text-shadow:0 1px 0 #666;
-        width:70%;
+        width:60%;
     }
     #content .index .sign-up-info .actions {
         padding-top:30px;
@@ -734,8 +734,78 @@ nav#sub-links {
 #content .index .sign-in-card { 
     width:382px;
     float:left;
-    padding-top:140px;
+    padding-top:75px;
 }
+
+.home-content {
+    background:#fff;
+}
+    .home-content .container {
+        padding:20px 0;
+    }
+    .home-content h1 {
+        font-family:Calibri;
+        font-size:2.6em;
+        margin-bottom:1em;
+    }
+    .home-content p,
+    .home-content ul {
+        font-size:1.2em;
+        padding:0.9em 0;
+    }
+    .home-content ul:after {
+        clear:both;
+        content: "";
+        display:table;
+    }
+    .home-content ul li {
+        list-style-type:none;
+        margin:0;
+        padding:1em 0;
+        padding-left:40px;
+        background-repeat:no-repeat;
+        background-position:left 1.2em;
+    }
+    .home-content ul li.home-item-secure { background-image:url(../images/homepage-icon-secure.png); }
+    .home-content ul li.home-item-directory { background-image:url(../images/homepage-icon-directory.png); }
+    .home-content ul li.home-item-profile { background-image:url(../images/homepage-icon-profile.png); }
+    .home-content ul li.home-item-news { background-image:url(../images/homepage-icon-news.png); }
+    .home-content ul li.home-item-local { background-image:url(../images/homepage-icon-local.png); }
+    .home-content img {
+        display:block;
+        float:right;
+        padding-right:20px;
+        padding-left:20px;
+    }
+    .home-content .register {
+        margin-top:10px;
+        border-top:solid 1px #999;
+        padding:0 30px;
+        background:#F2F2F3;
+    }
+        .home-content .register input {
+            float:left;
+            width:350px;
+            padding:7px;
+            margin-right:15px;
+            border:solid 1px #ccc;
+        }
+        .home-content .register button {
+            float:left;
+        }
+        .home-content .register button.loading,
+        .home-content .register button.loading:hover,
+        .home-content .register button.loading:focus {
+            width:40px;
+            background:#C0202F url(../images/ajax-loader.gif) no-repeat 10px center;
+            border:none;
+            text-indent:-99999px;
+            z-index:999;
+        }
+        .home-content .register .errors {
+            clear:both;
+            padding:10px 0;
+        }
 
 
 /** SIGN-UP **/

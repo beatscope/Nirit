@@ -20,6 +20,7 @@ urlpatterns = patterns('',
     url(r'^sitemap.xml', 'nirit.views_public.sitemap'),
     url(pages_regex, 'nirit.views_public.page'),
     url(r'^supplier/(?P<slug>.+)$', 'nirit.views_public.supplier'),
+    url(r'^action/register-interest$', 'nirit.views_public.action', {'action': 'register-interest'}),
 
     url(r'^board/[\w-]*/(?P<codename>\w+)', 'nirit.views.board', name='board'),
     url(r'^board/$', 'nirit.views.board'),

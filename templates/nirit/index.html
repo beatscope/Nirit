@@ -6,6 +6,7 @@
 <link media="all" rel="stylesheet" type="text/css" href="{{ STATIC_URL }}ui/jquery-ui-1.10.3.custom.min.css" />
 {% endblock %}
 
+{% block title %}Nirit, the local business network.{% endblock %}
 {% block bodyclass %}class="home"{% endblock %}
 
 {% if user.is_anonymous %}
@@ -30,12 +31,12 @@
 
         <div class="sign-up-info">
             <div class="nirit">
-                <a href="/"><img alt="Nirit icon" src="{{ STATIC_URL}}/images/icon_nirit-rings.png">nirit</a>
+                <a href="/">nirit</a>
             </div>
             <h2>The local business network.</h2>
             <div class="actions">
-                <a href="/what-is-nirit" class="button learn-more">learn more</a>
-                <a href="/what-is-nirit" class="button video"><span></span>play video</a>
+                <a href="/what-is-nirit" class="button learn-more">Learn more</a>
+                <a href="/what-is-nirit" class="button video"><span></span>Play video</a>
             </div>
         </div>
 
@@ -52,16 +53,50 @@
                     <div class="form-field"><label>{{ form.password.label_tag }}</label>{{ form.password }}</div>
                     <input type="hidden" name="next" value="{{ next }}" />
                     <ul id="login-links">
-                        <li><a href="/member/password/reset/">forgot password</a></li>
-                        <li><a href="/what-is-nirit">what's Nirit</a></li>
-                        <li><a href="/member/sign-up">sign-up</a></li>
-                        <li><input type="submit" class="button" value="login" /></li>
+                        <li><a href="/member/password/reset/">Forgot password</a></li>
+                        <li><a href="/member/sign-up">Sign-up</a></li>
+                        <li><input type="submit" class="button" value="Login" /></li>
                     </ul>
                 </form>
             </div>
         </div>
     {% endif %}
 
+</div>
+{% endblock %}
+
+{% block extracontent %}
+<div class="home-content content">
+    <div class="container">
+        <h1>A free community-building platform for co-working and shared spaces.</h1>
+        <p>Shared spaces are at their most valuable when they bring about community, creativity and collaboration between their tenants.
+        Nirit increases those fortuitous conversations that lead to major breakthroughs and new ideas.</p>
+        <p>It fosters a real sense of togetherness and bonding around the space.
+        It also integrates your space with your wider, local community - 
+        enabling those in the space to quickly find and engage with the cafes, pubs, shops and suppliers on their doorstep.</p>
+
+        <img src="{{ STATIC_URL }}images/home-page-computer.jpg" alt="" width="628" height="487" />
+
+        <ul class="home-items">
+            <li class="home-item-secure">Secure, restricted network for individual co-working and shared spaces.</li>
+            <li class="home-item-directory">Easily navigable internal directory of tenants.</li>
+            <li class="home-item-profile">Internal profiles for tenants of the space, listing information about their work and contact details.</li>
+            <li class="home-item-news">Central newsfeed that encourages communication between owners and tenants.</li>
+            <li class="home-item-local">Easily navigable directory of local resources such as bars, cafes and other suppliers</li>
+        </ul>
+
+        <div class="register">
+            <div class="register-box" data-entity="register">
+                <p><strong>To find out more, simply enter your email address and we'll get back to you.</strong></p>
+                <input type="text" class="text" value="" />
+                <button class="button">Send</button>
+                <div class="errors"></div>
+            </div>
+            <div class="register-box hidden" data-entity="register-success">
+                <p><strong>Thank you for registering your interest. We'll get back to you very soon.</strong></p>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -80,8 +115,10 @@
             $('#id_username').focus();
         });
         setTimeout(function () {
-            $('#form-errors').fadeOut();
-            $('#id_username').focus();
+            if ($('#form-errors').is(':visible')) {
+                $('#form-errors').fadeOut();
+                $('#id_username').focus();
+            }
         }, 2000);
 
         $('.actions a.video').click(function () {
@@ -102,6 +139,36 @@
             });
             return false;
         });
+
+        // Register interest
+        var box = $('div[data-entity="register"]');
+        box.find('.button').bind('click', function () {
+            var button = $(this);
+            var email = box.find('.text').val();
+            if (email.length > 0 && !box.data('submitting')) {
+                box.data('submitting', true);
+                box.find('.text').attr('disabled', 'disabled');
+                button.addClass('loading');
+                box.find('.errors').empty();
+                $.post('/action/register-interest', {
+                    'email': trim(email)
+                }, function (response) {
+                    box.slideUp(250, function () { 
+                        box.data('submitting', false);
+                        box.find('.text').attr('disabled', null);
+                        button.removeClass('loading');
+                        $('div[data-entity="register-success"]').slideDown(250);
+                    });
+                }).fail(function (e) {
+                    box.data('submitting', false);
+                    box.find('.text').attr('disabled', null);
+                    button.removeClass('loading');
+                    var r = JSON.parse(e.responseText)
+                    box.find('.errors').text(r.reason);
+                });
+            }
+        });
+
     });
 </script>
 {% endblock %}

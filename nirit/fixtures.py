@@ -14,6 +14,7 @@ class Message(object):
         'invalid_token': 'invalid_token.html',                                  # Invalid Token message on Sign-up page
 
         ### Emails ###
+        'email_register_interest_text': 'emails/register_interest.txt',         # Home page widget email (text)
         'email_activation_required_text': 'emails/activation_required.txt',     # Activation Required Email (text)
         'email_activation_required_html': 'emails/activation_required.html',    # Activation Required Email (html)
         'email_new_company_text': 'emails/new_company_joined.txt',              # New Company Joined (text)

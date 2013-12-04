@@ -4,10 +4,12 @@ import json
 import operator
 import requests
 from django.core.exceptions import PermissionDenied
+from django.core.validators import validate_email
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login as auth_login
+from django.core.mail import mail_admins
 from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.template import RequestContext, loader
 from django.conf import settings
 from nirit.models import Page, UserProfile, Supplier
@@ -161,3 +163,37 @@ def supplier(request, slug):
     t = loader.get_template('nirit/supplier.html')
     c = RequestContext(request, context)
     return HttpResponse(t.render(c))
+
+
+def action(request, action):
+    """
+    Handle public actions.
+    Available through AJAX. POST only allowed.
+
+    """
+    if request.method == 'GET':
+        return HttpResponseBadRequest(json.dumps({
+            'status': '400',
+            'reason': 'Method Not Allowed.'
+        }), mimetype="application/json")
+
+    # Check email address is valid
+    try:
+        email = request.POST['email']
+        validate_email(email)
+    except Exception:
+        return HttpResponseBadRequest(json.dumps({
+            'status': '400',
+            'reason': 'Enter a valid email address.'
+        }), mimetype="application/json")
+
+    subject = 'Someone registered an interest to join Nirit'
+    text_content = Message().get('email_register_interest_text', {'email': email})
+    mail_admins(subject, text_content)
+
+    response = HttpResponse(json.dumps({
+        'status': '200',
+        'action': action
+    }), mimetype="application/json")
+    response['Content-Type'] = 'application/json; charset=utf-8'
+    return response
