@@ -73,7 +73,7 @@ def supplier(request, slug):
             raise Http404
         for candidate in candidates:
             # calculate distances
-            if not candidate['location']:
+            if not candidate['location'] or request.user.is_anonymous():
                 candidate['distance'] = 99999999999
             else:
                 geocode = [float(c) for c in candidate['location'].split(',')]
