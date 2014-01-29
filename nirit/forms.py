@@ -12,8 +12,8 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.models import get_current_site
-from nirit.models import Organization, OToken, UserProfile, Supplier
-from nirit.utils import validate_year, lookup_email
+from nirit.models import Organization, OToken, RegistrationProfile, UserProfile, Supplier
+from nirit.utils import validate_year, lookup_email, generate_activation_key
 from nirit.widgets import ImageWidget
 from nirit.fixtures import Message
 
@@ -55,9 +55,13 @@ class PassResetForm(PasswordResetForm):
             # Email subject *must not* contain newlines
             subject = ''.join(subject.splitlines())
             text_content = loader.render_to_string('messages/emails/password_reset.txt', c)
-            html_content = loader.render_to_string('messages/emails/password_reset.html', c)
+            if not settings.DEBUG:
+                html_content = loader.render_to_string('messages/emails/password_reset.html', c)
+            else:
+                html_content = None
             msg = EmailMultiAlternatives(subject, text_content, from_email, [user.email])
-            msg.attach_alternative(html_content, "text/html")
+            if html_content:
+                msg.attach_alternative(html_content, "text/html")
             msg.send()
 
 
@@ -173,29 +177,7 @@ class SignUpForm(forms.Form):
             # Find the company associated with this email address
             if cleaned_data.has_key('email'):
                 company = lookup_email(cleaned_data['email'])
-                if not company:
-                    # Email admins
-                    # make sure we only do that if the T&Cs have been checked though
-                    # also make sure the passord is set as it is cleared when errors are found,
-                    # so we might have someone submitting and forgetting to re-type the password
-                    if cleaned_data.has_key('agreed') and cleaned_data['agreed'] and cleaned_data.has_key('password'):
-                        subject = 'An Account Sign-Up has Failed'
-                        data = {
-                            'contact': ', '.join([
-                                'First Name: {}'.format(cleaned_data['first_name'] if cleaned_data.has_key('first_name') else ''),
-                                'Last Name: {}'.format(cleaned_data['last_name'] if cleaned_data.has_key('last_name') else ''),
-                                'Email: {}'.format(cleaned_data['email'] if cleaned_data.has_key('email') else ''),
-                                'BAC: {}'.format(cleaned_data['auth_code'] if cleaned_data.has_key('auth_code') else ''),
-                            ]),
-                        }
-                        text_content = Message().get('email_sign_up_failed_text', data)
-                        html_content = Message().get('email_sign_up_failed_html', data)
-                        mail_admins(subject, text_content, html_message=html_content)
-
-                    message = Message().get('email_failed')
-                    raise ValidationError(message)
-                else:
-                    cleaned_data['company'] = company
+                cleaned_data['company'] = company
         return cleaned_data
 
     def save(self, commit=True):
@@ -206,17 +188,18 @@ class SignUpForm(forms.Form):
         if commit:
             user.first_name = self.cleaned_data["first_name"]
             user.last_name = self.cleaned_data["last_name"]
-            user.save()
             if self.cleaned_data['company']:
-                # The User is a Staff Member
+                # The User is a Staff Member joining an existing company
+                user.save()
                 user.groups.add(Group.objects.get(name='Staff'))
                 # Assign it to the Company
                 profile = user.get_profile()
                 profile.company = self.cleaned_data['company']
                 profile.save()
-            else:
+            elif self.cleaned_data['auth_code']:
                 # The User is the Owner of a Company
                 # User will be able to create a Business Profile when he confirms his email address
+                user.save()
                 user.groups.add(Group.objects.get(name='Owner'))
                 profile = user.get_profile()
                 if self.cleaned_data.has_key('join') and self.cleaned_data['join']:
@@ -231,6 +214,24 @@ class SignUpForm(forms.Form):
                     profile.space = t.space
                 profile.status = UserProfile.VERIFIED # activate user
                 profile.save()
+            else:
+                # The user is an unaffiliated member
+                # Unaffiliated members are created as inactive, and sent an activation email
+                user.is_active = False
+                user.save()
+                # Create temporary activation profile
+                activation_key = generate_activation_key(user)
+                activation_link = '{}/member/activate/{}/'.format(settings.HOST, activation_key)
+                registration_profile = RegistrationProfile.objects.create(user=user,
+                                                                          activation_key=activation_key)
+                # Send email
+                subject = 'Activate Your Account'
+                data = {
+                    'link': activation_link,
+                    'expiration_days': settings.ACCOUNT_ACTIVATION_DAYS
+                }
+                message = Message().get('email_activation_text', data)
+                user.email_user(subject, message, settings.EMAIL_FROM)
         return user
 
 

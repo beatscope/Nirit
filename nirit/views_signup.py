@@ -1,6 +1,7 @@
 # nirit/views_signup.py
 import logging
 import json
+import re
 import requests
 from django.core.exceptions import PermissionDenied
 from django.core.mail import EmailMultiAlternatives, mail_admins
@@ -9,11 +10,13 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.template import RequestContext, loader
 from django.utils.encoding import force_unicode
 from django.conf import settings
-from nirit.models import Notice, OToken, CompanyProfile
+from nirit.models import Notice, OToken, CompanyProfile, RegistrationProfile
 from nirit.forms import CompanyForm, SignUpForm
 from nirit.fixtures import Message
 
 logger = logging.getLogger('nirit.signup')
+
+SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
 
 def sign_up(request):
@@ -36,10 +39,13 @@ def sign_up(request):
                     'link': '{}/company/{}/{}/staff'.format(settings.HOST, company.slug, company.codename)
                 }
                 text_content = Message().get('email_sign_up_success_text', data)
-                html_content = Message().get('email_sign_up_success_html', data)
+                if not settings.DEBUG:
+                    html_content = Message().get('email_sign_up_success_html', data)
+                else:
+                    html_content = None
                 company.mail_editors(subject, text_content, html_content)
                 return HttpResponseRedirect('/member/sign-up/complete')
-            else:
+            elif user.is_active:
                 # Owner User created
                 # Send activation email
                 subject = 'Activate your Nirit account'
@@ -50,11 +56,19 @@ def sign_up(request):
                     'link': '{}/member/sign-up/activate?token={}'.format(settings.HOST, form.cleaned_data['auth_code'])
                 }
                 text_content = Message().get('email_activation_required_text', data)
-                html_content = Message().get('email_activation_required_html', data)
+                if not settings.DEBUG:
+                    html_content = Message().get('email_activation_required_html', data)
+                else:
+                    html_content = None
                 msg = EmailMultiAlternatives(subject, text_content, from_email, [to])
-                msg.attach_alternative(html_content, "text/html")
+                if html_content:
+                    msg.attach_alternative(html_content, "text/html")
                 msg.send()
                 return HttpResponseRedirect('/member/sign-up/activation-required')
+            else:
+                # Unaffiliated User created.
+                return HttpResponseRedirect('/member/sign-up/registration-complete')
+                
     else:
         form = SignUpForm()
         explanation = Message().get('welcome')
@@ -67,16 +81,32 @@ def sign_up(request):
     return HttpResponse(t.render(c))
 
 def complete(request):
+    """
+    The registration complete page for Affiliated Members.
+
+    """
     t = loader.get_template('registration/sign_up_complete.html')
     c = RequestContext(request)
     return HttpResponse(t.render(c))
 
+
 def activation_required(request):
+    """
+    The registration complete page for Owners.
+    Owners are required to activate their accounts.
+    
+    """
     t = loader.get_template('registration/sign_up_activation_required.html')
     c = RequestContext(request)
     return HttpResponse(t.render(c))
 
+
 def activate(request):
+    """
+    Owner activation page.
+    Provides the form to create a Company Profile when activated successfully.
+
+    """
     form = None
     context = {}
     if request.GET.has_key('token'):
@@ -152,7 +182,10 @@ def activate(request):
                             'link': '{}/member/account'.format(settings.HOST)
                         }
                         text_content = Message().get('email_new_company_text', data)
-                        html_content = Message().get('email_new_company_html', data)
+                        if not settings.DEBUG:
+                            html_content = Message().get('email_new_company_html', data)
+                        else:
+                            html_content = None
                         mail_admins(subject, text_content, html_message=html_content)
                         t.space.mail_managers(subject, text_content, html_content)
 
@@ -172,6 +205,12 @@ def activate(request):
 
 
 def join(request):
+    """
+    Handles Company (Owners) registration in one single form.
+    The form requires to be sent from a manager in an existing Space.
+    Failing that, the token will not exist.
+
+    """
     form = None
     company_form = None
     context = {}
@@ -253,7 +292,10 @@ def join(request):
                                 'link': '{}/member/account'.format(settings.HOST)
                             }
                             text_content = Message().get('email_new_company_text', data)
-                            html_content = Message().get('email_new_company_html', data)
+                            if not settings.DEBUG:
+                                html_content = Message().get('email_new_company_html', data)
+                            else:
+                                html_content = None
                             mail_admins(subject, text_content, html_message=html_content)
                             t.space.mail_managers(subject, text_content, html_content)
 
@@ -274,3 +316,32 @@ def join(request):
     c = RequestContext(request, context)
     return HttpResponse(t.render(c))
 
+
+def registration_complete(request):
+    """
+    The registration complete page for Unaffiliated Members.
+    Unaffiliated Members required to activate their accounts.
+
+    """
+    t = loader.get_template('registration/sign_up_registration_complete.html')
+    c = RequestContext(request)
+    return HttpResponse(t.render(c))
+
+
+def registration_activate(request, activation_key):
+    """
+    Activate Unaffiliated Member, given an activation_key.
+
+    """
+    # Make sure the key we're trying conforms to the pattern of a
+    # SHA1 hash; if it doesn't, no point trying to look it up in
+    # the database.
+    if SHA1_RE.search(activation_key):
+        try:
+            profile = RegistrationProfile.objects.get(activation_key=activation_key)
+            activated_user = profile.activate_user(activation_key)
+        except RegistrationProfile.DoesNotExist:
+            pass
+    t = loader.get_template('registration/sign_up_activation_complete.html')
+    c = RequestContext(request)
+    return HttpResponse(t.render(c))

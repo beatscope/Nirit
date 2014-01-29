@@ -1,0 +1,12 @@
+{% autoescape off %}
+Thanks for registering with Nirit.
+
+Please follow the link below to activate your account:
+
+{{ link }}
+
+Please note that this link will expire in {{ expiration_days }} days.
+
+Regards,
+The team @ Nirit
+{% endautoescape %}

@@ -336,7 +336,10 @@ def amenities_request(request, edit=False):
     else:
         subject = 'A member has requested a new Supplier/Amenity'
     text_content = Message().get('email_supplier_details_text', data)
-    html_content = Message().get('email_supplier_details_html', data)
+    if not settings.DEBUG:
+        html_content = Message().get('email_supplier_details_html', data)
+    else:
+        html_content = None
     mail_admins(subject, text_content, html_message=html_content)
 
     response = HttpResponse(json.dumps({

@@ -35,7 +35,13 @@ def landing(request):
         context['form'] = form
     else:
         # Redirect authenticated user to their primary space's Notice Board
-        destination = 'board/{}'.format(request.user.get_profile().space.link)
+        # Owners and Affiliated Members have their primary Space automatically set on registration
+        if request.user.get_profile().space:
+            destination = 'board/{}'.format(request.user.get_profile().space.link)
+        else:
+            # This must be an Unaffiliated Member, who is not a Member of any Spaces yet.
+            # Redirect to list of Spaces
+            destination = 'spaces/'
         return HttpResponseRedirect(destination)
 
     t = loader.get_template('nirit/index.html')
@@ -60,6 +66,12 @@ def page(request, page):
         'title': p.title,
         'body': p.body
     })
+    return HttpResponse(t.render(c))
+
+
+def spaces(request):
+    t = loader.get_template('nirit/spaces.html')
+    c = RequestContext(request)
     return HttpResponse(t.render(c))
 
 

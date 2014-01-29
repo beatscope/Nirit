@@ -156,12 +156,16 @@ class NoticeListView(generics.ListAPIView):
                 # exclude notices posted by a BANNED company
                 # we only exclude Notices sent in the User's Active Space,
                 # where the Company is banned
-                company_profile = CompanyProfile.objects.get(space=profile.space, organization=profile.company)
-                if company_profile.status == CompanyProfile.BANNED:
-                    queryset = Notice.objects.none()
+                try:
+                    company_profile = CompanyProfile.objects.get(space=profile.space, organization=profile.company)
+                    if company_profile.status == CompanyProfile.BANNED:
+                        queryset = Notice.objects.none()
+                except CompanyProfile.DoesNotExist:
+                    pass
 
         # By default, we return Notices for the User's Active Space
-        queryset = queryset.filter(space=self.request.user.get_profile().space)
+        if self.request.user.get_profile().space:
+            queryset = queryset.filter(space=self.request.user.get_profile().space)
         # exclude notices posted by a BANNED user
         queryset = queryset.exclude(sender__profile__status=UserProfile.BANNED)
         # order all results by latest updated

@@ -362,12 +362,15 @@ def contact(request, codename):
                 'link': '{}/member/{}'.format(settings.HOST, request.user.get_profile().codename),
                 'subject': request.POST['subject']
             })
-            html_content = Message().get('email_company_contact_html', {
-                'name': request.user.get_profile().name,
-                'company': company.name,
-                'link': '{}/member/{}'.format(settings.HOST, request.user.get_profile().codename),
-                'subject': linebreaks(request.POST['subject'])
-            }) 
+            if not settings.DEBUG:
+                html_content = Message().get('email_company_contact_html', {
+                    'name': request.user.get_profile().name,
+                    'company': company.name,
+                    'link': '{}/member/{}'.format(settings.HOST, request.user.get_profile().codename),
+                    'subject': linebreaks(request.POST['subject'])
+                }) 
+            else:
+                html_content = None
             company.mail_editors(subject, text_content, html_content)
     except Organization.DoesNotExist:
         return HttpResponseBadRequest(json.dumps({
@@ -429,7 +432,10 @@ def invite_staff(request, codename):
                     'link': '{}/member/sign-up'.format(settings.HOST),
                 }
                 text_content = Message().get('email_invite_members_text', c)
-                html_content = Message().get('email_invite_members_html', c)
+                if not settings.DEBUG:
+                    html_content = Message().get('email_invite_members_html', c)
+                else:
+                    html_content = None
                 from_email = settings.EMAIL_FROM
                 msg = EmailMultiAlternatives(subject, text_content, from_email, recipients_list)
                 if html_content:
@@ -490,7 +496,10 @@ def invite_company(request, codename):
         'link': '{}/member/sign-up/join?token={}'.format(settings.HOST, token.key),
     }
     text_content = Message().get('email_invite_company_text', c)
-    html_content = Message().get('email_invite_company_html', c)
+    if not settings.DEBUG:
+        html_content = Message().get('email_invite_company_html', c)
+    else:
+        html_content = None
     from_email = settings.EMAIL_FROM
     msg = EmailMultiAlternatives(subject, text_content, from_email, [email])
     if html_content:

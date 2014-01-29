@@ -19,24 +19,33 @@ urlpatterns = patterns('',
     url(r'^$', 'nirit.views_public.landing'),
     url(r'^sitemap.xml', 'nirit.views_public.sitemap'),
     url(pages_regex, 'nirit.views_public.page'),
-    url(r'^supplier/(?P<slug>.+)$', 'nirit.views_public.supplier'),
-    url(r'^action/register-interest$', 'nirit.views_public.action', {'action': 'register-interest'}),
+    url(r'^spaces/$', 'nirit.views_public.spaces'),
+    url(r'^supplier/(?P<slug>.+)/$', 'nirit.views_public.supplier'),
+    url(r'^action/register-interest/$', 'nirit.views_public.action', {'action': 'register-interest'}),
 
-    url(r'^board/[\w-]*/(?P<codename>\w+)', 'nirit.views.board', name='board'),
+    url(r'^board/[\w-]*/(?P<codename>\w+)/', 'nirit.views.board', name='board'),
     url(r'^board/$', 'nirit.views.board'),
-    url(r'^directory/[\w-]*/(?P<codename>\w+)', 'nirit.views.directory'),
+    url(r'^directory/[\w-]*/(?P<codename>\w+)/', 'nirit.views.directory'),
     url(r'^directory/$', 'nirit.views.directory'),
-    url(r'^amenities/[\w-]*/(?P<codename>\w+)', 'nirit.views.amenities'),
+    url(r'^amenities/[\w-]*/(?P<codename>\w+)/', 'nirit.views.amenities'),
     url(r'^amenities/$', 'nirit.views.amenities'),
-    url(r'^amenities/request$', 'nirit.views.amenities_request'),
-    url(r'^amenities/request-edit$', 'nirit.views.amenities_request', {'edit': True}),
+    url(r'^amenities/request/$', 'nirit.views.amenities_request'),
+    url(r'^amenities/request-edit/$', 'nirit.views.amenities_request', {'edit': True}),
 
     # Sign-up
-    url(r'^member/sign-up$', 'nirit.views_signup.sign_up'),
-    url(r'^member/sign-up/complete$', 'nirit.views_signup.complete'),
-    url(r'^member/sign-up/activation-required$', 'nirit.views_signup.activation_required'),
-    url(r'^member/sign-up/activate$', 'nirit.views_signup.activate'),
-    url(r'^member/sign-up/join$', 'nirit.views_signup.join'),
+    url(r'^member/sign-up/$', 'nirit.views_signup.sign_up'),
+
+    # Sign-up - Affiliated
+    url(r'^member/sign-up/complete/$', 'nirit.views_signup.complete'),
+
+    # Sign-up - Owners
+    url(r'^member/sign-up/activation-required/$', 'nirit.views_signup.activation_required'),
+    url(r'^member/sign-up/activate/$', 'nirit.views_signup.activate'),
+    url(r'^member/sign-up/join/$', 'nirit.views_signup.join'),
+
+    # Sign-up - Unaffiliated
+    url(r'^member/sign-up/registration-complete/$', 'nirit.views_signup.registration_complete'),
+    url(r'^member/activate/(?P<activation_key>\w+)/$', 'nirit.views_signup.registration_activate'),
 
     # Member
     url(r'^member/password/reset/$', 'django.contrib.auth.views.password_reset',
@@ -52,22 +61,22 @@ urlpatterns = patterns('',
             'post_reset_redirect' : '/member/password/reset/complete/'
         }),
     url(r'^member/password/reset/complete/$', 'django.contrib.auth.views.password_reset_complete'),
-    url(r'^member/password/change', 'django.contrib.auth.views.password_change',
+    url(r'^member/password/change/', 'django.contrib.auth.views.password_change',
         {
             'post_change_redirect': '/'
         }),
-    url(r'^member/set-preference/(?P<setting>\w+)/(?P<value>\w+)$', 'nirit.views_member.set_preference'),
-    url(r'^member/account/edit$', 'nirit.views_member.edit_profile'),
-    url(r'^member/account$', 'nirit.views_member.profile'),
-    url(r'^member/(?P<codename>.+)$', 'nirit.views_member.profile'),
+    url(r'^member/set-preference/(?P<setting>\w+)/(?P<value>\w+)/$', 'nirit.views_member.set_preference'),
+    url(r'^member/account/edit/$', 'nirit.views_member.edit_profile'),
+    url(r'^member/account/$', 'nirit.views_member.profile'),
+    url(r'^member/(?P<codename>.+)/$', 'nirit.views_member.profile'),
     url(r'^member/$', 'nirit.views_member.profile'),
     url(r'^logout', 'django.contrib.auth.views.logout_then_login'),
 
     # Company
-    url(r'^company/[\w-]*/(?P<codename>\w+)/board$', 'nirit.views_company.board'),
-    url(r'^company/[\w-]*/(?P<codename>\w+)/edit$', 'nirit.views_company.edit_profile'),
-    url(r'^company/[\w-]*/(?P<codename>\w+)/staff$', 'nirit.views_company.staff'),
-    url(r'^company/[\w-]*/(?P<codename>\w+)$', 'nirit.views_company.profile'),
+    url(r'^company/[\w-]*/(?P<codename>\w+)/board/$', 'nirit.views_company.board'),
+    url(r'^company/[\w-]*/(?P<codename>\w+)/edit/$', 'nirit.views_company.edit_profile'),
+    url(r'^company/[\w-]*/(?P<codename>\w+)/staff/$', 'nirit.views_company.staff'),
+    url(r'^company/[\w-]*/(?P<codename>\w+)/$', 'nirit.views_company.profile'),
     url(r'^company$', 'nirit.views_company.profile'),
 
     # AJAX Interfaces

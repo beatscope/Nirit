@@ -20,6 +20,11 @@ from nirit.fixtures import DEPARTMENTS, SUPPLIER_TYPES
 from nirit import utils
 from markitup.fields import MarkupField
 
+try:
+    from django.utils.timezone import now as datetime_now
+except ImportError:
+    datetime_now = datetime.datetime.now
+
 logger = logging.getLogger('nirit.models')
 
 
@@ -534,6 +539,83 @@ def create_auth_token(sender, instance, created, **kwargs):
 
 post_save.connect(create_user_profile, sender=User)
 post_save.connect(create_auth_token, sender=User)
+
+
+class RegistrationProfile(models.Model):
+    """
+    A simple profile which stores an activation key for use during
+    unaffiliated user account registration.
+
+    """
+    ACTIVATED = u"ALREADY_ACTIVATED"
+
+    user = models.ForeignKey(User, unique=True)
+    activation_key = models.CharField(max_length=40)
+
+    class Meta:
+        verbose_name = 'registration profile'
+        verbose_name_plural = 'registration profiles'
+
+    def __unicode__(self):
+        return u"Registration information for %s" % self.user
+
+    def activate_user(self, activation_key):
+        """
+        Validate an activation key and activate the corresponding
+        ``User`` if valid.
+
+        If the key is valid and has not expired, return the ``User``
+        after activating.
+
+        If the key is not valid or has expired, return ``False``.
+
+        If the key is valid but the ``User`` is already active,
+        return ``False``.
+
+        To prevent reactivation of an account which has been
+        deactivated by site administrators, the activation key is
+        reset to the string constant ``RegistrationProfile.ACTIVATED``
+        after successful activation.
+
+        """
+        if not self.activation_key_expired():
+            user = self.user
+            user.is_active = True
+            user.save()
+            profile = user.get_profile()
+            profile.status = UserProfile.VERIFIED
+            profile.save()
+            self.activation_key = self.ACTIVATED
+            self.save()
+            return user
+        return False
+
+    def activation_key_expired(self):
+        """
+        Determine whether this ``RegistrationProfile``'s activation
+        key has expired, returning a boolean -- ``True`` if the key
+        has expired.
+
+        Key expiration is determined by a two-step process:
+
+        1. If the user has already activated, the key will have been
+           reset to the string constant ``ACTIVATED``. Re-activating
+           is not permitted, and so this method returns ``True`` in
+           this case.
+
+        2. Otherwise, the date the user signed up is incremented by
+           the number of days specified in the setting
+           ``ACCOUNT_ACTIVATION_DAYS`` (which should be the number of
+           days after signup during which a user is allowed to
+           activate their account); if the result is less than or
+           equal to the current date, the key has expired and this
+           method returns ``True``.
+
+        """
+        expiration_date = datetime.timedelta(days=settings.ACCOUNT_ACTIVATION_DAYS)
+        return self.activation_key == self.ACTIVATED or \
+               (self.user.date_joined + expiration_date <= datetime_now())
+    activation_key_expired.boolean = True
 
 
 class Page(models.Model):

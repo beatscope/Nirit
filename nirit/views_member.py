@@ -110,10 +110,13 @@ def set_status(request, codename, action):
                 'first_name': profile.name,
                 'link': '{}/member/{}'.format(settings.HOST, profile.codename)
             })
-            html_content = Message().get('email_sign_up_activated_html', {
-                'first_name': profile.name,
-                'link': '{}/member/{}'.format(settings.HOST, profile.codename)
-            })
+            if not settings.DEBUG:
+                html_content = Message().get('email_sign_up_activated_html', {
+                    'first_name': profile.name,
+                    'link': '{}/member/{}'.format(settings.HOST, profile.codename)
+                })
+            else:
+                html_content = None
             profile.mail(subject, text_content, html_content)
         elif action == 'ban':
             profile.status = UserProfile.BANNED
@@ -244,12 +247,15 @@ def contact(request, codename):
                 'link': '{}/member/{}'.format(settings.HOST, request.user.get_profile().codename),
                 'subject': request.POST['subject']
             })
-            html_content = Message().get('email_member_contact_html', {
-                'name': request.user.get_profile().name,
-                'company': request.user.get_profile().company.name,
-                'link': '{}/member/{}'.format(settings.HOST, request.user.get_profile().codename),
-                'subject': linebreaks(request.POST['subject'])
-            }) 
+            if not settings.DEBUG:
+                html_content = Message().get('email_member_contact_html', {
+                    'name': request.user.get_profile().name,
+                    'company': request.user.get_profile().company.name,
+                    'link': '{}/member/{}'.format(settings.HOST, request.user.get_profile().codename),
+                    'subject': linebreaks(request.POST['subject'])
+                }) 
+            else:
+                html_content = None
             from_email = settings.EMAIL_FROM
             recipients_list = [profile.user.email]
             if recipients_list:

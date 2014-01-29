@@ -1,0 +1,26 @@
+{% extends "nirit/base.html" %}
+{% load static %}
+
+{% block title %}Nirit Spaces{% endblock %}
+
+{% block content %}
+<div class="content spaces">
+
+    <div id="main">
+
+        <h1>
+            <span>Recently Added Spaces</span>
+        </h1>
+
+    </div>
+
+    <div id="sidebar">
+        <div class="box">
+            <div class="ad-slot">
+                {% include "adverts/mpu.html" %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

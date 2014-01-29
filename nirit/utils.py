@@ -4,9 +4,11 @@ Common Utilities.
 
 """
 import datetime
+import hashlib
 import json
 import logging
 import math
+import random
 import re
 import requests
 import urllib2
@@ -67,6 +69,23 @@ def lookup_email(email):
             except:
                 return None
     return None
+
+
+def generate_activation_key(user):
+    """
+    Create an activation key for the given ``User``.
+
+    The activation key will be a SHA1 hash, 
+    generated from a combination of the ``User``'s
+    username and a random salt.
+
+    """
+    salt = hashlib.sha1(str(random.random())).hexdigest()[:5]
+    username = user.username
+    if isinstance(username, unicode):
+        username = username.encode('utf-8')
+    activation_key = hashlib.sha1(salt+username).hexdigest()
+    return activation_key
 
 
 BING_MAPS_KEY = settings.BING_MAPS_KEY
