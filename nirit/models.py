@@ -1,6 +1,5 @@
 # nirit/models.py
 import logging
-import base64
 import datetime
 import hashlib
 import random
@@ -10,7 +9,6 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.core.mail import EmailMultiAlternatives
 from django.contrib.auth.models import User
-from django.utils.crypto import pbkdf2, get_random_string
 from django.utils.html import strip_tags, linebreaks
 from django.utils.encoding import force_unicode
 from django.utils.timesince import timesince
@@ -105,9 +103,13 @@ class Notice(models.Model):
             spaces = self.space_set.all()
             # check the status of the reply company is each space
             for space in spaces:
-                space_profile = CompanyProfile.objects.get(space=space, organization=reply.sender.profile.company)
-                if space_profile.status == CompanyProfile.BANNED:
-                    exclude.append(reply.id)
+                try:
+                    space_profile = CompanyProfile.objects.get(space=space, organization=reply.sender.profile.company)
+                except CompanyProfile.DoesNotExist:
+                    pass
+                else:
+                    if space_profile.status == CompanyProfile.BANNED:
+                        exclude.append(reply.id)
         if exclude:
             replies = replies.exclude(pk__in=exclude)
         return replies
@@ -234,10 +236,12 @@ class Organization(models.Model):
 class Space(models.Model):
     name = models.CharField(max_length=200, unique=True)
     codename = models.CharField(max_length=64, unique=True, null=True, blank=True)
+    created = models.DateField(auto_now_add=True)
+    managed = models.BooleanField(default=True, help_text="Whether the Space requires confirmation.")
     postcode = models.CharField("Postcode", max_length=8,
                                 help_text='Please include the gap (space) between the outward and inward codes')
+    geocode = models.CharField("Geocode", max_length=255, null=True, blank=True)
     notices = models.ManyToManyField(Notice, null=True, blank=True)
-
     use_building = models.BooleanField("Use 'Building' field", default=True,
                                        help_text="Whether to display the 'Building' field on Company Profiles.")
     use_floor = models.BooleanField("Use 'Floor' field", default=True,
@@ -247,9 +251,13 @@ class Space(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        # generate codename from name
+        # generate codename from name on creation
         if self.id is None:
             self.codename = hashlib.sha256(self.name).hexdigest()
+        # update geocode
+        if self.postcode:
+            self.postcode = self.postcode.upper()
+            self.set_geocode()
         super(Space, self).save(*args, **kwargs)
 
     @property
@@ -261,35 +269,26 @@ class Space(models.Model):
         return '{}/{}'.format(self.slug, self.codename)
 
     @property
-    def geocode(self):
-        try:
-            geocode = Geocode.objects.get(code=self.postcode)
-        except Geocode.DoesNotExist:
-            # If the geocode for this postcode has not yet been stored,
-            # fetch it
-            try:
-                point = utils.get_postcode_point(self.postcode)
-            except:
-                # The function raises an Exception when the postcode does not exist
-                # we store the resulst as (0, 0) to avoid fetching the API every time
-                point = (0.0, 0.0)
-            geocode = Geocode.objects.create(code=self.postcode, latitude=point[0], longitude=point[1])
-        return geocode
-
-    @property
     def members(self):
         """
         Return all members througout all the Organizations of the Space.
+        Plus all Unaffiliated Members.
         Managers are considered members of their Spaces.
 
         """
+        # Find Members affiliated to Organizations in the Space
         profiles = self.space_profile.filter(space=self)\
-                                        .exclude(status=CompanyProfile.BANNED)
+                                     .exclude(status=CompanyProfile.BANNED)
         ids = []
         for profile in profiles:
             ids.extend([m['id'] for m in profile.organization.members.values('id')])
+        # Add Space Unaffiliated Users
+        approved_members = [m['member__id'] for m in Membership.objects.filter(space=self, status=Membership.APPROVED).values('member__id')]
+        approved_users = [u['id'] for u in User.objects.filter(profile__id__in=approved_members).values('id')]
+        ids.extend(approved_users)
+        # Query DB
         members = User.objects.filter(pk__in=ids)\
-                              .filter(groups__name__in=['Owner','Rep','Staff','Manager'])\
+                              .filter(groups__name__in=['Owner','Rep','Staff','Manager','Member'])\
                               .exclude(profile__status=UserProfile.BANNED)\
                               .distinct()\
                               .order_by('first_name', 'last_name', 'username')
@@ -314,9 +313,20 @@ class Space(models.Model):
         return managers
 
     def get_pending_companies(self):
-        # Return pending companies
+        """
+        Return pending companies.
+
+        """
         pending_profiles = self.space_profile.filter(status=CompanyProfile.PENDING)
         return Organization.objects.filter(pk__in=[p.organization.id for p in pending_profiles])
+
+    def get_pending_members(self):
+        """
+        Return pending members.
+        
+        """
+        memberships = Membership.objects.filter(space=self, status=Membership.PENDING)
+        return [m.member for m in memberships]
 
     def get_notices(self):
         notices = self.notices.filter(is_reply=False)\
@@ -335,6 +345,49 @@ class Space(models.Model):
             if html_content:
                 msg.attach_alternative(html_content, "text/html")
             msg.send()
+
+    def set_geocode(self):
+        if not self.geocode or self.geocode == '0.0,0.0':
+            try:
+                geocode = Geocode.objects.get(code=self.postcode)
+            except Geocode.DoesNotExist:
+                # If the geocode for this postcode has not yet been stored,
+                # fetch it
+                try:
+                    point = utils.get_postcode_point(self.postcode)
+                except:
+                    # The function raises an Exception when the postcode does not exist
+                    # we store the resulst as (0, 0) to avoid fetching the API every time
+                    point = (0.0, 0.0)
+                geocode = Geocode.objects.create(code=self.postcode, latitude=point[0], longitude=point[1])
+            self.geocode = str(geocode)
+
+    def get_distance(self, geocode):
+        """
+        Calculate the distance, in miles, between the given geocode
+        and the space.
+        The geocode must be a string representation of the floating point.
+        e.g.: '51.5217170715,-0.0723014622927'
+
+        """
+        if not self.geocode or self.geocode == '0.0,0.0' or geocode == '0.0,0.0':
+            return {
+                'distance_display': 'N/A',
+                'distance': 99999999999
+            }
+        else:
+            geocode = geocode.split(',')
+            space_geocode = self.geocode.split(',')
+            distance = utils.get_distance(float(geocode[0]),
+                                          float(geocode[1]),
+                                          float(space_geocode[0]),
+                                          float(space_geocode[1]))[0]
+            unit = 'mile' if round(distance, 1) <= 1.1 else 'miles'
+            distance_display = '{} {}'.format(round(distance, 1), unit)
+            return {
+                'distance_display': distance_display,
+                'distance': distance
+            }
 
 
 class CompanyProfile(models.Model):
@@ -435,7 +488,8 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, related_name='profile')
     codename = models.CharField(max_length=255, unique=True, null=True, blank=True)
     company = models.ForeignKey(Organization, null=True, blank=True, related_name='company', on_delete=models.SET_NULL)
-    space = models.ForeignKey(Space, null=True, blank=True, help_text="Primary space", on_delete=models.SET_NULL)
+    space = models.ForeignKey(Space, null=True, blank=True, help_text="Primary space", on_delete=models.SET_NULL, related_name='primary_space')
+    spaces_joined = models.ManyToManyField(Space, null=True, blank=True, related_name='space_members', through='Membership')
     starred = models.ManyToManyField(Notice, null=True, blank=True)
     networked = models.ManyToManyField(Organization, null=True, blank=True, related_name='networked')
     thumbnail = models.ImageField(upload_to='./member/%Y/%m/%d', null=True, blank=True, \
@@ -445,6 +499,10 @@ class UserProfile(models.Model):
     status = models.IntegerField("Verification Status", choices=STATUS_CHOICES, default=PENDING, \
                                  null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        self.set_codename()
+        super(UserProfile, self).save(*args, **kwargs)
+
     def __unicode__(self):
         return self.name
 
@@ -452,8 +510,7 @@ class UserProfile(models.Model):
     def name(self):
         if self.user.get_full_name():
             return self.user.get_full_name()
-        else:
-            return self.codename
+        return ''
 
     @property
     def roles(self):
@@ -466,7 +523,9 @@ class UserProfile(models.Model):
         if self.company:
             profiles = CompanyProfile.objects.filter(organization=self.company)
             spaces = [profile.space for profile in profiles]
-        return spaces
+            return spaces
+        else:
+            return self.get_spaces()
 
     @property
     def token(self):
@@ -493,26 +552,21 @@ class UserProfile(models.Model):
     def is_pending(self):
         return self.status == self.PENDING
 
-    def generate_hash(self):
-        # Generate a random binary string
-        # Configured to use PBKDF2 + HMAC + SHA256 with 10000 iterations.
-        # The result is a 64 byte binary string
-        hash = pbkdf2(self.user.username, get_random_string(), 10000, digest=hashlib.sha256)
-        self.codename = base64.b64encode(hash).decode('ascii').strip()
-        self.save()
-
-    def generate_hash(self):
-        # Generate member codename based on his full name
-        if not self.codename:
-            # Slug format: initials(fullname)/random(1-999)/count(fullname)/random(1-999)*count(fullname)
-            groups = self.user.first_name.split()
-            groups.extend(self.user.last_name.split())
-            initials = ''.join(['{}.'.format(n[0]) for n in groups if n and re.search(r'[^-_0-9a-zA-Z]', n) is None])
+    def set_codename(self):
+        # Generate member codename based on his full name.
+        # The codename will be the slug
+        if not self.codename and self.name:
+            # Slug format: initials(fullname)/random(1-999)/(1+count(fullname)/random(1-999)*(1+count(fullname))
+            initials = ''.join(['{}.'.format(n[0]) for n in self.name.split() if n and re.search(r'[^-_0-9a-zA-Z]', n) is None])
             initials = initials.lower()
             count = UserProfile.objects.filter(codename__contains=initials).count()
-            slug = '{}/{}/{}/{}'.format(initials, random.randint(1, 999), count, count * random.randint(1, 999))
+            slug = '{}/{}/{}/{}'.format(initials, random.randint(1, 999), count+1, (count+1) * random.randint(1, 999))
             self.codename = slug
-            self.save()
+
+    def get_spaces(self, status=1):
+        memberships = Membership.objects.filter(member=self, status=status)\
+                                        .order_by('space__name')
+        return [m.space for m in memberships]
 
     def get_starred(self):
         # Convert logged-in user starred notices into list of IDs
@@ -525,19 +579,20 @@ class UserProfile(models.Model):
             msg.attach_alternative(html_content, "text/html")
         msg.send()
 
-
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
+def set_user_profile(sender, instance, created, **kwargs):
+    # Only create associated UserProfile on creation,
+    # also make sure they are not created when used in the TestCase
+    if created and not kwargs.get('raw', False):
         profile = UserProfile.objects.create(user=instance)
     else:
+        # On User.save(), update UserProfile as well
         profile = instance.get_profile()
-        profile.generate_hash()
+    profile.save()
+post_save.connect(set_user_profile, sender=User)
 
 def create_auth_token(sender, instance, created, **kwargs):
     if created:
-        Token.objects.create(user=instance)
-
-post_save.connect(create_user_profile, sender=User)
+        token = Token.objects.create(user=instance)
 post_save.connect(create_auth_token, sender=User)
 
 
@@ -616,6 +671,25 @@ class RegistrationProfile(models.Model):
         return self.activation_key == self.ACTIVATED or \
                (self.user.date_joined + expiration_date <= datetime_now())
     activation_key_expired.boolean = True
+
+
+class Membership(models.Model):
+    PENDING = 0
+    APPROVED = 1
+    REJECTED = 2
+    STATUSES = (
+        (PENDING, 'Pending'),
+        (APPROVED, 'Approved'),
+        (REJECTED, 'Rejected'),
+    )
+
+    space = models.ForeignKey(Space)
+    member = models.ForeignKey(UserProfile)
+    date_joined = models.DateField(auto_now_add=True)
+    status = models.IntegerField(choices=STATUSES, default=PENDING)
+
+    def __unicode__(self):
+        return u'{} @ {} [{}]'.format(self.member, self.space, self.get_status_display())
 
 
 class Page(models.Model):

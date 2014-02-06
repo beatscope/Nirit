@@ -1,0 +1,48 @@
+{% extends "nirit/base.html" %}
+{% load i18n admin_static %}
+
+{% block content %}
+<div class="content password edit">
+    <div class="padded">
+        <h1>Login required</h1>
+        <p class="description">This page is for members only. Please sign-in using the form below.</p>
+
+        <div id="login-card">
+            {% if form.errors %}
+            <div id="form-errors">
+                <p>Your email and password didn't match our records. Please try again.</p>
+            </div>
+            {% endif %}
+            <form method="post" action="">
+                {% csrf_token %}
+                <div class="form-field"><label>Email Address</label>{{ form.username }}</div>
+                <div class="form-field"><label>{{ form.password.label_tag }}</label>{{ form.password }}</div>
+                <input type="hidden" name="next" value="{{ next }}" />
+                <ul id="login-links">
+                    <li><a href="/member/password/reset/">Forgot password</a></li>
+                    <li><a href="/member/sign-up">Sign-up</a></li>
+                    <li><input type="submit" class="button" value="Login" /></li>
+                </ul>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}{{ block.super }}
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#id_username').focus();
+        $('#form-errors').bind('click', function () {
+            $(this).hide();
+            $('#id_username').focus();
+        });
+        setTimeout(function () {
+            if ($('#form-errors').is(':visible')) {
+                $('#form-errors').fadeOut();
+                $('#id_username').focus();
+            }
+        }, 2000);
+    });
+</script>
+{% endblock %}

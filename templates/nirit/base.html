@@ -4,10 +4,10 @@
     <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
     <title>{% block title %}Nirit{% endblock %}</title>
     <link rel="icon" href="{{ STATIC_URL }}/images/favicon.ico" type="image/x-icon">
-    <link href="{% static "css/nirit.min.css" %}" type="text/css" rel="stylesheet" media="all" />
+    <link href="{% static "css/nirit-1.2.0.min.css" %}" type="text/css" rel="stylesheet" media="all" />
     {% block extrastyle %}{% endblock %}
     <script type="text/javascript" src="{% static "js/jquery-1.9.1.min.js" %}"></script>
-    <script type="text/javascript" src="{% static "js/nirit.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/nirit-1.2.0.min.js" %}"></script>
     <script type="text/javascript">
         NIRIT.STATIC_URL = '{{ STATIC_URL }}';
         NIRIT.MEDIA_URL = '{{ MEDIA_URL }}';
@@ -36,7 +36,11 @@
                 <div id="logo"><a href="/"><img src="{{ STATIC_URL}}/images/nirit-site-logo.png" witdh="69" height="35" alt="Nirit" /></a></div>
                 <div id="user-corner">
                     {% if user.is_authenticated %}
-                    <h3><a href="/board/{{ user.get_profile.space.link }}">{{ user.get_profile.space.name }}</a></h3>
+                        <h3>{% if user.get_profile.company %}
+                        <a href="/board/{{ user.get_profile.space.link }}">{{ user.get_profile.space.name }}</a>
+                        {% else %}
+                        <a href="/member/spaces/">{{ user.get_profile.space.name }}</a>
+                        {% endif %}</h3>
                     {% endif %}
                     <div class="today">{% now "jS F Y" %}</div>
                     {% if user.is_authenticated %}
@@ -81,6 +85,7 @@
             <ul class="container">
                 <li><a href="/what-is-nirit">What's Nirit</a></li>
                 <li><a href="/member/sign-up">Sign-up</a></li>
+                <li><a href="/spaces/">Spaces</a></li>
                 <li><a href="https://nirit.uservoice.com/" target="_blank">Feedback &amp; Support</a></li>
                 <li class="inline"><a href="/terms-of-use">Terms &amp; conditions</a></li>
                 <li class="inline"><a href="/privacy-policy">Privacy policy</a></li>

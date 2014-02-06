@@ -4,7 +4,8 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from nirit.models import Space, Organization, Notice, Expertise, \
-                         UserProfile, CompanyProfile, Page, OToken, Supplier
+                         UserProfile, CompanyProfile, Page, OToken, Supplier, \
+                         Geocode
 
 class BackOffice(admin.sites.AdminSite):
     pass
@@ -15,7 +16,7 @@ class UserProfileInline(admin.StackedInline):
     verbose_name_plural = 'profile'
 
 class UserAdmin(UserAdmin):
-    list_display = ('profile', 'space', 'company', 'username', 'email', 'token', 'is_staff')
+    list_display = ('profile', 'space', 'company', 'email', 'token', 'is_staff')
     list_filter = ('profile__space__name', 'profile__company__name')
     inlines = (UserProfileInline, )
 
@@ -41,7 +42,8 @@ class UserAdmin(UserAdmin):
             return ''
 
 class SpaceAdmin(admin.ModelAdmin):
-    list_display = ('name', 'postcode')
+    list_display = ('name', 'postcode', 'geocode', 'created')
+    list_editable = ['postcode']
 
     def get_actions(self, request):
         actions = super(SpaceAdmin, self).get_actions(request)
@@ -85,6 +87,10 @@ class SupplierAdmin(admin.ModelAdmin):
             return '-'
     locations.short_description = 'Spaces'
 
+class GeocodeAdmin(admin.ModelAdmin):
+    list_display = ('code', '__unicode__')
+    search_fields = ('code',)
+
 
 site = BackOffice()
 site.register(User, UserAdmin)
@@ -95,3 +101,4 @@ site.register(Notice, NoticeAdmin)
 site.register(Expertise)
 site.register(Page, PageAdmin)
 site.register(Supplier, SupplierAdmin)
+site.register(Geocode, GeocodeAdmin)

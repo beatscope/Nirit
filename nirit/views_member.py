@@ -12,12 +12,30 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpRespons
 from django.template import RequestContext, loader
 from django.utils.html import linebreaks
 from django.conf import settings
-from nirit.models import Notice, Organization, UserProfile
+from nirit.models import Notice, Organization, UserProfile, Membership
 from nirit.manager import ModelManager
 from nirit.forms import MemberForm, UserForm
 from nirit.fixtures import Message
 
 logger = logging.getLogger('nirit.member')
+
+
+@login_required
+def spaces(request):
+    """
+    Member Spaces.
+
+    """
+    # Check the user is active
+    if not request.user.get_profile().status == UserProfile.VERIFIED:
+        raise PermissionDenied
+    spaces = request.user.get_profile().get_spaces()
+    context = {
+        'spaces': spaces
+    }
+    t = loader.get_template('nirit/user_spaces.html')
+    c = RequestContext(request, context)
+    return HttpResponse(t.render(c))
 
 
 @login_required
@@ -68,14 +86,17 @@ def profile(request, codename=None):
         'notices': notices
     }
 
-    # Add companies approval
+    # Add join requests approval
     #   - for Managers
     #   - only on member's own page
     context['is_manager'] = False
     if profile.user == request.user:
         if profile.space and 'Manager' in profile.roles:
             context['is_manager'] = True
+            # Companies
             context['companies_awaiting'] = profile.space.get_pending_companies()
+            # Members
+            context['members_awaiting'] = profile.space.get_pending_members()
 
     t = loader.get_template('nirit/user_profile.html')
     c = RequestContext(request, context)
@@ -137,6 +158,71 @@ def set_status(request, codename, action):
         'status': '200',
         'data': {
             'codename': codename,
+            'action': action
+        }
+    }), mimetype="application/json")
+    response['Content-Type'] = 'application/json; charset=utf-8'
+    return response
+
+
+@login_required
+def set_unaffiliated_status(request, id, action):
+    profile = request.user.get_profile()
+
+    # Check the user is active
+    if not profile.status == UserProfile.VERIFIED:
+        raise PermissionDenied
+
+    # Check the user is a Space Manager
+    if not request.user in profile.space.managers:
+        raise PermissionDenied
+
+    # Check action
+    if action not in ('activate', 'ban'):
+        return HttpResponseBadRequest(json.dumps({
+            'status': '400',
+            'reason': 'Unknown Action.'
+        }), mimetype="application/json")
+
+    try:
+        member = UserProfile.objects.get(pk=id)
+        try:
+            membership = Membership.objects.get(space=profile.space, member=member)
+        except Membership.DoesNotExist:
+            raise UserProfile.DoesNotExist
+        else:
+            if action == 'activate':
+                membership.status = Membership.APPROVED
+                membership.save()
+                # email user
+                subject = 'Your membership request has been approved'
+                text_content = Message().get('email_approval_receipt_text', {
+                    'first_name': member.name,
+                    'space': profile.space.name,
+                    'link': '{}/member/{}'.format(settings.HOST, member.codename)
+                })
+                if not settings.DEBUG:
+                    html_content = Message().get('email_approval_receipt_html', {
+                        'first_name': member.name,
+                        'space': profile.space.name,
+                        'link': '{}/member/{}'.format(settings.HOST, member.codename)
+                    })
+                else:
+                    html_content = None
+                member.mail(subject, text_content, html_content)
+            elif action == 'ban':
+                membership.status = Membership.REJECTED
+                membership.save()
+    except UserProfile.DoesNotExist:
+        return HttpResponseBadRequest(json.dumps({
+            'status': '404',
+            'reason': 'Unknown User.'
+        }), mimetype="application/json")
+
+    response = HttpResponse(json.dumps({
+        'status': '200',
+        'data': {
+            'id': id,
             'action': action
         }
     }), mimetype="application/json")

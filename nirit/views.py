@@ -12,12 +12,49 @@ from django.core.mail import mail_admins
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.template import RequestContext, loader
 from django.conf import settings
-from nirit.models import Space, UserProfile, CompanyProfile
+from nirit.models import Space, UserProfile, Membership, CompanyProfile
 from nirit.forms import SupplierForm
 from nirit.fixtures import Message
 from nirit import utils
 
 logger = logging.getLogger('nirit.views')
+
+
+def join(request, codename=None):
+    space = get_object_or_404(Space, codename=codename)
+    if request.user.is_anonymous():
+        # members are required to be logged-in for this
+        url = '/login?next=/join/{}/{}'.format(space.slug, space.codename)
+        return redirect(url)
+    # At this point the Member will be signed-up, activated and logged-in
+    profile = request.user.get_profile()
+
+    # Only Unaffiliated Members can join Spaces
+    if profile.company:
+        t = loader.get_template('nirit/space-not-available.html')
+        c = RequestContext(request)
+        return HttpResponse(t.render(c))
+
+    # Make sure the Member has not already joined
+    if space not in profile.spaces_joined.all():
+        if space.managed:
+            # The space is members only.
+            # create a PENDING Membership
+            m = Membership(space=space, member=profile)
+            m.save()
+            # redirect to Spaces page
+            return redirect('/spaces/awaiting-approval')
+        else:
+            # The space is public.
+            # create an APPROVED Membership
+            m = Membership(space=space, member=profile, status=Membership.APPROVED)
+            m.save()
+            # Set the space as primary
+            profile.space = space
+            profile.save()
+    # Redirect to Space board after joining
+    url = '/board/{}'.format(space.link)
+    return redirect(url)
 
 
 @login_required
@@ -35,7 +72,6 @@ def board(request, codename=None):
     # Check the user is a member of this space
     if request.user not in space.members:
         raise PermissionDenied
-
     # Check the user is active
     if not request.user.get_profile().status == UserProfile.VERIFIED:
         raise PermissionDenied
@@ -124,6 +160,7 @@ def directory(request, codename=None):
         context['tabs'].append({'name': 'building','label': 'By Building', 'href': '?by=building'})
     if space.use_floor:
         context['tabs'].append({'name': 'floor','label': 'By Floor', 'href': '?by=floor'})
+    context['tabs'].append({'name': 'members','label': 'Members', 'href': '?by=members'})
 
     if request.GET.has_key('by'):
         group = request.GET['by']
@@ -143,21 +180,28 @@ def directory(request, codename=None):
     # Fetch companies using Nirit API
     url = "{}/spaces/{}".format(settings.API_HOST, space.codename)
     response = requests.get(url, verify=False, headers=headers)
+    logger.debug(response.url)
     data = json.loads(response.text)
 
-    # order by group
-    companies = data['organizations']
-    companies = sorted(companies, key=operator.itemgetter(group))
+    if group == 'members':
+        # order by name
+        results = data['members']
+        get_key = operator.itemgetter('name')
+        results = sorted(results, key=lambda u: get_key(u).upper())
+    else:
+        # order by group
+        results = data['organizations']
+        results = sorted(results, key=operator.itemgetter(group))
 
     # group results by label
     groups = []
     index = -1
     previous_value = None
-    for result in companies:
+    for result in results:
         # use the first letter as the alphabetical group
         # otherwise, the label is the group name
-        if group == 'name':
-            label = result[group][:1]
+        if group in ('name', 'members'):
+            label = result['name'][:1].upper()
         elif group == 'floor':
             label = result['floor_tag']
         else:
@@ -180,7 +224,7 @@ def directory(request, codename=None):
             groups[index]['results'].append(result)
 
     # override the result list with the grouped list
-    data['count'] = len(companies)
+    data['count'] = len(results)
     data['results'] = groups
 
     context['data'] = json.dumps(data)
@@ -250,16 +294,17 @@ def amenities(request, codename=None):
         # determine supplier icon
         supplier['icon'] = re.sub(r'\s\s*', '-', supplier['type'].lower())
         # calculate distances
-        if not supplier['geocode'][0] and not supplier['geocode'][1]:
+        if not supplier['geocode'] or not space.geocode:
             supplier['distance'] = 'N/A'
             supplier['distance-key'] = 99999999999
         else:
             # coming from the API, the geocode is a coma-separated string
             geocode = [float(c) for c in supplier['geocode'].split(',')]
+            space_geocode = [float(c) for c in space.geocode.split(',')]
             distance = utils.get_distance(geocode[0],
                                           geocode[1],
-                                          space.geocode.latitude,
-                                          space.geocode.longitude)
+                                          space_geocode[0],
+                                          space_geocode[1])
             # we use miles
             if distance[1] <= 1:
                 supplier['distance'] = '{} mile'.format(round(distance[1], 1))

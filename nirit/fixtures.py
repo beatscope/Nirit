@@ -24,6 +24,8 @@ class Message(object):
         'email_sign_up_success_html': 'emails/sign_up_new.html',                # Sign up success (html)
         'email_sign_up_failed_text': 'emails/sign_up_failed.txt',               # Sign up failed (text)
         'email_sign_up_failed_html': 'emails/sign_up_failed.html',              # Sign up failed (html)
+        'email_approval_receipt_text': 'emails/approval_receipt.txt',           # Unaffiliated Membership approval (text)
+        'email_approval_receipt_html': 'emails/approval_receipt.html',          # Unaffiliated Membership approval (html)
         'email_sign_up_activated_text': 'emails/sign_up_activated.txt',         # Sign up activated (text)
         'email_sign_up_activated_html': 'emails/sign_up_activated.html',        # Sign up activated (html)
         'email_company_contact_text': 'emails/company_contact.txt',             # Contact Company (text)

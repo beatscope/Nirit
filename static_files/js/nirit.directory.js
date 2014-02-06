@@ -1,6 +1,7 @@
 /**
  * Nirit - Directory Scripts
- * (c) 2013 Beatscope Limited | http://www.beatscope.co.uk/
+ * 2014-02-05 1.2.0
+ * (c) 2014 Beatscope Limited | http://www.beatscope.co.uk/
  */
 
 if (typeof(NIRIT) === 'undefined') {
@@ -33,7 +34,11 @@ NIRIT.Directory.prototype.add_cards = function (update) {
 
     // Add results count
     var counter = '<div class="counter"><span>' + this.data.count + '</span> ';
-    counter += this.data.count > 1 ? 'companies' : 'company';
+    if (this.group == 'members') {
+        counter += this.data.count > 1 ? 'members' : 'member';
+    } else {
+        counter += this.data.count > 1 ? 'companies' : 'company';
+    }
     counter += ' listed.</div>';
     this.insert(counter);
 
@@ -93,6 +98,34 @@ NIRIT.Directory.prototype.apply_template = function (object, template) {
             }
             html += '<div class="company-expertise">' + object.expertise.join(', ') + '</div>';
             html += '</div>';
+            html += '</div>';
+            break;
+
+        case 'member':
+            console.log(object);
+            html += '<div class="company-item">';
+            html += '<img src="' + object.avatar + '" alt="" width="32" height="32" />';
+            html += '<div class="company-info">';
+            html += '<div class="member-name"><a href="/member/' + object.codename + '" title="' + object.name + '">' + object.name + '</a></div>';
+            if (object.company) {
+                html += '<div class="member-company-name">'
+                      + '<a href="/company/' + object.company.slug + '" title="' + object.company.name + '">' + object.company.name + '</a>'
+                      + '</div>';
+            } else {
+                html += '<div class="member-unaffiliated">Member</div>';
+            }
+            html += '</div>';
+            html += '</div>';
+            break;
+
+        case 'members-group':
+            html += '<div class="card">';
+            html += '<h3>' + object['label'] + '</h3>';
+            for (var c in object['cards']) {
+                var card = this.apply_template(object['cards'][c], 'member');
+                html += card;
+                card = null;
+            }
             html += '</div>';
             break;
 

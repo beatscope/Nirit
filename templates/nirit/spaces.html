@@ -9,8 +9,57 @@
     <div id="main">
 
         <h1>
-            <span>Recently Added Spaces</span>
+            <span>{{ title }}</span>
         </h1>
+
+        {% if user.get_profile.company %}
+            <div class="edit">
+                <p class="description">Only Company Owners can join new Spaces.</p>
+                <p class="description">If you are a Company Owner and would like to join another Space, please contact us.</p>
+            </div>
+        {% else %}
+            <div class="space-search">
+                <form method="post" action="">
+                    {% csrf_token %}
+                    <input type="text" name="search" placeholder="Search near your postcode" value="{% if postcode %}{{ postcode }}{% else %}{% endif %}">
+                    <button class="button">Search</button>
+                </form>
+            </div>
+            <ul class="space-cards">
+            {% for space in spaces %}
+                <li class="space-card">
+                    <{% if space.pending %}div{% else %}a href="/join/{{ space.space.link }}"{% endif %}>
+                        <span class="space-name">{{ space.space }}{% if space.space.managed %}<span class="lock-icon" title="This group is member only"></span>{% endif %}</span>
+                        <span class="space-location">{{ space.space.postcode }}{% if space.distance_display and space.distance_display != 'N/A' %},
+                                <span class="space-distance">{{ space.distance_display }}</span>
+                        {% endif %}</span>
+                        <span class="space-info">{{ space.space.members|length }} Member{{ space.space.members|pluralize:"s" }}</span>
+                        <span class="space-info">{{ space.space.space_profile.count }} Compan{{ space.space.space_profile.count|pluralize:"y,ies" }}</span>
+                        <span class="space-button">{% if space.pending %}Pending{% else %}Join{% endif %}</span>
+                    </{% if space.pending %}div{% else %}a{% endif %}>
+                </li>
+            {% endfor %}
+            </ul>
+
+            {% if member_spaces %}
+            <h2>
+                <span>My Spaces</span>
+            </h2>
+            <ul class="space-cards">
+            {% for space in member_spaces %}
+                <li class="space-card">
+                    <a href="/board?set-active-space={{ space.codename }}">
+                        <span class="space-name">{{ space }}</span>
+                        <span class="space-location">{{ space.postcode }}</span>
+                        <span class="space-info">{{ space.members|length }} Member{{ space.members|pluralize:"s" }}</span>
+                        <span class="space-info">{{ space.space_profile.count }} Compan{{ space.space_profile.count|pluralize:"y,ies" }}</span>
+                    </a>
+                </li>
+            {% endfor %}
+            </ul>
+            {% endif %}
+
+        {% endif %}
 
     </div>
 

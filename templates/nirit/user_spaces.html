@@ -1,0 +1,45 @@
+{% extends "nirit/base.html" %}
+{% load static %}
+
+{% block title %}Nirit Spaces{% endblock %}
+
+{% block content %}
+<div class="content spaces">
+
+    <div id="main">
+
+        <h1>
+            <span>My Spaces</span>
+        </h1>
+
+        {% if user.get_profile.company %}
+            <div class="edit">
+                <p class="description">This feature is not available to Company Owners &amp; Staff.</p>
+            </div>
+        {% else %}
+            <ul class="space-cards">
+            {% for space in spaces %}
+                <li class="space-card">
+                    <a href="/board?set-active-space={{ space.codename }}">
+                        <span class="space-name">{{ space }}</span>
+                        <span class="space-location">{{ space.postcode }}</span>
+                        <span class="space-info">{{ space.members|length }} Member{{ space.members|pluralize:"s" }}</span>
+                        <span class="space-info">{{ space.space_profile.count }} Compan{{ space.space_profile.count|pluralize:"y,ies" }}</span>
+                    </a>
+                </li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+
+    </div>
+
+    <div id="sidebar">
+        <div class="box">
+            <div class="ad-slot">
+                {% include "adverts/mpu.html" %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

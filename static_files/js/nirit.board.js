@@ -1,5 +1,6 @@
 /**
  * Nirit - Notice Board Scripts
+ * 2014-02-03 1.2.0
  * (c) 2013 Beatscope Limited | http://www.beatscope.co.uk/
  */
 
@@ -270,7 +271,7 @@ NIRIT.Board.prototype.apply_template = function (card, template) {
 
     try {
         // Sender's display name
-        var sender = card.sender.full_name;
+        var sender = card.sender.name;
         if (card.sender.is_admin) {
             sender = 'System Administrator';
         }
@@ -354,7 +355,9 @@ NIRIT.Board.prototype.apply_template = function (card, template) {
             card_tag += ' - <a href="/member/' + card.sender.codename + '">' + sender + '</a>';
         } else {
             card_tag += '<div class="sender"><a href="/member/' + card.sender.codename + '">' + sender + '</a>';
-            card_tag += ', <span><a href="/company/' + card.sender.company.slug + '">' + card.sender.company.name + '</a></span>';
+            if (card.sender.company) {
+                card_tag += ', <span><a href="/company/' + card.sender.company.slug + '">' + card.sender.company.name + '</a></span>';
+            }
         }
     }
 

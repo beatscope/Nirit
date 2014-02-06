@@ -1,0 +1,12 @@
+{% autoescape off %}
+Hi {{ first_name }}
+
+Your membership request on {{ space }} has been approved.
+
+Please click the following link to access you profile:
+
+    {{ link }}
+
+The team @ Nirit
+
+{% endautoescape %}

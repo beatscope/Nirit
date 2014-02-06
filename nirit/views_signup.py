@@ -25,8 +25,6 @@ def sign_up(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # Generate user hash/slug
-            user.get_profile().generate_hash()
             # Handle user role
             if user.get_profile().company:
                 # Staff User created
@@ -242,10 +240,6 @@ def join(request):
                             # Create user
                             user = form.save()
 
-                            # Generate user hash/slug
-                            profile = user.get_profile()
-                            profile.generate_hash()
-
                             # Create organization
                             data = company_form.save()
                             company = data['organization']
@@ -259,6 +253,7 @@ def join(request):
                                                           floor=floor)
 
                             # Assign user to the company and space
+                            profile = user.get_profile()
                             profile.company = company
                             profile.space = t.space
                             profile.save()

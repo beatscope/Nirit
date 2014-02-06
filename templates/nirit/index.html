@@ -15,6 +15,7 @@
     <div class="container">
         <ul>
             <li class="first"><a href="/member/sign-up">Sign-up</a></li>
+            <li><a href="/spaces">Spaces</a></li>
         </ul>
     </div>
 </nav>
@@ -44,7 +45,13 @@
             <div id="login-card">
                 {% if form.errors %}
                 <div id="form-errors">
-                    <p>Your email and password didn't match. Please try again.</p>
+                    {% for error, message in form.errors.items %}
+                        {% for item in message %}{% if 'inactive' in item %}
+                        <p>You need to activate your account. Please check your email.</p>
+                        {% else %}
+                        <p>Your email and password didn't match. Please try again.</p>
+                        {% endif %}{% endfor %}
+                    {% endfor %}
                 </div>
                 {% endif %}
                 <form method="post" action="">
@@ -68,6 +75,30 @@
 {% block extracontent %}
 <div class="home-content content">
     <div class="container">
+
+        <div class="home-search">
+            <h2>Recently Added Spaces</h2>
+            <form method="post" action="/spaces/">
+                {% csrf_token %}
+                <input type="text" name="search" placeholder="Search near your postcode" value="{% if postcode %}{{ postcode }}{% else %}{% endif %}">
+                <button class="button">Search</button>
+                <div class="errors"></div>
+            </form>
+        </div>
+        <ul class="space-cards">
+        {% for space in spaces %}
+            <li class="space-card">
+                <a href="/join/{{ space.link }}">
+                    <span class="space-name">{{ space }}{% if space.managed %}<span class="lock-icon" title="This group is member only"></span>{% endif %}</span>
+                    <span class="space-location">{{ space.postcode }}</span>
+                    <span class="space-info">{{ space.members|length }} Member{{ space.members|pluralize:"s" }}</span>
+                    <span class="space-info">{{ space.space_profile.count }} Compan{{ space.space_profile.count|pluralize:"y,ies" }}</span>
+                    <span class="space-button">Join</span>
+                </a>
+            </li>
+        {% endfor %}
+        </ul>
+
         <h1>A free community-building platform for co-working and shared spaces.</h1>
         <p>Shared spaces are at their most valuable when they bring about community, creativity and collaboration between their tenants.
         Nirit increases those fortuitous conversations that lead to major breakthroughs and new ideas.</p>
@@ -85,14 +116,14 @@
             <li class="home-item-local">Easily navigable directory of local resources such as bars, cafes and other suppliers</li>
         </ul>
 
-        <div class="register">
-            <div class="register-box" data-entity="register">
+        <div class="home-search">
+            <div data-entity="register">
                 <p><strong>To find out more, simply enter your email address and we'll get back to you.</strong></p>
                 <input type="text" class="text" value="" />
                 <button class="button">Send</button>
                 <div class="errors"></div>
             </div>
-            <div class="register-box hidden" data-entity="register-success">
+            <div class="hidden" data-entity="register-success">
                 <p><strong>Thank you for registering your interest. We'll get back to you very soon.</strong></p>
             </div>
         </div>
@@ -150,7 +181,7 @@
                 box.find('.text').attr('disabled', 'disabled');
                 button.addClass('loading');
                 box.find('.errors').empty();
-                $.post('/action/register-interest', {
+                $.post('/action/register-interest/', {
                     'email': trim(email)
                 }, function (response) {
                     box.slideUp(250, function () { 

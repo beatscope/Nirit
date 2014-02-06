@@ -36,7 +36,7 @@
                 {% endif %}
                 {% if is_user_editor %}
                     <li class="right">
-                        <a class="button" href="./{{ company.organization.codename }}/edit">Edit</a>
+                        <a class="button" href="/company/{{ company.organization.link }}/edit">Edit</a>
                     </li>
                 {% endif %}
             </ul>
@@ -185,7 +185,7 @@
                         {% endif %}
                              width="16" height="auto"
                              class="avatar"
-                             alt="{{ notice.sender.full_name }}" />
+                             alt="{{ notice.sender.name }}" />
                         {{ notice.subject|safe }}
                     </div>
                 </li>

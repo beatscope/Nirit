@@ -219,6 +219,7 @@ class SignUpForm(forms.Form):
                 # Unaffiliated members are created as inactive, and sent an activation email
                 user.is_active = False
                 user.save()
+                user.groups.add(Group.objects.get(name='Member'))
                 # Create temporary activation profile
                 activation_key = generate_activation_key(user)
                 activation_link = '{}/member/activate/{}/'.format(settings.HOST, activation_key)

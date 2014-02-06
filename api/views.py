@@ -153,15 +153,16 @@ class NoticeListView(generics.ListAPIView):
                 return queryset
             else:
                 queryset = Notice.objects.filter(sender=profile.user, is_reply=False).order_by('-updated')
-                # exclude notices posted by a BANNED company
+                # Return no results if the member belongs to a BANNED company.
                 # we only exclude Notices sent in the User's Active Space,
                 # where the Company is banned
-                try:
-                    company_profile = CompanyProfile.objects.get(space=profile.space, organization=profile.company)
-                    if company_profile.status == CompanyProfile.BANNED:
-                        queryset = Notice.objects.none()
-                except CompanyProfile.DoesNotExist:
-                    pass
+                if profile.company:
+                    try:
+                        company_profile = CompanyProfile.objects.get(space=profile.space, organization=profile.company)
+                        if company_profile.status == CompanyProfile.BANNED:
+                            queryset = Notice.objects.none()
+                    except CompanyProfile.DoesNotExist:
+                        pass
 
         # By default, we return Notices for the User's Active Space
         if self.request.user.get_profile().space:
@@ -196,9 +197,10 @@ class NoticeListView(generics.ListAPIView):
             # exclude notices posted by a BANNED company
             # we only exclude Notices sent in the User's Active Space,
             # where the Company is banned
-            company_profile = CompanyProfile.objects.get(space=profile.space, organization=profile.company)
-            if company_profile.status == CompanyProfile.BANNED:
-                queryset = Notice.objects.none()
+            if profile.company:
+                company_profile = CompanyProfile.objects.get(space=profile.space, organization=profile.company)
+                if company_profile.status == CompanyProfile.BANNED:
+                    queryset = Notice.objects.none()
 
             count = queryset.count()
             notices = {}

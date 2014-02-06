@@ -4,7 +4,7 @@
 {% block title %}Nirit | Member Profile | {{ member.name }}{% endblock %}
 
 {% block extrahead %}<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>
-<script type="text/javascript" src="{% static "js/nirit.board.min.js" %}"></script>{% endblock %}
+<script type="text/javascript" src="{% static "js/nirit.board-1.2.0.min.js" %}"></script>{% endblock %}
 
 {% block content %}
 <div class="content account">
@@ -45,9 +45,11 @@
                         {% endfor %}
                     </div>
                 {% endif %}
-                <h2>
-                    <a href="/company/{{ member.company.link }}">{{ member.company.name }}</a>
-                </h2>
+                {% if member.company %}
+                    <h2>
+                        <a href="/company/{{ member.company.link }}">{{ member.company.name }}</a>
+                    </h2>
+                {% endif %}
             </div>
         </div>
 
@@ -77,6 +79,7 @@
         {% endcomment %}
         {% if is_manager %}
         <div class="box padded">
+
             {% if companies_awaiting %}
             <h3>Companies Awaiting Approval</h3>
             <ul class="approval-list company">
@@ -87,8 +90,20 @@
                 </li>
                 {% endfor %}
             </ul>
-
             {% endif %}
+
+            {% if members_awaiting %}
+            <h3>Members Awaiting Approval</h3>
+            <ul class="approval-list members">
+                {% for member in members_awaiting %}
+                <li class="unaffiliated" rel="{{ member.id }}">{{ member.name }}
+                    <a href="" class="activate">Approve</a>
+                    <a href="" class="ban">Decline</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
             {% comment %}
             Invite Company to the Space, using email address
             {% endcomment %}
@@ -112,28 +127,28 @@
                 {% include "adverts/mpu.html" %}
             </div>
         </div>
-        {% if user.get_profile == member %}
-            {% if member.spaces|length > 1 %}
-            <div class="box padded">
-                <h3>Select primary space</h3>
-                <p class="description">The primary space defines your active view,
-                    and sets the default filters, including the Notices displayed on your Profile.</p>
-                <ul>{% for space in member.spaces %}
-                    <li class="{% if space == member.space %}active{% else %}inactive{% endif %}">
-                        {% if user == member.user %}
-                            {% if space == member.space %}
-                                {{ space.name }} <span class="primary">(primary)</span>
-                            {% else %}
-                                <a href="?set-active-space={{ space.codename }}" title="Set as primary space">{{ space.name }}</a>
-                            {% endif %}
+
+        {% if member.spaces|length > 1 %}
+        <div class="box padded">
+            <h3>Select primary space</h3>
+            <p class="description">The primary space defines your active view,
+                and sets the default filters, including the Notices displayed on your Profile.</p>
+            <ul>{% for space in member.spaces %}
+                <li class="{% if space == member.space %}active{% else %}inactive{% endif %}">
+                    {% if user == member.user %}
+                        {% if space == member.space %}
+                            {{ space.name }} <span class="primary">(primary)</span>
                         {% else %}
-                            {{ space.name }}
+                            <a href="?set-active-space={{ space.codename }}" title="Set as primary space">{{ space.name }}</a>
                         {% endif %}
-                    </li>
-                {% endfor %}</ul>
-            </div>
-            {% endif %}
+                    {% else %}
+                        {{ space.name }}
+                    {% endif %}
+                </li>
+            {% endfor %}</ul>
+        </div>
         {% endif %}
+
         {% if member.networked.all.count > 0 %}
         <div class="box padded">
             <h3>{{ member.name }}'s Network</h3>
@@ -202,49 +217,10 @@
         });
 
         {% if is_manager %}
-            {% if companies_awaiting %}
 
-            // Handle Companies approval
-            NIRIT.Approval = function () {
-                this.init();
-            };
-            
-            NIRIT.Approval.prototype.init = function () {
-                var self = this;
-                $('.approval-list').find('.company').each(function () {
-                    var entity = $(this);
-                    entity.find('a').bind('click', function () {
-                        // URL format: "/approval/company/codename/activate|ban
-                        var url = '/approval/' + entity.attr('class');
-                        url += '/' + entity.attr('rel');
-                        url += '/' + $(this).attr('class');
-                        $.get(url, function () {
-                            // Remove the entity from the screen on success
-                            self.remove(entity);
-                        });
-                        return false;
-                    });
-                });
-            };
+        {% if companies_awaiting %}new NIRIT.Approval('company');{% endif %}
 
-            NIRIT.Approval.prototype.remove = function (entity) {
-                var self = this;
-                var entity_type = entity.attr('class');
-                entity.slideUp(function () {
-                    entity.remove();
-                    self.refresh(entity_type);
-                });
-            };
-
-            NIRIT.Approval.prototype.refresh = function (entity_type) {
-                if ($('.approval-list.'+entity_type).find('.'+entity_type).length <= 0) {
-                    $('.approval-list.'+entity_type).hide().append('<li>No pending requests remaining.</li>').slideDown();
-                }
-            };
-
-            new NIRIT.Approval();
-
-            {% endif %}
+        {% if members_awaiting %}new NIRIT.Approval('unaffiliated');{% endif %}
 
         // Invite Form
         $('a[data-entity="invite"]').bind('click', function () {

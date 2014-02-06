@@ -37,13 +37,13 @@ class UserSerializer(serializers.ModelSerializer):
     roles = serializers.RelatedField(source='groups', many=True, read_only=True)
     is_admin = serializers.Field(source='is_superuser')
     codename = serializers.RelatedField(source='profile.codename')
-    full_name = serializers.RelatedField(source='profile.name')
+    name = serializers.RelatedField(source='profile.name')
     avatar = serializers.RelatedField(source='profile.avatar')
     company = ShortCompanySerializer(source='profile.company', read_only=True)
 
     class Meta:
         model = User
-        fields = ('codename', 'is_staff', 'is_admin', 'full_name', 'avatar', 'company', 'roles')
+        fields = ('codename', 'is_staff', 'is_admin', 'name', 'avatar', 'company', 'roles')
 
 
 class CompanyProfileSerializer(serializers.ModelSerializer):
@@ -102,7 +102,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
 class SpaceSerializer(serializers.ModelSerializer):
     name = serializers.Field(source='name')
     slug = serializers.SlugField(source='link')
-    members = ShortUserSerializer(many=True, read_only=True)
+    members = UserSerializer(many=True, read_only=True)
     notices = serializers.IntegerField(source='get_notices.count')
     organizations = SpaceProfileSerializer(source='space_profile', many=True)
 

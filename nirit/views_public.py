@@ -3,6 +3,7 @@ import logging
 import json
 import operator
 import requests
+import urllib
 from django.core.exceptions import PermissionDenied
 from django.core.validators import validate_email
 from django.contrib.auth.forms import AuthenticationForm
@@ -12,7 +13,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.template import RequestContext, loader
 from django.conf import settings
-from nirit.models import Page, UserProfile, Supplier
+from nirit.models import Page, UserProfile, Membership, Supplier, Space, Geocode
 from nirit.fixtures import Message
 from nirit.forms import SupplierForm
 from nirit import utils
@@ -33,6 +34,10 @@ def landing(request):
         else:
             form = AuthenticationForm()
         context['form'] = form
+
+        # 3 most recent Spaces
+        context['spaces'] = Space.objects.all().order_by('-created')[:3]
+
     else:
         # Redirect authenticated user to their primary space's Notice Board
         # Owners and Affiliated Members have their primary Space automatically set on registration
@@ -70,7 +75,88 @@ def page(request, page):
 
 
 def spaces(request):
+    # Redirect POST requests to spaces with querystring
+    if request.method == 'POST' and request.POST.has_key('search'):
+        terms = urllib.quote(request.POST['search'])
+        return HttpResponseRedirect('/spaces/?search={}'.format(terms))
+
+    # Check for search parameter
+    search_query = request.GET['search'] \
+                   if request.GET.has_key('search') and request.GET['search'] \
+                   else None
+    title = 'Recently Added Spaces'
+    postcode = None
+    geocode = '0.0,0.0'
+    if search_query:
+        # we only handle valid postcodes for now
+        postcode = utils.Extractor(search_query).extract_postcode()
+        if postcode:
+            title = 'Nearest Spaces'
+            try:
+                geocode = Geocode.objects.get(code=postcode)
+            except Geocode.DoesNotExist:
+                # If the geocode for this postcode has not yet been stored,
+                # fetch it
+                try:
+                    point = utils.get_postcode_point(postcode)
+                except:
+                    # The function raises an Exception when the postcode does not exist
+                    # we store the resulst as (0, 0) to avoid fetching the API every time
+                    point = (0.0, 0.0)
+                geocode = Geocode.objects.create(code=postcode, latitude=point[0], longitude=point[1])
+            geocode = str(geocode)
+
+    spaces = []
+    # By default, we show most recent spaces
+    for space in Space.objects.all().order_by('-created'):
+        _space = {}
+        # Filter out APPROVED and REJECTED memberships
+        # for authenticated users
+        if request.user.is_authenticated():
+            if request.user in space.members:
+                # No need to re-list spaces you are a member of
+                continue
+            try:
+                membership = Membership.objects.get(space=space, member=request.user.get_profile())
+                if membership.status == Membership.REJECTED:
+                    # Hide spaces I have been rejected from
+                    continue
+                _space['pending'] = True if membership.status == Membership.PENDING else False
+            except Membership.DoesNotExist:
+                pass
+        distance = space.get_distance(geocode)
+        if distance:
+            _space.update(distance)
+        _space['space'] = space
+        spaces.append(_space)
+
+    # Order spaces by increasing distance if a search query was given
+    if spaces and search_query:
+        spaces = sorted(spaces, key=operator.itemgetter('distance'))
+    # Only display first 6
+    if spaces:
+        spaces = spaces[:6]
+
+    # Display Member spaces
+    member_spaces = None
+    if request.user.is_authenticated():
+        profile = request.user.get_profile()
+        member_spaces = profile.get_spaces()
+
+    context = {
+        'title': title,
+        'postcode': postcode,
+        'spaces': spaces
+    }
+    if member_spaces:
+        context['member_spaces'] = member_spaces
     t = loader.get_template('nirit/spaces.html')
+    c = RequestContext(request, context)
+    return HttpResponse(t.render(c))
+
+
+def spaces_awaiting_approval(request):
+    t = loader.get_template('nirit/space-awaiting-approval.html')
     c = RequestContext(request)
     return HttpResponse(t.render(c))
 
@@ -89,10 +175,11 @@ def supplier(request, slug):
                 candidate['distance'] = 99999999999
             else:
                 geocode = [float(c) for c in candidate['location'].split(',')]
+                space_geocode = [float(c) for c in request.user.get_profile().space.geocode.split(',')]
                 distance = utils.get_distance(geocode[0],
                                               geocode[1],
-                                              request.user.get_profile().space.geocode.latitude,
-                                              request.user.get_profile().space.geocode.longitude)
+                                              space_geocode[0],
+                                              space_geocode[1])
                 candidate['distance'] = distance[1]
         candidates = sorted(candidates, key=operator.itemgetter('distance'))
         try:

@@ -75,10 +75,16 @@ def request(request):
         # Add user's company
         if request.user.get_profile().company:
             meta['menu'].append({
-                    'link': 'Company Profile',
-                    'name': 'company',
-                    'href': '/company/{}'.format(request.user.get_profile().company.link)
-                })
+                'link': 'Company Profile',
+                'name': 'company',
+                'href': '/company/{}'.format(request.user.get_profile().company.link)
+            })
+        else:
+            meta['menu'].append({
+                'link': 'Spaces',
+                'name': 'directory',
+                'href': '/spaces/'
+            })
 
         # Highlight active menu item
         for i, l in enumerate([p for p in meta['menu'] if p['href']]):

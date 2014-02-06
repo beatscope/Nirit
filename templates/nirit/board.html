@@ -4,7 +4,7 @@
 {% block title %}Nirit | {{ space.name }} Notice Board{% endblock %}
 
 {% block extrahead %}<script type="text/javascript" src="{% static "js/jquery.color-2.1.1.min.js" %}"></script>
-<script type="text/javascript" src="{% static "js/nirit.board.min.js" %}"></script>{% endblock %}
+<script type="text/javascript" src="{% static "js/nirit.board-1.2.0.min.js" %}"></script>{% endblock %}
 
 {% block content %}
 <div class="content board">
@@ -22,14 +22,16 @@
                     <a {% if filter and filter == 'starred' %}class="active" {% endif %}
                        href="/board/{{ space.link }}?filter=starred">Starred</a>
                 </li>
-                <li>
+                <li{% if not user.get_profile.company %} class="last"{% endif %}>
                     <a {% if filter and filter == 'network' %}class="active" {% endif %}
                        href="/board/{{ space.link }}?filter=network">Network</a>
                 </li>
+                {% if user.get_profile.company %}
                 <li class="last">
                     <a {% if filter and filter == 'company' %}class="active" {% endif %}
                        href="/board/{{ space.link }}?filter=company">Company</a>
                 </li>
+                {% endif %}
                 <li class="right">
                     <a id="new_card" class="button create new-card" href="">Post New Notice <span></span></a>
                 </li>

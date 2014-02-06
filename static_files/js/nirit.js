@@ -1,5 +1,6 @@
 /**
  * Nirit - Common Scripts
+ * 2014-02-03 1.2.0
  * (c) 2013 Beatscope Limited | http://www.beatscope.co.uk/
  */
 
@@ -287,6 +288,46 @@ NIRIT.utils = new NIRIT.Utils();
 /**
  * Utility Objects
  */
+
+// Requests Approval Helper
+NIRIT.Approval = function (entity) {
+    this.entity = entity;
+    this.init();
+};
+
+NIRIT.Approval.prototype.init = function () {
+    var self = this;
+    $('.approval-list').find('.'+this.entity).each(function () {
+        var entity = $(this);
+        entity.find('a').bind('click', function () {
+            // URL format: "/approval/[entity]/[id]/activate|ban
+            var url = '/approval/' + entity.attr('class');
+            url += '/' + entity.attr('rel');
+            url += '/' + $(this).attr('class');
+            $.get(url, function () {
+                // Remove the entity from the screen on success
+                self.remove(entity);
+            });
+            return false;
+        });
+    });
+};
+
+NIRIT.Approval.prototype.remove = function (entity) {
+    var self = this;
+    var entity_type = entity.attr('class');
+    entity.slideUp(function () {
+        entity.remove();
+        self.refresh(entity_type);
+    });
+};
+
+NIRIT.Approval.prototype.refresh = function (entity_type) {
+    if ($('.approval-list.'+entity_type).find('.'+entity_type).length <= 0) {
+        $('.approval-list.'+entity_type).hide().append('<li>No pending requests remaining.</li>').slideDown();
+    }
+};
+
 
 // Image Upload Handler
 NIRIT.Upload = function (settings) {
