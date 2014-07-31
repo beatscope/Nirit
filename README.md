@@ -1,15 +1,14 @@
-Nirit
-=====
+# Nirit
 
 Copyright (C) 2013 Beatscope Limited | http://www.beatscope.co.uk/
 Michael Giuliano <michael@beatscope.co.uk>
 
-Introduction
-------------
+## Introduction
+
 Nirit is a business to business network. It aims at connecting local businesses. It is primarily focused on serviced offices, where multiple companies co-habit anonymously.
 
-Requirements
-------------
+## Requirements
+
 - Python 2.7+
 - Python MysqlDb (python-mysqldb)
 - Python Imaging (python-imaging)
@@ -20,3 +19,8 @@ Requirements
 - django-filebrowser
 - django-markitup
 - requests
+
+## Copying
+
+Free use of this software is granted under the terms of the GNU Lesser General
+Public License (LGPL). 
